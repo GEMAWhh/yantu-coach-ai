@@ -6,6 +6,7 @@ from app.models.knowledge import KnowledgeEdge, KnowledgeNode
 from app.models.mastery import MasteryEvidence, MasterySnapshot
 from app.models.planning import Goal, Task, TaskResult
 from app.models.review import ReviewResult, ReviewSchedule
+from app.models.time_calibration import TimeAdjustment, TimeCoefficient
 
 __all__ = [
     "Asset",
@@ -21,4 +22,6 @@ __all__ = [
     "ReviewSchedule",
     "Task",
     "TaskResult",
+    "TimeAdjustment",
+    "TimeCoefficient",
 ]

@@ -32,6 +32,7 @@ class PlanningCandidate:
     source_type: str = "manual"
     source_id: str | None = None
     task_type: str = "study"
+    difficulty: str | None = None
     fixed: bool = False
     failure_streak: int = 0
     overtime_count: int = 0

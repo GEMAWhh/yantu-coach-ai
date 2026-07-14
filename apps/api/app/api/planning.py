@@ -43,6 +43,7 @@ from app.schemas.planning import (
     TodayResponse,
 )
 from app.settings import get_settings
+from app.time_calibration.service import apply_time_calibration_to_candidates
 
 router = APIRouter(prefix="/api/v1", tags=["planning"])
 IfMatch = Annotated[str | None, Header(alias="If-Match")]
@@ -74,8 +75,14 @@ def generate_today(
     request: Request,
     payload: TodayGenerateRequest,
 ) -> ApiResponse[TodayGenerateResponse]:
+    session_factory = _session_factory()
+    with session_factory() as session:
+        candidates = apply_time_calibration_to_candidates(
+            session,
+            [candidate.to_candidate() for candidate in payload.candidates],
+        )
     plan = generate_today_plan(
-        [candidate.to_candidate() for candidate in payload.candidates],
+        candidates,
         available_minutes=payload.available_minutes,
         energy=payload.energy,
         subject_filter=payload.subject_filter,

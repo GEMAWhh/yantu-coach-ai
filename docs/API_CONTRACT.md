@@ -55,6 +55,7 @@ POST   /tasks/{task_id}/withdraw
 
 `POST /tasks/{task_id}/results` 必须支持 `Idempotency-Key`，重复提交同一 key
 返回同一结果；任务状态与任务结果分离，结果不得直接推动掌握阶段。
+首次写入的任务结果会进入 `time-calibration-v1.0.0` 用时校准，重复幂等提交不得重复调整系数。
 
 ## 3. 规划
 
@@ -67,6 +68,17 @@ DELETE /goals/{goal_id}
 POST   /goals/{goal_id}/recalculate
 GET    /goals/{goal_id}/history
 ```
+
+## 3.1 用时校准
+
+```http
+GET /time-calibration/coefficients
+GET /time-calibration/adjustments
+```
+
+`coefficients` 返回按 `subject_id + task_type + difficulty` 隔离的当前个人用时系数；
+`adjustments` 返回每次任务结果的调整依据，包括实际/预计比、是否忽略、忽略原因、
+是否连续超时以及是否建议拆分。`POST /today/generate` 在调用计划引擎前必须读取最新系数并校准候选任务预计用时。
 
 ## 4. 知识与掌握
 

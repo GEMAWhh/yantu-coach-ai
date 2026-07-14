@@ -265,6 +265,7 @@ class PlanningCandidateInput(BaseModel):
     source_type: str = "manual"
     source_id: str | None = None
     task_type: str = "study"
+    difficulty: str | None = None
     fixed: bool = False
     failure_streak: int = Field(default=0, ge=0)
     overtime_count: int = Field(default=0, ge=0)

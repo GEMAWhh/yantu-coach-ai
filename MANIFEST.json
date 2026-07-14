@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 191,
+  "file_count": 198,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 7107,
-      "sha256": "67f5679f2658eac4dc77cafdfb73c53b7dda732af28418d254567b67c6c9fe18"
+      "size": 7797,
+      "sha256": "ac76fee12554c6d7bab916f2e67ada1b58afc5fded00c8b0e4cd54c3ebee74e3"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 399,
-      "sha256": "7807b84e3c8fe2c31eeefffdaf8c16c368b15bcb127acfd755616932067c1d92"
+      "size": 501,
+      "sha256": "a68098a4919b9dde9819c225e109e6654710670122c08bb63188ece05867c0d4"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -125,13 +125,18 @@
     },
     {
       "path": "apps/api/app/api/planning.py",
-      "size": 10137,
-      "sha256": "3d0056f20263b3d5cbc7c7d5f8ffaa281ac370288e27754ef528920b74d3ebc7"
+      "size": 10409,
+      "sha256": "2ad09ae72fcdbf0a58725256dde59034042cc0627529a5463767e3f4bab0aacc"
     },
     {
       "path": "apps/api/app/api/reviews.py",
       "size": 3563,
       "sha256": "92cc2b580949deb3f630acf2b351572e1eaf265c1012f32159bfd4b926cbdd41"
+    },
+    {
+      "path": "apps/api/app/api/time_calibration.py",
+      "size": 1631,
+      "sha256": "bc1fda9d6a30b3659e6f9f2d9aabaeda8a602a8746e7e79e21c5d7be1b05139e"
     },
     {
       "path": "apps/api/app/db/__init__.py",
@@ -146,7 +151,7 @@
     {
       "path": "apps/api/app/db/migrations.py",
       "size": 2070,
-      "sha256": "b0514df20092334dedcfbfecbdab877bed8bc2d71f8e2fc6d0e084dab0882ca6"
+      "sha256": "c9cfe39b22daa3e2495b55f4c8018c9b8a79448f374cd0c232c2004b3a22d60d"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -200,8 +205,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4398,
-      "sha256": "fd7b5517f4b395caf77d6acce1dccc2d5420ffa62153519a061223e907b5289f"
+      "size": 4507,
+      "sha256": "accb34ac93820fee33e39ac521cf54349eb011d59b0c998e79b89b224f4c7b92"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -220,8 +225,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 645,
-      "sha256": "a516beeff632848c54c5dc2f4dc6007da7de7450d34c9e8c8d5a17bca1603301"
+      "size": 762,
+      "sha256": "a4bc41530ae7529d275b6f55b857e0a1ba16b394b72afc0ee97ab3656c95d724"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -264,19 +269,24 @@
       "sha256": "2cfdf826411e04743d97e7cbd820bd323011f367e909929f2604683052a342b9"
     },
     {
+      "path": "apps/api/app/models/time_calibration.py",
+      "size": 4425,
+      "sha256": "d0c4c75179ec8fd24275cfc929ac35efbb7909547dcd4aab32966da197bb152f"
+    },
+    {
       "path": "apps/api/app/planning/__init__.py",
       "size": 976,
       "sha256": "118250c551eef003b1a439381e8f07b5205791ebe48cc8f307dca7bf4f9c59be"
     },
     {
       "path": "apps/api/app/planning/engine.py",
-      "size": 6182,
-      "sha256": "d5f39d4828733e7b8930f5cc8cdb9febe764f5a951665ddff931bdede483828b"
+      "size": 6216,
+      "sha256": "205ab0c29264487aabdc6ef4848577f23607219a3f01acbf64783bc2dcad31cb"
     },
     {
       "path": "apps/api/app/planning/service.py",
-      "size": 18475,
-      "sha256": "2b81249af7eeadf73fdb15be20920896b3248b4c7f21cb484ba0f5a0c08baf02"
+      "size": 18642,
+      "sha256": "dc6a6d67e3e8b074aee3b25160f691288d6283c9f26ae582b2f231edf6b8592f"
     },
     {
       "path": "apps/api/app/request_context.py",
@@ -335,13 +345,18 @@
     },
     {
       "path": "apps/api/app/schemas/planning.py",
-      "size": 14373,
-      "sha256": "0fa767bdbab9bfe5756ab62b8756842bd84e66f106ddef67ff95cd54c07d3be0"
+      "size": 14407,
+      "sha256": "12377d6857bec64192713caceec973385b9970b1c8597b8c023e303e4732bbb9"
     },
     {
       "path": "apps/api/app/schemas/reviews.py",
       "size": 6281,
       "sha256": "bab9069a084a1722ffc109051122d4be982291a24a79b250933db737b5830632"
+    },
+    {
+      "path": "apps/api/app/schemas/time_calibration.py",
+      "size": 3449,
+      "sha256": "30c25af122de69a33de35c29eb68e11e7d96109dee722eedcd6b096041845310"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -357,6 +372,16 @@
       "path": "apps/api/app/settings.py",
       "size": 3054,
       "sha256": "ac9cc4efe5cd140eb31c120813b22c4949a7654c3d96c1ad72885abc224fe22c"
+    },
+    {
+      "path": "apps/api/app/time_calibration/__init__.py",
+      "size": 690,
+      "sha256": "a63ca3560a169f376a15b3915bd8ca1b1304dd8e05c6017ccc208581d7df2905"
+    },
+    {
+      "path": "apps/api/app/time_calibration/service.py",
+      "size": 8194,
+      "sha256": "1a5db2f71a6fd858250edd9c050e6f58b14647dd805abae5f5fb42f47fc303b3"
     },
     {
       "path": "apps/api/migrations/README.md",
@@ -407,6 +432,11 @@
       "path": "apps/api/migrations/versions/0007_review_scheduler.py",
       "size": 7186,
       "sha256": "b1387efa52519bab63a1be21c1a29a7357485ed921f0370ff7c7fb3dd58ad4c1"
+    },
+    {
+      "path": "apps/api/migrations/versions/0008_time_calibration.py",
+      "size": 6650,
+      "sha256": "6e7ed4e68265da11ec9f95e1d5fa169e35ccf2f348cf8ce52e3ad1d423174cb4"
     },
     {
       "path": "apps/api/pyproject.toml",
@@ -462,6 +492,11 @@
       "path": "apps/api/tests/test_review_scheduler.py",
       "size": 10609,
       "sha256": "a8dcb7e585f668b868792793506399625b056d0b330c18d19ec64fc1ffd7052e"
+    },
+    {
+      "path": "apps/api/tests/test_time_calibration.py",
+      "size": 8256,
+      "sha256": "71c40bdca9fed7ee02fb565c6400acb6ddff9fd3ffbfbebbd0ca0214af1a1c87"
     },
     {
       "path": "apps/web/README.md",
@@ -720,8 +755,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 5112,
-      "sha256": "e58880ee6f9c989ae2187664cc242a91b1f8c1dee1cfee45812c8af8972b40a9"
+      "size": 5705,
+      "sha256": "dd5dd25df08fae321128d4a7076f8f3f70f245ac0e29268bdb5e376d9646596e"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -730,8 +765,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 5977,
-      "sha256": "1497552daa2ec4cc023c9ae76740d7bd45599c5bd0dcaf0e6c04869cd99e5847"
+      "size": 6839,
+      "sha256": "f58ac5dcccf60e3ec3650c88d2f94ec6f6ef295b6a919e864f3cbeee8a4a19bc"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -765,8 +800,8 @@
     },
     {
       "path": "docs/PRODUCT_SPEC.md",
-      "size": 5231,
-      "sha256": "1e42a4869ee9ee3e7109f997944aa2b1fb720c00f3b98c350e59f044986d753f"
+      "size": 5434,
+      "sha256": "6d6ea6fb2a184cfa8cfdff30d9c12640b8e5a7993af48848b705c5e0221e73d1"
     },
     {
       "path": "docs/RELEASE_PROCESS.md",
@@ -785,8 +820,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 2436,
-      "sha256": "0eb1a9360c57a4a69ddd1550b3f0e03e11a2eb8390c2b007cc39d19894bdb35f"
+      "size": 2674,
+      "sha256": "99b7dd2828e6b5d850e6e21ba4624cc6c73941897cc12b62801051cca4350c0a"
     },
     {
       "path": "docs/UI_STANDARD.md",

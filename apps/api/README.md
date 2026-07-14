@@ -150,3 +150,14 @@ mypy apps/api/app apps/api/tests
 - `POST /api/v1/reviews/{schedule_id}/results`：提交复习结果，支持 `Idempotency-Key` 幂等。
 - 独立通过会逐步延长间隔；失败会写入 `interval_test` 证据、触发掌握回退并缩短下一次间隔。
 - 同一日期即时重做会保留结果，但 `independent_timepoint=false`，不计入连续独立通过。
+
+## 个人用时校准
+
+阶段 3 提供 `time-calibration-v1.0.0` 的最小用时校准边界：
+
+- 任务结果首次提交后，按 `actual_minutes / estimated_minutes` 更新个人用时系数。
+- 系数按 `subject_id + task_type + difficulty` 隔离，使用有界指数平滑，范围为 `0.6–1.8`。
+- 零用时和异常极值会保留调整记录，但不会更新系数。
+- 连续超时会提高 `overtime_streak`，达到阈值后在调整记录中给出拆分建议。
+- `POST /api/v1/today/generate` 会读取最新系数，先校准候选任务预计用时再生成计划。
+- `GET /api/v1/time-calibration/coefficients|adjustments` 可查看当前系数和调整依据。

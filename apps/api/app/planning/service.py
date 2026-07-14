@@ -11,6 +11,7 @@ from app.models.base import utc_now
 from app.models.knowledge import KnowledgeNode
 from app.models.planning import Goal, Task, TaskResult
 from app.services.audit import write_audit_event
+from app.time_calibration.service import update_time_coefficient_from_task_result
 
 GoalLevel = Literal["semester", "quarter", "month", "week", "day"]
 GoalStatus = Literal["draft", "active", "completed", "delayed", "archived", "cancelled"]
@@ -398,6 +399,7 @@ def submit_task_result(
     )
     session.add(result)
     session.flush()
+    update_time_coefficient_from_task_result(session, result, request_id=request_id)
     if task.goal_id is not None:
         _recalculate_goal_progress(session, task.goal_id)
     write_audit_event(

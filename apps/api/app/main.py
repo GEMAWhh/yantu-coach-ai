@@ -12,6 +12,7 @@ from app.api import (
     mastery_router,
     planning_router,
     reviews_router,
+    time_calibration_router,
 )
 from app.db.migrations import initialize_database
 from app.errors import ApiError, VersionConflictError
@@ -91,6 +92,7 @@ def create_app() -> FastAPI:
             "task-results",
             "review-scheduler",
             "review-results",
+            "time-calibration",
         ]
         return api_response(
             ApiMetaResponse(
@@ -124,6 +126,7 @@ def create_app() -> FastAPI:
     app.include_router(mastery_router)
     app.include_router(planning_router)
     app.include_router(reviews_router)
+    app.include_router(time_calibration_router)
 
     return app
 
