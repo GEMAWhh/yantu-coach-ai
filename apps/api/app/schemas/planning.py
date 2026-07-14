@@ -5,7 +5,7 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.planning import Goal, Task, TaskResult
+from app.models.planning import Goal, GoalHistoryEvent, Task, TaskResult
 from app.planning.engine import PlanningCandidate, TodayPlan
 from app.planning.service import GoalTreeNode
 
@@ -136,6 +136,76 @@ class GoalTreeListResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     items: list[GoalTreeResponse]
+    total: int
+
+
+class GoalRecalculateRequest(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    as_of_date: date | None = None
+    reason: str | None = None
+
+
+class GoalHistoryEventResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    created_by: str
+    goal_id: str
+    event_type: str
+    previous_progress: int
+    new_progress: int
+    previous_actual_minutes: int
+    new_actual_minutes: int
+    previous_risk_status: str
+    new_risk_status: str
+    previous_status: GoalStatus
+    new_status: GoalStatus
+    reason: str | None
+    source_type: str | None
+    source_id: str | None
+    request_id: str | None
+
+    @classmethod
+    def from_model(cls, event: GoalHistoryEvent) -> GoalHistoryEventResponse:
+        return cls(
+            id=event.id,
+            version=event.version,
+            created_at=event.created_at,
+            updated_at=event.updated_at,
+            created_by=event.created_by,
+            goal_id=event.goal_id,
+            event_type=event.event_type,
+            previous_progress=event.previous_progress,
+            new_progress=event.new_progress,
+            previous_actual_minutes=event.previous_actual_minutes,
+            new_actual_minutes=event.new_actual_minutes,
+            previous_risk_status=event.previous_risk_status,
+            new_risk_status=event.new_risk_status,
+            previous_status=cast(GoalStatus, event.previous_status),
+            new_status=cast(GoalStatus, event.new_status),
+            reason=event.reason,
+            source_type=event.source_type,
+            source_id=event.source_id,
+            request_id=event.request_id,
+        )
+
+
+class GoalRecalculateResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    root: GoalResponse
+    events: list[GoalHistoryEventResponse]
+    total_events: int
+
+
+class GoalHistoryListResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: list[GoalHistoryEventResponse]
     total: int
 
 

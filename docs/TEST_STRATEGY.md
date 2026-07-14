@@ -101,3 +101,13 @@ tests/fixtures/ai/
 - `WRONG-003`: failed attempts roll the record back to `regressed`, clear that verification flag, and increment `error_count`.
 - Duplicate attempt submissions with the same `Idempotency-Key` return `created=false` and do not repeat state changes.
 - Regressed or unresolved wrong records appear as `wrong_record` planning candidates linked to their knowledge node subject.
+
+## 9. Goal recalculation acceptance coverage
+
+`apps/api/tests/test_goal_recalculation_history.py` covers stage 4 planning rollup:
+
+- Task result submission recalculates the child goal and root ancestor goal.
+- Goal progress and actual minutes roll up from task results into parent goals.
+- `goal.recalculated` history events preserve request id and task-result source.
+- Manual recalculate marks overdue unfinished goals high risk and delayed.
+- Goal history API returns the emitted recalculation evidence.

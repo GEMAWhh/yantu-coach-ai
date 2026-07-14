@@ -242,3 +242,16 @@ GET  /api/v1/wrongbook/planning-candidates
 The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
 
 Wrongbook attempt types are `original_redo`, `no_hint_redo`, `variant`, `interval_test`, and `transfer_test`. `Idempotency-Key` prevents duplicate attempt effects. A correct original redo may move a record to `pending_variant`, but it never resolves the wrong record. Stable correction requires `no_hint_redo`, `variant`, and `interval_test` all passed. A failed attempt rolls the record back to `regressed` and increments `error_count`.
+
+## 15. Implemented goal recalculation and history
+
+Current implemented planning rollup endpoints are:
+
+```http
+POST /api/v1/goals/{goal_id}/recalculate
+GET  /api/v1/goals/{goal_id}/history
+```
+
+`/recalculate` accepts optional `as_of_date` and `reason`. It recalculates the requested goal subtree bottom-up from direct task results and child goals. The response includes the recalculated root goal plus emitted `goal.recalculated` history events.
+
+Task result submission automatically recalculates the root ancestor goal using `source_type=task_result`. Goal history events include previous/new progress, actual minutes, risk status, status, request id, source, and reason.

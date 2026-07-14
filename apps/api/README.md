@@ -186,3 +186,14 @@ Stage 6 adds the deterministic wrongbook domain model without OCR or AI analysis
 - `GET /api/v1/wrongbook/planning-candidates`: returns non-resolved wrong records as `wrong_record` planning candidates.
 
 Resolution requires all three required checks: no-hint redo, variant, and interval test. Immediate original redo can advance the record only to `pending_variant`; any failed attempt marks the record `regressed`, clears that verification flag, and increments `error_count`.
+
+## Goal recalculation and history
+
+Stage 4 adds deterministic five-layer planning rollup:
+
+- `POST /api/v1/goals/{goal_id}/recalculate`: recalculates a goal subtree from child goals and task results.
+- `GET /api/v1/goals/{goal_id}/history`: returns `goal.recalculated` events with previous/new progress, actual minutes, risk status, and status.
+- Task result submission now recalculates the root ancestor goal so week/month/quarter/semester progress stays linked.
+- Overdue unfinished goals become `risk_status=high`; overdue unfinished tasks make the direct goal `at_risk`.
+
+History events preserve `request_id`, `source_type`, `source_id`, and a human reason so later UI can explain why a goal changed.

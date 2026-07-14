@@ -14,7 +14,9 @@ from app.planning.service import (
     get_goal,
     get_goal_tree,
     get_task,
+    list_goal_history,
     list_tasks,
+    recalculate_goal_tree,
     set_task_status,
     soft_delete_goal,
     submit_task_result,
@@ -26,6 +28,10 @@ from app.responses import api_response
 from app.schemas.common import ApiResponse
 from app.schemas.planning import (
     GoalCreate,
+    GoalHistoryEventResponse,
+    GoalHistoryListResponse,
+    GoalRecalculateRequest,
+    GoalRecalculateResponse,
     GoalResponse,
     GoalTreeListResponse,
     GoalTreeResponse,
@@ -119,6 +125,50 @@ def goals_tree(
     except PlanningError as exc:
         raise _api_planning_error(exc) from exc
     return api_response(GoalTreeListResponse(items=items, total=len(items)), request)
+
+
+@router.post("/goals/{goal_id}/recalculate", response_model=ApiResponse[GoalRecalculateResponse])
+def recalculate_goal_endpoint(
+    request: Request,
+    goal_id: str,
+    payload: GoalRecalculateRequest,
+) -> ApiResponse[GoalRecalculateResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            recalculation = recalculate_goal_tree(
+                session,
+                goal_id,
+                as_of=payload.as_of_date,
+                reason=payload.reason,
+                request_id=get_request_id(request),
+            )
+            events = [GoalHistoryEventResponse.from_model(event) for event in recalculation.events]
+            response = GoalRecalculateResponse(
+                root=GoalResponse.from_model(recalculation.root),
+                events=events,
+                total_events=len(events),
+            )
+    except PlanningError as exc:
+        raise _api_planning_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.get("/goals/{goal_id}/history", response_model=ApiResponse[GoalHistoryListResponse])
+def goal_history(
+    request: Request,
+    goal_id: str,
+) -> ApiResponse[GoalHistoryListResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory() as session:
+            items = [
+                GoalHistoryEventResponse.from_model(event)
+                for event in list_goal_history(session, goal_id)
+            ]
+    except PlanningError as exc:
+        raise _api_planning_error(exc) from exc
+    return api_response(GoalHistoryListResponse(items=items, total=len(items)), request)
 
 
 @router.get("/goals/{goal_id}", response_model=ApiResponse[GoalResponse])

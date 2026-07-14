@@ -5,7 +5,7 @@ from app.models.evidence import AIJob, EvidenceAsset, EvidenceDraft, EvidenceRec
 from app.models.import_batch import ImportBatch
 from app.models.knowledge import KnowledgeEdge, KnowledgeNode
 from app.models.mastery import MasteryEvidence, MasterySnapshot
-from app.models.planning import Goal, Task, TaskResult
+from app.models.planning import Goal, GoalHistoryEvent, Task, TaskResult
 from app.models.review import ReviewResult, ReviewSchedule
 from app.models.time_calibration import TimeAdjustment, TimeCoefficient
 from app.models.wrongbook import Attempt, Question, QuestionAsset, WrongRecord, WrongVerification
@@ -27,6 +27,7 @@ __all__ = [
     "Question",
     "QuestionAsset",
     "Goal",
+    "GoalHistoryEvent",
     "ReviewResult",
     "ReviewSchedule",
     "Task",
