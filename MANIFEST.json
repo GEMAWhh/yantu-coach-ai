@@ -45,8 +45,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "size": 1623,
-      "sha256": "befa532967f630610fd562f439518cf8eaaa79ccfafc50eb266dde38e0cb913e"
+      "size": 1542,
+      "sha256": "f08daa2a5f44ba20551d656df47343e3a1aea9704d33707eb2db858ac8bf38f6"
     },
     {
       "path": ".github/workflows/governance.yml",
