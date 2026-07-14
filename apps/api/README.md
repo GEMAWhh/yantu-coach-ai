@@ -113,3 +113,20 @@ mypy apps/api/app apps/api/tests
 阅读最多到已接触、可回忆必须有闭卷回忆、基础/变式/综合迁移必须满足样本与正确率、
 稳定掌握必须多时间点达标、稳定后失败会进入掌握衰退、重复深层错因会回退并提高补救优先级。
 每次状态变化都会保存 `rule_version` 与证据 ID。
+
+## 目标、任务与结果
+
+阶段 3 提供最小周目标到今日任务链路：
+
+- `POST /api/v1/goals`：创建学期/季度/月/周/日目标。
+- `GET /api/v1/goals/tree`：返回目标树，供规划页展示进度。
+- `PATCH /api/v1/goals/{goal_id}`：更新目标，支持 `If-Match` 版本冲突保护。
+- `POST /api/v1/tasks`：创建今日任务，保留 `goal_id/source_type/source_id/reason`
+  以追溯来源。
+- `GET /api/v1/today?date=YYYY-MM-DD`：返回当天任务和预计总用时。
+- `POST /api/v1/tasks/{task_id}/start|skip|withdraw`：只改变任务状态。
+- `POST /api/v1/tasks/{task_id}/results`：提交真实结果，支持
+  `Idempotency-Key` 幂等；结果保存真实用时、正确率、把握度和问题描述。
+
+任务状态与任务结果严格分离：结果提交不会自动改任务状态，任务完成也不会直接创建
+`mastery_snapshots`。目标进度当前按该目标下任务结果的 `completion_ratio` 汇总。

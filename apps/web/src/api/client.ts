@@ -1,4 +1,12 @@
-import type { ApiErrorBody, ApiErrorResponse, ApiMetaPayload, ApiResponse, HealthPayload } from "./contracts";
+import type {
+  ApiErrorBody,
+  ApiErrorResponse,
+  ApiMetaPayload,
+  ApiResponse,
+  GoalTreeListPayload,
+  HealthPayload,
+  TodayPayload,
+} from "./contracts";
 
 export class ApiClientError extends Error {
   constructor(
@@ -24,6 +32,14 @@ export class ApiClient {
 
   meta(): Promise<ApiResponse<ApiMetaPayload>> {
     return this.get<ApiMetaPayload>("/api/v1/meta");
+  }
+
+  today(date: string): Promise<ApiResponse<TodayPayload>> {
+    return this.get<TodayPayload>(`/api/v1/today?date=${encodeURIComponent(date)}`);
+  }
+
+  goalsTree(): Promise<ApiResponse<GoalTreeListPayload>> {
+    return this.get<GoalTreeListPayload>("/api/v1/goals/tree");
   }
 
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {

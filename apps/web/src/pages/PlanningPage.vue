@@ -1,9 +1,53 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+
+import { ApiClient } from "../api/client";
+import type { GoalTreePayload } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
-import { useMockStudyStore } from "../stores/mockStudy";
+import { useMockStudyStore, type PlanLevel, type Tone } from "../stores/mockStudy";
 
 const study = useMockStudyStore();
+const apiPlanLevels = ref<PlanLevel[] | null>(null);
+const planSourceLabel = computed(() => (apiPlanLevels.value ? "正式数据" : "可追溯"));
+const planSourceTone = computed<Tone>(() => (apiPlanLevels.value ? "green" : "green"));
+const planLevels = computed(() => apiPlanLevels.value ?? study.planLevels);
+
+function toneForGoal(goal: GoalTreePayload): Tone {
+  if (goal.status === "completed") {
+    return "green";
+  }
+  if (goal.risk_status === "slow" || goal.risk_status === "delayed") {
+    return "yellow";
+  }
+  if (goal.risk_status === "blocked" || goal.status === "delayed") {
+    return "red";
+  }
+  return "blue";
+}
+
+function flattenGoals(goals: GoalTreePayload[]): GoalTreePayload[] {
+  return goals.flatMap((goal) => [goal, ...flattenGoals(goal.children)]);
+}
+
+function mapGoal(goal: GoalTreePayload): PlanLevel {
+  return {
+    level: goal.level,
+    title: goal.title,
+    status: goal.status,
+    detail: `${goal.progress}% · ${goal.actual_minutes}/${goal.estimated_minutes} min`,
+    tone: toneForGoal(goal),
+  };
+}
+
+onMounted(async () => {
+  try {
+    const response = await new ApiClient().goalsTree();
+    apiPlanLevels.value = flattenGoals(response.data.items).map(mapGoal);
+  } catch {
+    apiPlanLevels.value = null;
+  }
+});
 </script>
 
 <template>
@@ -27,14 +71,14 @@ const study = useMockStudyStore();
           <h2>学期 → 季度 → 月 → 周 → 日</h2>
         </div>
         <StatusTag
-          label="可追溯"
-          tone="green"
+          :label="planSourceLabel"
+          :tone="planSourceTone"
         />
       </div>
 
       <ol class="timeline">
         <li
-          v-for="level in study.planLevels"
+          v-for="level in planLevels"
           :key="level.level"
           class="timeline-item"
         >
