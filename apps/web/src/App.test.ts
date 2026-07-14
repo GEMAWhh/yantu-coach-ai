@@ -95,4 +95,79 @@ describe("App", () => {
     expect(wrapper.text()).toContain("control");
     expect(wrapper.text()).toContain("mastery-v1.0.0");
   });
+
+  it("renders progress analytics from the API when available", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        const dataByPath: Record<string, unknown> = {
+          "/api/v1/analytics/mastery": {
+            latest_snapshot_count: 2,
+            weak_node_count: 1,
+            stage_distribution: [
+              { key: "2", count: 1 },
+              { key: "5", count: 1 },
+            ],
+          },
+          "/api/v1/analytics/errors": {
+            total_wrong_records: 1,
+            by_status: [{ key: "regressed", count: 1 }],
+            by_knowledge_node: [{ knowledge_node_id: "node-weak", count: 1 }],
+          },
+          "/api/v1/analytics/time": {
+            estimated_minutes: 50,
+            actual_minutes: 70,
+            by_subject: [{ subject_id: "math", estimated_minutes: 50, actual_minutes: 70 }],
+          },
+          "/api/v1/analytics/goal-risk": {
+            total_goals: 2,
+            by_risk_status: [
+              { key: "normal", count: 1 },
+              { key: "high", count: 1 },
+            ],
+            risky_goals: [
+              {
+                object_type: "goal",
+                object_id: "goal-risk",
+                title: "本周导数应用",
+                level: "week",
+                risk_status: "high",
+                status: "delayed",
+                progress: 40,
+              },
+            ],
+          },
+          "/api/v1/graph/weak": {
+            total: 1,
+            items: [
+              {
+                object_type: "knowledge_node",
+                object_id: "node-weak",
+                label: "导数应用",
+                subject_id: "math",
+                latest_stage: 2,
+                evidence_count: 1,
+                repeat_error_rate: 40,
+                blocking_reasons: ["needs_variant"],
+              },
+            ],
+          },
+        };
+        return new Response(
+          JSON.stringify({
+            data: dataByPath[path],
+            meta: { request_id: `progress-${path}` },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/progress");
+
+    expect(wrapper.text()).toContain("导数应用");
+    expect(wrapper.text()).toContain("错因率 40%");
+    expect(wrapper.text()).toContain("本周导数应用");
+    expect(wrapper.text()).toContain("实际用时比预估多 20 分钟");
+  });
 });

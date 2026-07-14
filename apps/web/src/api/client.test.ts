@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiClient } from "./client";
-import type { ApiResponse, HealthPayload, SettingsRulesPayload, TodayPayload } from "./contracts";
+import type {
+  AnalyticsMasteryPayload,
+  ApiResponse,
+  HealthPayload,
+  SettingsRulesPayload,
+  TodayPayload,
+  WeakGraphPayload,
+} from "./contracts";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -120,5 +127,46 @@ describe("ApiClient", () => {
 
     await expect(client.settingsRules()).resolves.toEqual(payload);
     expect(calls).toEqual(["/api/v1/settings/rules"]);
+  });
+
+  it("loads progress analytics through stable insights API paths", async () => {
+    const mastery: ApiResponse<AnalyticsMasteryPayload> = {
+      data: {
+        latest_snapshot_count: 2,
+        weak_node_count: 1,
+        stage_distribution: [
+          { key: "2", count: 1 },
+          { key: "5", count: 1 },
+        ],
+      },
+      meta: { request_id: "client-analytics-mastery" },
+    };
+    const weakGraph: ApiResponse<WeakGraphPayload> = {
+      data: {
+        total: 1,
+        items: [
+          {
+            object_type: "knowledge_node",
+            object_id: "node-weak",
+            label: "导数应用",
+            subject_id: "math",
+            latest_stage: 2,
+            evidence_count: 1,
+            repeat_error_rate: 40,
+            blocking_reasons: ["needs_variant"],
+          },
+        ],
+      },
+      meta: { request_id: "client-weak-graph" },
+    };
+    const calls: string[] = [];
+    const client = new ApiClient("", async (input) => {
+      calls.push(String(input));
+      return jsonResponse(calls.length === 1 ? mastery : weakGraph);
+    });
+
+    await expect(client.analyticsMastery()).resolves.toEqual(mastery);
+    await expect(client.weakGraph()).resolves.toEqual(weakGraph);
+    expect(calls).toEqual(["/api/v1/analytics/mastery", "/api/v1/graph/weak"]);
   });
 });
