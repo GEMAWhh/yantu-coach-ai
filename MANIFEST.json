@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 206,
+  "file_count": 213,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 8831,
-      "sha256": "e4a9af37ca64d389be877c26020019fa0efbd65424120bcd0ae133b48f3deb0f"
+      "size": 9930,
+      "sha256": "a7655b124d87eb1f5d0a171f7328eeec04c7f69288ba3e14a192c9a8e0ea368a"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 579,
-      "sha256": "a6138617a3220dcc8319f625fa3f0892887474c8c968823f18382e8678b57003"
+      "size": 660,
+      "sha256": "9fb6b4e38ba5a9c27fb966fb91fb662e37923c55994f84a9dba38dc32eb54208"
     },
     {
       "path": "apps/api/app/api/evidence.py",
@@ -144,6 +144,11 @@
       "sha256": "bc1fda9d6a30b3659e6f9f2d9aabaeda8a602a8746e7e79e21c5d7be1b05139e"
     },
     {
+      "path": "apps/api/app/api/wrongbook.py",
+      "size": 5624,
+      "sha256": "29f73e3786122ee0e0f6c2ceb0e47f33120763ad71497be8936d57d3c9414f8d"
+    },
+    {
       "path": "apps/api/app/db/__init__.py",
       "size": 31,
       "sha256": "c09a1e9998915d9671218296afef3f96b9f15103be130e8dada009f9ddbdf1ef"
@@ -155,8 +160,8 @@
     },
     {
       "path": "apps/api/app/db/migrations.py",
-      "size": 2077,
-      "sha256": "538ddf83ce36b94f9e0f61699429fb60916c2be81844426208e6d1580344f2ce"
+      "size": 2070,
+      "sha256": "450e7336afb4ce309596e01d0ab7482ac4ce75f4c5e08f45573c22e6d4a1bc69"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -220,8 +225,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4639,
-      "sha256": "e4c68ed072fe435c69cb9745907fc06cbd26e774231fdb266362d5401d19c2d5"
+      "size": 4734,
+      "sha256": "7eb1d82a889da5727fb0b39e7e9678aec6d80b2c63ae575895e2e79322d90541"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -240,8 +245,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 923,
-      "sha256": "5f84f11a660e75ea62be87af646083a2165ea433b696d9b4618adbe5693fc5c4"
+      "size": 1117,
+      "sha256": "bf9c7c36124889b2f85c976051c1d66fabfa44947348f21157ab616056fc542b"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -292,6 +297,11 @@
       "path": "apps/api/app/models/time_calibration.py",
       "size": 4425,
       "sha256": "d0c4c75179ec8fd24275cfc929ac35efbb7909547dcd4aab32966da197bb152f"
+    },
+    {
+      "path": "apps/api/app/models/wrongbook.py",
+      "size": 6936,
+      "sha256": "5a0ed7c4d4beaaa4dcb18c2777d330f83e8c51bea19e11667ec02434c4823ee1"
     },
     {
       "path": "apps/api/app/planning/__init__.py",
@@ -384,6 +394,11 @@
       "sha256": "30c25af122de69a33de35c29eb68e11e7d96109dee722eedcd6b096041845310"
     },
     {
+      "path": "apps/api/app/schemas/wrongbook.py",
+      "size": 9933,
+      "sha256": "52d3ef1c1b38ec68b90d0068136c8b05f354977f1fca8d7534464a85a070f6df"
+    },
+    {
       "path": "apps/api/app/services/__init__.py",
       "size": 28,
       "sha256": "5ee368b8b403ddb926e38792d6c660d7a6ec88ea5bd628ded82a91e52931d2f1"
@@ -407,6 +422,16 @@
       "path": "apps/api/app/time_calibration/service.py",
       "size": 8194,
       "sha256": "1a5db2f71a6fd858250edd9c050e6f58b14647dd805abae5f5fb42f47fc303b3"
+    },
+    {
+      "path": "apps/api/app/wrongbook/__init__.py",
+      "size": 745,
+      "sha256": "bc9752da7f8cb357b7e16c1daa5601d370aba47c7553e73f0980df3725a19250"
+    },
+    {
+      "path": "apps/api/app/wrongbook/service.py",
+      "size": 16226,
+      "sha256": "c2951956e0758cfc29a81111cfe41895c2e0c4e9e9e8d5427a499df39808d2ef"
     },
     {
       "path": "apps/api/migrations/README.md",
@@ -467,6 +492,11 @@
       "path": "apps/api/migrations/versions/0009_evidence_draft_pipeline.py",
       "size": 6074,
       "sha256": "1346303f495d291fc5b320f6165305e829f1958a704f4010536ac452ed655e9c"
+    },
+    {
+      "path": "apps/api/migrations/versions/0010_wrongbook_domain.py",
+      "size": 10098,
+      "sha256": "8becbc7a6a014f561a3ded02b7eb4c718230efdaa1b0cf9a2298dc95e5bb9ea7"
     },
     {
       "path": "apps/api/pyproject.toml",
@@ -537,6 +567,11 @@
       "path": "apps/api/tests/test_time_calibration.py",
       "size": 8256,
       "sha256": "71c40bdca9fed7ee02fb565c6400acb6ddff9fd3ffbfbebbd0ca0214af1a1c87"
+    },
+    {
+      "path": "apps/api/tests/test_wrongbook_domain.py",
+      "size": 9019,
+      "sha256": "17b0322e2c30faf2848023d7984984172b2e7711a082667c1953df31b0d1b449"
     },
     {
       "path": "apps/web/README.md",
@@ -795,8 +830,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 6831,
-      "sha256": "8197ef329688ae47d125f9c61260ca74ccddbeeb312b4260a13b6ac8de1b6e3f"
+      "size": 7830,
+      "sha256": "b4452fa29292a22ec50eaddb0aacf7f954577d1169aa2ea287dc7f2438e56d7e"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -805,8 +840,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 8070,
-      "sha256": "1bf025cd1cf73709ff7f83f26da655adf6cf8a34a0a4fe6bb53f6324c226504b"
+      "size": 9062,
+      "sha256": "a16dfb79f2d890a2038b648185705292e1126a76dfcdd6332ce2689bed5e59ff"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -860,8 +895,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 3656,
-      "sha256": "72518377ff25d6d0e6c21cbd6af044811624d9d067dc11e29232e4ec06d00263"
+      "size": 4434,
+      "sha256": "da9c547f4b6c897843a1f3c4370474260718f8e2a1087b9c458373e4fc591803"
     },
     {
       "path": "docs/UI_STANDARD.md",

@@ -225,3 +225,20 @@ POST /api/v1/evidence/{record_id}/reject
 `/analyze` uses the Fake Provider. `provider_mode=valid` creates a schema-valid draft; `provider_mode=invalid_schema` stores a failed `ai_job` and a `needs_correction` draft with validation errors. The draft schema id is `evidence-analysis-v1`.
 
 Unconfirmed drafts must not write formal evidence fields, tasks, mastery evidence, or mastery snapshots. `/confirm` is idempotent: the first valid confirmation copies structured fields into `evidence_records` and writes one `evidence.confirmed` audit event; repeated confirmation returns `created=false`.
+
+## 14. Implemented wrongbook domain boundary
+
+Current implemented wrongbook endpoints are:
+
+```http
+POST /api/v1/wrongbook/questions
+POST /api/v1/wrongbook/records
+GET  /api/v1/wrongbook/{wrong_record_id}
+POST /api/v1/wrongbook/{wrong_record_id}/assets
+POST /api/v1/wrongbook/{wrong_record_id}/attempts
+GET  /api/v1/wrongbook/planning-candidates
+```
+
+The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
+
+Wrongbook attempt types are `original_redo`, `no_hint_redo`, `variant`, `interval_test`, and `transfer_test`. `Idempotency-Key` prevents duplicate attempt effects. A correct original redo may move a record to `pending_variant`, but it never resolves the wrong record. Stable correction requires `no_hint_redo`, `variant`, and `interval_test` all passed. A failed attempt rolls the record back to `regressed` and increments `error_count`.

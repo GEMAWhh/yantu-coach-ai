@@ -192,3 +192,15 @@ Status values currently used:
 - `ai_jobs.status`: `succeeded`, `failed`.
 
 Unconfirmed drafts are isolated from `tasks`, `mastery_evidence`, and `mastery_snapshots`. Confirmation copies only the validated structured evidence fields into the formal record and writes an audit event.
+
+## 7. Implemented wrongbook tables
+
+Migration `0010_wrongbook_domain` adds these concrete tables:
+
+- `questions`: structured question text, optional `subject_id`, optional `knowledge_node_id`, type, difficulty, source, year, page, and status.
+- `question_assets`: existing `asset_id` linked to a question through strict `asset_role` and `page_order`.
+- `wrong_records`: question link, optional knowledge-node link, manual causes, `error_count`, `redo_count`, `current_status`, `next_review_at`, and `resolved_at`.
+- `attempts`: attempt type, correctness, score, duration, hint level, confidence, idempotency key, and request id.
+- `wrong_verifications`: per-record flags for original redo, no-hint redo, variant, interval test, transfer test, and latest attempt.
+
+Current wrong statuses are `pending_analysis`, `pending_no_hint_redo`, `pending_variant`, `pending_interval`, `stable_corrected`, and `regressed`. Required stable correction checks are no-hint redo, variant, and interval test.
