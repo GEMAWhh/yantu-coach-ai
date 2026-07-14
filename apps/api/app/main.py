@@ -91,6 +91,7 @@ def create_app() -> FastAPI:
             "mastery-evidence",
             "mastery-state-machine",
             "goals-tasks",
+            "goal-recalculation-history",
             "task-results",
             "review-scheduler",
             "review-results",

@@ -44,6 +44,41 @@ class Goal(Base):
     __mapper_args__ = {"version_id_col": version}
 
 
+class GoalHistoryEvent(Base):
+    __tablename__ = "goal_history_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        onupdate=utc_now,
+    )
+    created_by: Mapped[str] = mapped_column(String(40), nullable=False, default="system")
+    goal_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("goals.id"), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    previous_progress: Mapped[int] = mapped_column(Integer, nullable=False)
+    new_progress: Mapped[int] = mapped_column(Integer, nullable=False)
+    previous_actual_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    new_actual_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    previous_risk_status: Mapped[str] = mapped_column(String(40), nullable=False)
+    new_risk_status: Mapped[str] = mapped_column(String(40), nullable=False)
+    previous_status: Mapped[str] = mapped_column(String(40), nullable=False)
+    new_status: Mapped[str] = mapped_column(String(40), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+
+    __mapper_args__ = {"version_id_col": version}
+
+
 class Task(Base):
     __tablename__ = "tasks"
 

@@ -204,3 +204,11 @@ Migration `0010_wrongbook_domain` adds these concrete tables:
 - `wrong_verifications`: per-record flags for original redo, no-hint redo, variant, interval test, transfer test, and latest attempt.
 
 Current wrong statuses are `pending_analysis`, `pending_no_hint_redo`, `pending_variant`, `pending_interval`, `stable_corrected`, and `regressed`. Required stable correction checks are no-hint redo, variant, and interval test.
+
+## 8. Implemented goal history events
+
+Migration `0011_goal_recalculation_history` adds `goal_history_events`:
+
+`goal_id, event_type, previous_progress, new_progress, previous_actual_minutes, new_actual_minutes, previous_risk_status, new_risk_status, previous_status, new_status, reason, source_type, source_id, request_id`
+
+These events are append-only audit evidence for deterministic goal recalculation. They do not replace `audit_events`; they are domain-level planning history optimized for the UI and reports.

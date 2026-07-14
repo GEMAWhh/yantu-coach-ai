@@ -4,12 +4,12 @@ from http import HTTPStatus
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import literal_column, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.base import utc_now
 from app.models.knowledge import KnowledgeNode
-from app.models.planning import Goal, Task, TaskResult
+from app.models.planning import Goal, GoalHistoryEvent, Task, TaskResult
 from app.services.audit import write_audit_event
 from app.time_calibration.service import update_time_coefficient_from_task_result
 
@@ -49,6 +49,12 @@ class GoalTreeNode:
 class TaskResultSubmission:
     result: TaskResult
     created: bool
+
+
+@dataclass(frozen=True)
+class GoalRecalculation:
+    root: Goal
+    events: list[GoalHistoryEvent]
 
 
 def create_goal(
@@ -139,6 +145,45 @@ def get_goal_tree(session: Session, root_goal_id: str | None = None) -> list[Goa
         )
 
     return [build(goal) for goal in goals if goal.id in root_ids]
+
+
+def list_goal_history(session: Session, goal_id: str) -> list[GoalHistoryEvent]:
+    goal = get_goal(session, goal_id)
+    return list(
+        session.scalars(
+            select(GoalHistoryEvent)
+            .where(GoalHistoryEvent.goal_id == goal.id)
+            .order_by(GoalHistoryEvent.created_at, GoalHistoryEvent.id)
+        ).all()
+    )
+
+
+def recalculate_goal_tree(
+    session: Session,
+    goal_id: str,
+    *,
+    as_of: date | None = None,
+    reason: str | None = None,
+    source_type: str | None = None,
+    source_id: str | None = None,
+    request_id: str | None = None,
+    created_by: str = "system",
+    force_root_history: bool = True,
+) -> GoalRecalculation:
+    root = get_goal(session, goal_id)
+    events = _recalculate_goal_and_descendants(
+        session,
+        root,
+        as_of=as_of or utc_now().date(),
+        reason=reason,
+        source_type=source_type,
+        source_id=source_id,
+        request_id=request_id,
+        created_by=created_by,
+        force_history=force_root_history,
+    )
+    session.flush()
+    return GoalRecalculation(root=root, events=events)
 
 
 def update_goal(
@@ -401,7 +446,14 @@ def submit_task_result(
     session.flush()
     update_time_coefficient_from_task_result(session, result, request_id=request_id)
     if task.goal_id is not None:
-        _recalculate_goal_progress(session, task.goal_id)
+        _recalculate_goal_progress(
+            session,
+            task.goal_id,
+            as_of=result.confirmed_at.date(),
+            source_type="task_result",
+            source_id=result.id,
+            request_id=request_id,
+        )
     write_audit_event(
         session,
         event_type="task_result.submitted",
@@ -421,39 +473,198 @@ def submit_task_result(
     return TaskResultSubmission(result=result, created=True)
 
 
-def _recalculate_goal_progress(session: Session, goal_id: str) -> None:
+def _recalculate_goal_progress(
+    session: Session,
+    goal_id: str,
+    *,
+    as_of: date | None = None,
+    source_type: str | None = None,
+    source_id: str | None = None,
+    request_id: str | None = None,
+) -> None:
     goal = get_goal(session, goal_id)
+    root = _root_goal(session, goal)
+    recalculate_goal_tree(
+        session,
+        root.id,
+        as_of=as_of,
+        reason="task result changed goal progress",
+        source_type=source_type,
+        source_id=source_id,
+        request_id=request_id,
+        force_root_history=False,
+    )
+
+
+def _recalculate_goal_and_descendants(
+    session: Session,
+    goal: Goal,
+    *,
+    as_of: date,
+    reason: str | None,
+    source_type: str | None,
+    source_id: str | None,
+    request_id: str | None,
+    created_by: str,
+    force_history: bool,
+) -> list[GoalHistoryEvent]:
+    events: list[GoalHistoryEvent] = []
+    children = list(
+        session.scalars(
+            select(Goal).where(Goal.parent_id == goal.id, Goal.is_deleted.is_(False))
+        ).all()
+    )
+    for child in children:
+        events.extend(
+            _recalculate_goal_and_descendants(
+                session,
+                child,
+                as_of=as_of,
+                reason=reason,
+                source_type=source_type,
+                source_id=source_id,
+                request_id=request_id,
+                created_by=created_by,
+                force_history=False,
+            )
+        )
+
+    previous = _goal_state(goal)
+    progress, actual_minutes, completion_by_task, tasks = _computed_goal_progress(
+        session, goal, children
+    )
+    risk_status = _computed_goal_risk(
+        goal,
+        children,
+        progress=progress,
+        completion_by_task=completion_by_task,
+        tasks=tasks,
+        as_of=as_of,
+    )
+    status = _computed_goal_status(goal, progress, risk_status)
+
+    goal.progress = progress
+    goal.actual_minutes = actual_minutes
+    goal.risk_status = risk_status
+    goal.status = status
+    changed = previous != _goal_state(goal)
+    if changed or force_history:
+        event = GoalHistoryEvent(
+            id=str(uuid4()),
+            goal_id=goal.id,
+            event_type="goal.recalculated",
+            previous_progress=previous["progress"],
+            new_progress=goal.progress,
+            previous_actual_minutes=previous["actual_minutes"],
+            new_actual_minutes=goal.actual_minutes,
+            previous_risk_status=previous["risk_status"],
+            new_risk_status=goal.risk_status,
+            previous_status=previous["status"],
+            new_status=goal.status,
+            reason=reason or "goal recalculated from child goals and task results",
+            source_type=source_type,
+            source_id=source_id,
+            request_id=request_id,
+            created_by=created_by,
+        )
+        session.add(event)
+        events.append(event)
+    return events
+
+
+def _computed_goal_progress(
+    session: Session,
+    goal: Goal,
+    children: list[Goal],
+) -> tuple[int, int, dict[str, int], list[Task]]:
     tasks = list(
         session.scalars(
             select(Task).where(Task.goal_id == goal.id, Task.is_deleted.is_(False))
         ).all()
     )
-    if not tasks:
-        goal.progress = 0
-        goal.actual_minutes = 0
-        session.flush()
-        return
     task_ids = [task.id for task in tasks]
-    results = list(
-        session.scalars(select(TaskResult).where(TaskResult.task_id.in_(task_ids))).all()
+    results = (
+        list(session.scalars(select(TaskResult).where(TaskResult.task_id.in_(task_ids))).all())
+        if task_ids
+        else []
     )
-    actual_minutes = sum(result.actual_minutes for result in results)
     completion_by_task = {task.id: 0 for task in tasks}
     for result in results:
         completion_by_task[result.task_id] = max(
             completion_by_task[result.task_id],
             result.completion_ratio,
         )
-    goal.actual_minutes = actual_minutes
-    goal.progress = round(sum(completion_by_task.values()) / len(tasks))
-    session.flush()
+    progress_parts = list(completion_by_task.values()) + [child.progress for child in children]
+    progress = round(sum(progress_parts) / len(progress_parts)) if progress_parts else 0
+    actual_minutes = sum(result.actual_minutes for result in results) + sum(
+        child.actual_minutes for child in children
+    )
+    return progress, actual_minutes, completion_by_task, tasks
+
+
+def _computed_goal_risk(
+    goal: Goal,
+    children: list[Goal],
+    *,
+    progress: int,
+    completion_by_task: dict[str, int],
+    tasks: list[Task],
+    as_of: date,
+) -> str:
+    if progress >= 100:
+        return "normal"
+    if goal.end_date is not None and goal.end_date < as_of:
+        return "high"
+    if any(child.risk_status == "high" for child in children):
+        return "high"
+    if any(child.risk_status == "at_risk" for child in children):
+        return "at_risk"
+    if any(
+        task.planned_date < as_of
+        and completion_by_task.get(task.id, 0) < 100
+        and task.status not in {"completed", "skipped", "withdrawn"}
+        for task in tasks
+    ):
+        return "at_risk"
+    return "normal"
+
+
+def _computed_goal_status(goal: Goal, progress: int, risk_status: str) -> str:
+    if goal.status in {"archived", "cancelled", "draft"}:
+        return goal.status
+    if progress >= 100:
+        return "completed"
+    if risk_status == "high" and goal.status == "active":
+        return "delayed"
+    if goal.status == "completed" and progress < 100:
+        return "active"
+    return goal.status
+
+
+def _goal_state(goal: Goal) -> dict[str, int | str]:
+    return {
+        "progress": goal.progress,
+        "actual_minutes": goal.actual_minutes,
+        "risk_status": goal.risk_status,
+        "status": goal.status,
+    }
+
+
+def _root_goal(session: Session, goal: Goal) -> Goal:
+    current = goal
+    while current.parent_id is not None:
+        parent = session.get(Goal, current.parent_id)
+        if parent is None or parent.is_deleted:
+            break
+        current = parent
+    return current
 
 
 def latest_task_result(session: Session, task_id: str) -> TaskResult | None:
     return session.scalar(
         select(TaskResult)
         .where(TaskResult.task_id == task_id)
-        .order_by(literal_column("rowid").desc())
+        .order_by(TaskResult.created_at.desc(), TaskResult.id.desc())
     )
 
 
