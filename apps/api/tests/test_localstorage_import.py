@@ -206,6 +206,11 @@ def test_api_preview_and_commit_use_response_envelope(
             json={"source_key": LOCAL_STORAGE_KEY, "payload": payload},
             headers={"X-Request-ID": "commit"},
         )
+        alias_response = client.post(
+            "/api/v1/imports/localstorage",
+            json={"source_key": LOCAL_STORAGE_KEY, "payload": payload},
+            headers={"X-Request-ID": "commit-alias"},
+        )
         invalid_response = client.post(
             "/api/v1/imports/localstorage/preview",
             json={"version": ["bad"]},
@@ -221,6 +226,13 @@ def test_api_preview_and_commit_use_response_envelope(
     assert commit_body["meta"] == {"request_id": "commit"}
     assert commit_body["data"]["created"] is True
     assert commit_body["data"]["status"] == "committed"
+
+    assert alias_response.status_code == 200
+    alias_body = alias_response.json()
+    assert alias_body["meta"] == {"request_id": "commit-alias"}
+    assert alias_body["data"]["batch_id"] == commit_body["data"]["batch_id"]
+    assert alias_body["data"]["created"] is False
+    assert alias_body["data"]["status"] == "committed"
 
     assert invalid_response.status_code == 422
     assert invalid_response.json()["error"]["code"] == "LOCALSTORAGE_IMPORT_INVALID"

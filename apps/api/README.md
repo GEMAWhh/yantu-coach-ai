@@ -59,6 +59,7 @@ mypy apps/api/app apps/api/tests
 - `POST /api/v1/imports/localstorage/commit`：事务化提交导入批次，按
   `source_key + source_sha256` 幂等；重复提交返回同一个 `batch_id` 且
   `created=false`。
+- `POST /api/v1/imports/localstorage`：合同兼容入口，等价于 `/commit`。
 
 请求体支持三种形态：
 

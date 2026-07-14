@@ -90,6 +90,7 @@ def create_app() -> FastAPI:
             "version-conflict",
             "localstorage-import-preview",
             "localstorage-import-commit",
+            "localstorage-import-alias",
             "knowledge-nodes",
             "knowledge-prerequisites",
             "mastery-evidence",
