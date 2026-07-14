@@ -10,6 +10,7 @@ from app.api import (
     assets_router,
     evidence_router,
     imports_router,
+    insights_router,
     knowledge_router,
     mastery_router,
     planning_router,
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
             "fake-ai-provider",
             "wrongbook-domain",
             "assets-resources-api",
+            "graph-analytics-api",
         ]
         return api_response(
             ApiMetaResponse(
@@ -138,6 +140,7 @@ def create_app() -> FastAPI:
     app.include_router(evidence_router)
     app.include_router(wrongbook_router)
     app.include_router(assets_router)
+    app.include_router(insights_router)
 
     return app
 
