@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 230,
+  "file_count": 235,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 13032,
-      "sha256": "422aa3f70f439a01c0701656613e9c56fcaaa2fd016a605bdff22f2cff7b49e5"
+      "size": 13610,
+      "sha256": "4e68ca45ee9c489ca5c8b56877080d58fe84d9fdc6e46809b622798fa2ddb177"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 909,
-      "sha256": "934788cb80fa1f73b3e63271eb9e0a5591cfe7e2bb4798744a155ededa84bf68"
+      "size": 987,
+      "sha256": "fabe312a87207c6b8e6bfd47a0202cdd97bc25258db5618182a9a37e659eb5c3"
     },
     {
       "path": "apps/api/app/api/assets.py",
@@ -152,6 +152,11 @@
       "path": "apps/api/app/api/reviews.py",
       "size": 3563,
       "sha256": "92cc2b580949deb3f630acf2b351572e1eaf265c1012f32159bfd4b926cbdd41"
+    },
+    {
+      "path": "apps/api/app/api/settings.py",
+      "size": 1629,
+      "sha256": "eafcb9ebd07dfd1a02b810879ddd783c8afa7316a65e001a508ffc67d2fc735e"
     },
     {
       "path": "apps/api/app/api/time_calibration.py",
@@ -225,8 +230,8 @@
     },
     {
       "path": "apps/api/app/files/backup.py",
-      "size": 6954,
-      "sha256": "3a4a770d915711c572734b12a7b89509ac21f5b1770a4ef08104b51a3ec6d557"
+      "size": 7278,
+      "sha256": "379326563bf70e2dc8461028d3bb7b0136ec8342b37636fabd640eb53210df0a"
     },
     {
       "path": "apps/api/app/files/exceptions.py",
@@ -270,8 +275,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 5079,
-      "sha256": "e8b6c43bc31192a521ea39ac7d1f2bf7a0fc6bab975f512730ff2ed059b1e136"
+      "size": 5178,
+      "sha256": "e57407251b4a1e0868117dcc99ebe8e33915e107690796fa8817611368adbd27"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -449,6 +454,11 @@
       "sha256": "bab9069a084a1722ffc109051122d4be982291a24a79b250933db737b5830632"
     },
     {
+      "path": "apps/api/app/schemas/settings.py",
+      "size": 1195,
+      "sha256": "8691b87e20714ea5c1de535722cf4a82d90584df67218403e4e604818edb7e2f"
+    },
+    {
       "path": "apps/api/app/schemas/time_calibration.py",
       "size": 3449,
       "sha256": "30c25af122de69a33de35c29eb68e11e7d96109dee722eedcd6b096041845310"
@@ -470,8 +480,18 @@
     },
     {
       "path": "apps/api/app/settings.py",
-      "size": 3054,
-      "sha256": "ac9cc4efe5cd140eb31c120813b22c4949a7654c3d96c1ad72885abc224fe22c"
+      "size": 3179,
+      "sha256": "08da3b29d66fd513074a21e213eb269cec7cc63d1c26f43e9021a92825c2288f"
+    },
+    {
+      "path": "apps/api/app/settings_api/__init__.py",
+      "size": 39,
+      "sha256": "e80189a85969063b526650ea350283b4269b83b96f94c92b4a5ccf8ff0c7e879"
+    },
+    {
+      "path": "apps/api/app/settings_api/service.py",
+      "size": 4185,
+      "sha256": "630638d2fd2332face65d1fe383d816e6c93e421de63c3db93380377e649e1f6"
     },
     {
       "path": "apps/api/app/time_calibration/__init__.py",
@@ -585,8 +605,8 @@
     },
     {
       "path": "apps/api/tests/test_data_management_backup_api.py",
-      "size": 3414,
-      "sha256": "3101e5582fe9c8e43503ba84ea1cb758ad7468dad1212f83147b29a11c635c4e"
+      "size": 3861,
+      "sha256": "724c40c18a8ae6114a9c6d4f4088d40b456eeaf1ccda109f0ac1f7f2e64301ae"
     },
     {
       "path": "apps/api/tests/test_database_foundation.py",
@@ -647,6 +667,11 @@
       "path": "apps/api/tests/test_review_scheduler.py",
       "size": 10609,
       "sha256": "a8dcb7e585f668b868792793506399625b056d0b330c18d19ec64fc1ffd7052e"
+    },
+    {
+      "path": "apps/api/tests/test_settings_profile_rules_api.py",
+      "size": 2597,
+      "sha256": "9b0c2871f0df9a16584552e49f8d5c4abfb2076e0d7bbeea83dfbb061ba666eb"
     },
     {
       "path": "apps/api/tests/test_time_calibration.py",
@@ -915,8 +940,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 11739,
-      "sha256": "d766f9d79d05ec9fb069b51957cc9ea2e7a6d13225f5f8f4a091ee539d9a0eda"
+      "size": 12802,
+      "sha256": "858f2368bbba8bd09f26f89e28f3040d709262104fe8b9ad0ff34e1b9ba17a2e"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -925,8 +950,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 10139,
-      "sha256": "97d752fb17eeb361bb998086f92ea8e12fd08a15b0e6915c9bcd1a89a9d6330e"
+      "size": 10553,
+      "sha256": "5aa4dc12b512119bc1896b2f3add4cdb3c3e6e45d0a58da503974abe54b63caa"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -980,8 +1005,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 7039,
-      "sha256": "ec953236d3827bdd0cfb44ee58711c270fc5b4094b3c2e6c730734173999ece4"
+      "size": 7610,
+      "sha256": "09f1e5aac8da2af0bdc207908723478ba9fdd7f4cd964e42271f8ad498be35fd"
     },
     {
       "path": "docs/UI_STANDARD.md",

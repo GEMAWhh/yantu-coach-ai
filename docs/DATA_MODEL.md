@@ -223,3 +223,9 @@ The current file API uses the existing `assets` table as both the physical-file 
 - `deleted`: hidden from normal metadata/content/resource reads.
 
 The resource index is a view over organized/archived assets. No standalone `resources` table has been added yet because catalog-specific fields are not defined in this data model.
+
+## 10. Implemented profile settings
+
+The current settings API stores the single-user profile as `settings/profile.json` under the runtime data directory instead of adding a SQLite table. This keeps the local profile portable with backup/restore while the data model remains single-user.
+
+Current profile fields are `name, target_school, target_major, exam_date, current_phase, coach_style, timezone, updated_at`.

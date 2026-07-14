@@ -37,6 +37,10 @@ class RuntimeSettings:
         return self.data_root / "files"
 
     @property
+    def settings_dir(self) -> Path:
+        return self.data_root / "settings"
+
+    @property
     def backups_dir(self) -> Path:
         return self.data_root / "backups"
 
@@ -54,6 +58,7 @@ class RuntimeSettings:
             self.files_dir / "original",
             self.files_dir / "derived",
             self.files_dir / "thumbnails",
+            self.settings_dir,
             self.data_root / "exports",
             self.backups_dir,
             self.logs_dir,

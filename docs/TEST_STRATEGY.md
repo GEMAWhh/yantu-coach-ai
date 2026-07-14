@@ -143,5 +143,15 @@ tests/fixtures/ai/
 - `GET /backups` lists available local backup archives.
 - `POST /backups/{backup_id}/verify` validates the manifest and archive entries.
 - `POST /backups/{backup_id}/restore` creates a pre-restore backup and restores both database state and file content visibility.
+- Restore also rolls back `settings/profile.json` so local profile changes are protected.
 - `GET /exports/full` creates an export archive through the same backup mechanism.
 - Invalid backup labels and missing backup ids return structured API errors.
+
+## 13. Settings profile and rules coverage
+
+`apps/api/tests/test_settings_profile_rules_api.py` covers the settings API boundary:
+
+- `GET /settings/profile` creates and returns the default local exam profile.
+- `PATCH /settings/profile` persists partial updates into the runtime data directory.
+- `GET /settings/rules` returns the three governed rule files with relative paths, versions, SHA-256 hashes, and raw content.
+- Rules responses do not expose local absolute file paths.
