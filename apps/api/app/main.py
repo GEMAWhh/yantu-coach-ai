@@ -6,6 +6,7 @@ from fastapi import FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.db.migrations import initialize_database
 from app.errors import ApiError, VersionConflictError
 from app.exception_handlers import (
     api_error_handler,
@@ -27,6 +28,7 @@ CONTRACT_VERSION: Literal["contract-v1"] = "contract-v1"
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     settings.ensure_runtime_dirs()
+    initialize_database(settings)
     app.state.settings = settings
     yield
 
