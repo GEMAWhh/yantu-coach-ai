@@ -1,3 +1,4 @@
+from app.api.evidence import router as evidence_router
 from app.api.imports import router as imports_router
 from app.api.knowledge import router as knowledge_router
 from app.api.mastery import router as mastery_router
@@ -6,6 +7,7 @@ from app.api.reviews import router as reviews_router
 from app.api.time_calibration import router as time_calibration_router
 
 __all__ = [
+    "evidence_router",
     "imports_router",
     "knowledge_router",
     "mastery_router",

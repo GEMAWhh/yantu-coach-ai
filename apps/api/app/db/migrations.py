@@ -8,7 +8,7 @@ from sqlalchemy import text
 from app.db.database import get_engine
 from app.settings import RuntimeSettings
 
-DATABASE_HEAD_REVISION = "0008_time_calibration"
+DATABASE_HEAD_REVISION = "0009_evidence_draft_pipeline"
 
 
 class DatabasePragmas(TypedDict):

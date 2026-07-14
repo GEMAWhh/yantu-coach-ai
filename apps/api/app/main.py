@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import (
+    evidence_router,
     imports_router,
     knowledge_router,
     mastery_router,
@@ -93,6 +94,8 @@ def create_app() -> FastAPI:
             "review-scheduler",
             "review-results",
             "time-calibration",
+            "evidence-draft-pipeline",
+            "fake-ai-provider",
         ]
         return api_response(
             ApiMetaResponse(
@@ -127,6 +130,7 @@ def create_app() -> FastAPI:
     app.include_router(planning_router)
     app.include_router(reviews_router)
     app.include_router(time_calibration_router)
+    app.include_router(evidence_router)
 
     return app
 
