@@ -1,0 +1,55 @@
+name: 功能任务
+about: 创建有边界、可验证、可回滚的开发任务
+title: "[Feature] "
+labels: ["type:feature", "status:triage"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景与用户价值
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+    validations:
+      required: true
+  - type: textarea
+    id: non_goal
+    attributes:
+      label: 非目标
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 允许与禁止修改范围
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 每项必须可测试或明确人工验收
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: 测试要求
+    validations:
+      required: true
+  - type: textarea
+    id: migration
+    attributes:
+      label: 数据、迁移与回滚
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: 需求来源
+      placeholder: PRODUCT_SPEC / ACCEPTANCE_MATRIX ID / ADR
+    validations:
+      required: true

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wrong-question-analysis-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "classification",
+    "standardized_question",
+    "solution",
+    "error_analysis",
+    "knowledge_links",
+    "uncertain_fields"
+  ],
+  "properties": {
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "module",
+        "chapter",
+        "knowledge_points",
+        "question_type",
+        "difficulty"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "chapter": {
+          "type": "string"
+        },
+        "knowledge_points": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "question_type": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        }
+      }
+    },
+    "standardized_question": {
+      "type": "string"
+    },
+    "solution": {
+      "type": "object",
+      "required": [
+        "core_method",
+        "key_steps",
+        "source_type"
+      ],
+      "properties": {
+        "core_method": {
+          "type": "string"
+        },
+        "key_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_type": {
+          "enum": [
+            "original",
+            "ai_supplement",
+            "ai_generated"
+          ]
+        }
+      }
+    },
+    "error_analysis": {
+      "type": "object",
+      "required": [
+        "surface_cause",
+        "deep_cause",
+        "prevention_rule"
+      ],
+      "properties": {
+        "surface_cause": {
+          "type": "string"
+        },
+        "deep_cause": {
+          "type": "string"
+        },
+        "prevention_rule": {
+          "type": "string"
+        }
+      }
+    },
+    "knowledge_links": {
+      "type": "object",
+      "required": [
+        "prerequisites",
+        "related"
+      ],
+      "properties": {
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "uncertain_fields": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+version: quality-gates-v1
+pull_request:
+  require_issue_link: true
+  require_ci_green: true
+  require_independent_review: true
+  require_related_tests: true
+  require_docs_for_contract_changes: true
+  forbid_self_approval: true
+  max_unrelated_files: 0
+coverage:
+  domain_min_percent: 90
+  api_min_percent: 80
+  frontend_critical_flows_min_percent: 80
+release:
+  require_clean_install_test: true
+  require_previous_version_upgrade_test: true
+  require_backup_restore_test: true
+  require_core_e2e: true
+  require_no_high_severity_vulnerabilities: true
+ai:
+  illegal_formal_writes: 0
+  require_schema_validation: true
+  require_user_confirmation: true
+  require_golden_set_regression: true

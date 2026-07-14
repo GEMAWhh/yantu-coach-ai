@@ -1,0 +1,24 @@
+version: planning-v1.0.0
+capacity:
+  buffer_ratio_min: 0.15
+  buffer_ratio_default: 0.18
+  max_high_cognitive_tasks_per_day: 2
+  max_single_task_minutes: 60
+  wrong_and_review_ratio_max: 0.40
+weights:
+  deadline_urgency: 0.25
+  review_due: 0.20
+  knowledge_importance: 0.18
+  weakness: 0.15
+  parent_goal_risk: 0.10
+  repeat_error: 0.07
+  energy_fit: 0.05
+penalties:
+  prerequisite_block: hard
+  overtime_risk: 0.20
+  same_type_fatigue: 0.10
+constraints:
+  respect_single_subject_filter: true
+  low_energy_blocks_high_cognitive_load: true
+  repeated_noncompletion_requires_diagnosis: true
+  preserve_user_fixed_schedule: true

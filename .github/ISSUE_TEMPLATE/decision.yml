@@ -1,0 +1,29 @@
+name: 决策请求
+about: 规范冲突、核心规则、重大界面或不可逆操作需要产品确认
+title: "[Decision] "
+labels: ["type:decision", "status:blocked"]
+body:
+  - type: textarea
+    id: conflict
+    attributes:
+      label: 需要决策的问题
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: 可选方案与利弊
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: AI 推荐与依据
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: 不决策的阻塞与影响
+    validations:
+      required: true

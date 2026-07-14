@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evidence-analysis-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "confirmed_facts",
+    "inferences",
+    "uncertain_fields",
+    "teaching_judgment",
+    "suggested_actions"
+  ],
+  "properties": {
+    "confirmed_facts": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "inferences": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "uncertain_fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "reason",
+          "confidence"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "teaching_judgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diagnosis",
+        "evidence_basis",
+        "risk"
+      ],
+      "properties": {
+        "diagnosis": {
+          "type": "string"
+        },
+        "evidence_basis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "risk": {
+          "type": "string"
+        }
+      }
+    },
+    "suggested_actions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

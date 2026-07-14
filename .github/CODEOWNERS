@@ -1,0 +1,6 @@
+# 用真实 GitHub 用户/团队替换占位符。
+/docs/ @product-owner
+/config/ @product-owner
+/apps/api/app/domains/ @architecture-reviewer
+/apps/api/migrations/ @architecture-reviewer
+/.github/ @repository-admin

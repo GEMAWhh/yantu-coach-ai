@@ -1,0 +1,22 @@
+name: Release Gate
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/validate_governance.py
+      - run: python scripts/check_forbidden_patterns.py .
+      - name: Require release report
+        run: test -f "releases/${{ inputs.version }}/RELEASE_REPORT.md"
+      - name: Reminder
+        run: echo 'Application build, upgrade, backup/restore and core E2E commands are added during implementation.'

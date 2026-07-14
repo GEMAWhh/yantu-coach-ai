@@ -1,0 +1,35 @@
+name: 缺陷
+about: 使用可复现步骤和回归测试修复缺陷
+title: "[Bug] "
+labels: ["type:bug", "status:triage"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最小复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: data_risk
+    attributes:
+      label: 数据与安全风险
+    validations:
+      required: true
+  - type: textarea
+    id: regression
+    attributes:
+      label: 必须新增的回归测试
+    validations:
+      required: true

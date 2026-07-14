@@ -1,0 +1,65 @@
+version: mastery-v1.0.0
+stages:
+  - id: 0
+    key: unlearned
+    label: 未学习
+  - id: 1
+    key: exposed
+    label: 已接触
+  - id: 2
+    key: initial_understanding
+    label: 初步理解
+  - id: 3
+    key: recallable
+    label: 可回忆
+  - id: 4
+    key: basic_application
+    label: 基础应用
+  - id: 5
+    key: variant_application
+    label: 变式应用
+  - id: 6
+    key: integrated_transfer
+    label: 综合迁移
+  - id: 7
+    key: stable_mastery
+    label: 稳定掌握
+  - id: 8
+    key: decayed
+    label: 掌握衰退
+thresholds:
+  initial_understanding:
+    self_explanation_score: 70
+  recallable:
+    closed_book_recall_score: 70
+    max_hint_level: 1
+  basic_application:
+    minimum_samples: 4
+    accuracy: 75
+  variant_application:
+    minimum_samples: 3
+    accuracy: 70
+    original_question_samples_allowed: 0
+  integrated_transfer:
+    minimum_samples: 2
+    accuracy: 65
+  stable_mastery:
+    minimum_distinct_timepoints: 2
+    recall_score: 80
+    basic_score: 80
+    variant_score: 75
+    transfer_score: 70
+    unresolved_repeat_deep_causes: 0
+review_intervals_days:
+  exposed: 1
+  initial_understanding: 1
+  recallable: 3
+  basic_application: 7
+  variant_application: 14
+  integrated_transfer: 21
+  stable_mastery: 30
+invariants:
+  reading_max_stage: exposed
+  task_completion_changes_mastery_directly: false
+  immediate_original_redo_resolves_wrong_question: false
+  stable_mastery_can_rollback: true

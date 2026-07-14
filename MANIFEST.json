@@ -1,0 +1,377 @@
+{
+  "package": "研途教练_AI研发执行包",
+  "version": "1.0.0",
+  "file_count": 74,
+  "files": [
+    {
+      "path": ".editorconfig",
+      "size": 202,
+      "sha256": "942beb9a4bf6131ea124de396b1a753c28784b9830a01348a8939b396c0e7c3c"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "size": 216,
+      "sha256": "938b982ec3a86e2da30dada6ceb7a37635f4a9efe9ff5dca1e1e6d5aec13fe24"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.yml",
+      "size": 743,
+      "sha256": "4ddd2001d501d4d10fd26385aecf784c5be87521447920fde4765cddc86b736a"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "size": 234,
+      "sha256": "4c739aa19cd58657eea2fbbae5fae26d9a1080d36820a4664abc67d35db933bc"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/decision.yml",
+      "size": 682,
+      "sha256": "192e6272c0b39a58fba58d18af809e3f1a981a275134f7a1ee6e14217b610036"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature.yml",
+      "size": 1217,
+      "sha256": "e8c0d86adc96b9acd751f50e5f22a5b484dee13aa0dc7e2364cd9b0f8c8fe42a"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "size": 515,
+      "sha256": "35647c78c1da55ff64a56dbf9aba39e2d76eea42e3f4cdcf4d38d959c5a09a41"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "size": 355,
+      "sha256": "f8b98b043d57186e5b6bddd44fbc9a7929b711dcdde75049ff3406e9004c67e6"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "size": 1623,
+      "sha256": "befa532967f630610fd562f439518cf8eaaa79ccfafc50eb266dde38e0cb913e"
+    },
+    {
+      "path": ".github/workflows/governance.yml",
+      "size": 360,
+      "sha256": "f6e3aeaaed3d17769c6ca85ee76d45382ab28d1cba160daeda64eb163c0027a5"
+    },
+    {
+      "path": ".github/workflows/release-gate.yml",
+      "size": 662,
+      "sha256": "4b1bd10283de99cbd1ad5c280dd254b517a3777940cf2552c46b221fcec11b5a"
+    },
+    {
+      "path": ".gitignore",
+      "size": 357,
+      "sha256": "d9b3ad5c492c3429e40836d6f1b0aaa7837c6d35a32eef256b9e0a7e35a317f0"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 2612,
+      "sha256": "cdf9f1c4ed33cfde0da833a1c8c0c24eb494ece04debe0de7ab39c409a65d255"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 127,
+      "sha256": "a132da8511908065a712f02e0e426ca583ef32093a5e3261fcd8fe605f965917"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "size": 1104,
+      "sha256": "53e8525945d0d7605727029ba888c37dd561734f91e806f87e90db85582afb77"
+    },
+    {
+      "path": "Makefile",
+      "size": 345,
+      "sha256": "200523c4923edf646b59fe0b314c7048dc6c69c12962336f4dc1153700f4804f"
+    },
+    {
+      "path": "README.md",
+      "size": 3137,
+      "sha256": "10df06a0fd79be45ac4a5ff7ea47716585b7117c060808a45569a5d1e1ccd5a3"
+    },
+    {
+      "path": "apps/api/README.md",
+      "size": 104,
+      "sha256": "f6fc1a88d17fdf90cf73d15664701c97eff63e97d0416f6a42d792becfd4865a"
+    },
+    {
+      "path": "apps/web/README.md",
+      "size": 128,
+      "sha256": "6b8bfaee58b095cf47a9d411b85424f72e33d2c8747147a6ce15a1cf6b90831d"
+    },
+    {
+      "path": "config/evidence_analysis.schema.json",
+      "size": 1572,
+      "sha256": "6a6f37d7fa4b57c4c0e2b247b55fc17c476b12a31252ad14e5f0b99bd5d8bdbd"
+    },
+    {
+      "path": "config/mastery_rules.v1.yaml",
+      "size": 1442,
+      "sha256": "686d77cc09a547f32d6f0f47477f995e5eb526a82ef43516d4358fea6c2d065a"
+    },
+    {
+      "path": "config/planning_rules.v1.yaml",
+      "size": 626,
+      "sha256": "b6d64f23e9343732f257ab2ad6a27669c70724f17cfa6c699b9613542dd8aa10"
+    },
+    {
+      "path": "config/quality_gates.yml",
+      "size": 689,
+      "sha256": "7e3458e33ac40385452f95e3aeff72523bdf78f5a47b03c001f497f00aa38412"
+    },
+    {
+      "path": "config/wrong_question_analysis.schema.json",
+      "size": 2506,
+      "sha256": "2d11a77bdee1f07b55e45fb7617818ad4dd9dedc7652a61449b0e07d30570aa9"
+    },
+    {
+      "path": "docs/ACCEPTANCE_MATRIX.md",
+      "size": 5414,
+      "sha256": "ceec5b0ad8d0672b7c1621fd2e8e2c1c8867890d35bc6c213bb25b065da91a4a"
+    },
+    {
+      "path": "docs/AI_GOVERNANCE.md",
+      "size": 2322,
+      "sha256": "e93c5adef75fda13b1ec41c0afd82f927d15fb98e35a93ff68f3855252bd3906"
+    },
+    {
+      "path": "docs/API_CONTRACT.md",
+      "size": 3300,
+      "sha256": "f783b56aabefb6a5544778d7bbf30b1d8386827fe9ea0b6435919170b73b80a7"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "size": 3353,
+      "sha256": "5175136170155cc549fe5281822b2deab3054282cba0fc81bd2d945f87358110"
+    },
+    {
+      "path": "docs/DATA_MODEL.md",
+      "size": 4770,
+      "sha256": "a87c1200e1fcce851c77f0fa2e03aeb0a74941345b44098888b6f09497917a14"
+    },
+    {
+      "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
+      "size": 381,
+      "sha256": "9374d2bc444dc777817855863f93fc317c715fd4b6cf5adbd1bd9083aa4042e7"
+    },
+    {
+      "path": "docs/DECISIONS/ADR-0002-ai-draft-confirmation.md",
+      "size": 340,
+      "sha256": "d9d53e314069266db7c42b224ccc74fb34f0949b028fc82230a5686e920d3671"
+    },
+    {
+      "path": "docs/DECISIONS/ADR-0003-sqlite-file-storage.md",
+      "size": 355,
+      "sha256": "f46a887848176d93af767cbef7843f8b6d4b6008cc2a7de5fa605ac35fa793bc"
+    },
+    {
+      "path": "docs/MASTERY_RULES.md",
+      "size": 3330,
+      "sha256": "0eac93adeeb42e22cc5819aae25572b372513fccdd22c99c4cc5a149c292921c"
+    },
+    {
+      "path": "docs/MIGRATION_PLAN.md",
+      "size": 1310,
+      "sha256": "9938e15f2b28b5be57ae9800f83abbb1ac42a1f3b59017b0b40de5e0b4d715ff"
+    },
+    {
+      "path": "docs/OPERATING_MODEL.md",
+      "size": 1483,
+      "sha256": "79aeedbbc084bf936668596cc68062946ed5a2f314cd136b19dfc89158595660"
+    },
+    {
+      "path": "docs/PRODUCT_SPEC.md",
+      "size": 4655,
+      "sha256": "f03dcd3893e41d481d10df93e8e49a9bef085bb3518ebe16e418a43a403bd57b"
+    },
+    {
+      "path": "docs/RELEASE_PROCESS.md",
+      "size": 1393,
+      "sha256": "66943b78ca9351f4f3f49d426081ca30cbe08d8df2f7254617331f6d209b26b6"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "size": 1681,
+      "sha256": "a0f9332f8f0ddd26cdae7bf2a74762aba93b779e1bdd6274fa01e2d40c4dfacc"
+    },
+    {
+      "path": "docs/SECURITY.md",
+      "size": 1863,
+      "sha256": "6d94f28c7e2ee353eef233d6f0a5a7c605fc0015600a759e59bc8d1250834aad"
+    },
+    {
+      "path": "docs/TEST_STRATEGY.md",
+      "size": 1926,
+      "sha256": "4afb751f5bb2422ee7399cc13b3d6fb77b2f39e57849740a856687e87786ec13"
+    },
+    {
+      "path": "docs/UI_STANDARD.md",
+      "size": 2208,
+      "sha256": "ff6efd03851969fe78f6299fe299894f7f953f6180f132e01886ccf7c2344257"
+    },
+    {
+      "path": "initial_issues/000-repository-bootstrap.md",
+      "size": 957,
+      "sha256": "886ed4260465e746961a5b1e5c654974596eb53fb7ebf081aa16b9088dbfd874"
+    },
+    {
+      "path": "initial_issues/001-contract-types.md",
+      "size": 782,
+      "sha256": "2977f9abfb385ce2064d9244c259737ecbd4aca50699703eec0d4eabace5ac48"
+    },
+    {
+      "path": "initial_issues/002-vue-prototype-shell.md",
+      "size": 813,
+      "sha256": "d163cfc39896d9edbd35397982240fc0341db856cc04f43bf1e8abec9ade7c7e"
+    },
+    {
+      "path": "initial_issues/003-database-foundation.md",
+      "size": 696,
+      "sha256": "99ab69468567ae1d31e0b244a23ff6a15b6eb3c167e3c7416f699a8410ffb507"
+    },
+    {
+      "path": "initial_issues/004-file-storage-backup.md",
+      "size": 729,
+      "sha256": "b4f04007e8b9455f756e3232b5118b78beb627e42d2133d8912ace818bcfc089"
+    },
+    {
+      "path": "initial_issues/005-localstorage-import.md",
+      "size": 747,
+      "sha256": "9051fc38f6e8c482678a4b72972da6a4f73e28b0e332018841a7ac35b930120a"
+    },
+    {
+      "path": "initial_issues/006-knowledge-model.md",
+      "size": 692,
+      "sha256": "575fc7daec638e8572be8c9c21c2b3a1819829f53b4149af8e4f72c10aef9869"
+    },
+    {
+      "path": "initial_issues/007-mastery-state-machine.md",
+      "size": 752,
+      "sha256": "bc080edcff00a732eb07f52f7f1956ed23f56f77e123ac409cd6f791729bf581"
+    },
+    {
+      "path": "initial_issues/008-goals-tasks.md",
+      "size": 728,
+      "sha256": "e8c1cf4c52bbfec9c4340a03592094a34199fd20939c26256e6e8be7b5434f91"
+    },
+    {
+      "path": "initial_issues/009-planning-engine-v1.md",
+      "size": 785,
+      "sha256": "ed28bf0ab1ee05f141bf692c7b8976a0b8d38b7d6fb8532a13a43a1d0896fa22"
+    },
+    {
+      "path": "initial_issues/010-review-scheduler.md",
+      "size": 715,
+      "sha256": "4d0e31346f75c5e56fd09d3b93709fa1866f73c55b8929716ab4bddcdbe9a09c"
+    },
+    {
+      "path": "initial_issues/011-time-calibration.md",
+      "size": 683,
+      "sha256": "5d18ab57f12d52031c1fafcd5896f3aaf29f758e5552670444b8218350213189"
+    },
+    {
+      "path": "initial_issues/012-core-loop-e2e.md",
+      "size": 755,
+      "sha256": "2ce27adc1cf18f86c76e6a355ddb5edd3b5e6dca6f25962bdaed4097169e1916"
+    },
+    {
+      "path": "initial_issues/013-evidence-draft-pipeline.md",
+      "size": 779,
+      "sha256": "8636d524ea8a6571e649279a87dcda4ec0ce038d2089933326904397c3429c4d"
+    },
+    {
+      "path": "initial_issues/014-wrongbook-domain.md",
+      "size": 754,
+      "sha256": "67eb06e201f5677f950ef6820c0fdc67e58487535a762edb88ff7ccf19e45982"
+    },
+    {
+      "path": "initial_issues/README.md",
+      "size": 339,
+      "sha256": "856c886a62112b8800dea6c89e1a17a4a01677f3d34cf05587a9812309f093d2"
+    },
+    {
+      "path": "prompts/00_orchestrator.md",
+      "size": 1096,
+      "sha256": "e602948e8d5dcedd60eeff13d3135485f83bc92d41a113260c45119e25fea4b8"
+    },
+    {
+      "path": "prompts/01_architect.md",
+      "size": 833,
+      "sha256": "330c017a01441ab314d0dc4f2a19c8a0a4c0db1fb2b18a82dcc955b8de795607"
+    },
+    {
+      "path": "prompts/02_frontend_agent.md",
+      "size": 846,
+      "sha256": "e4724e5cf12980d0372fa820bc05b9a7e02d45ce86456ee39e1b64189b421569"
+    },
+    {
+      "path": "prompts/03_backend_agent.md",
+      "size": 840,
+      "sha256": "3ee06f4513282779cf5bb5e6d68a62520071675023c9fbeff79f9771b13fa504"
+    },
+    {
+      "path": "prompts/04_ai_pipeline_agent.md",
+      "size": 868,
+      "sha256": "4292d1aac9c29ddb99d67c4bbb810d5d2b802151f64d41833b4f9cea7878bd65"
+    },
+    {
+      "path": "prompts/05_test_agent.md",
+      "size": 880,
+      "sha256": "f1bc8de889d6c363ccad4e518f17019a4880012f7a283516a6184e0eaf548658"
+    },
+    {
+      "path": "prompts/06_reviewer_agent.md",
+      "size": 838,
+      "sha256": "2096d8b2061d753d8ffd69b38178844efc0ddcb53f6d48b68aab2073c09d1091"
+    },
+    {
+      "path": "prompts/07_release_agent.md",
+      "size": 785,
+      "sha256": "b64ee1beb3f854e66be3cdcc1b4d8e58064ee125224de6b911ec146798dc3161"
+    },
+    {
+      "path": "references/README.md",
+      "size": 276,
+      "sha256": "8afae80fe5c876e529a41005cd55ebf5d1e2cc841e81836f9a89a5db2429faa6"
+    },
+    {
+      "path": "references/考研智能学习系统_V1.1_本地版.html",
+      "size": 103936,
+      "sha256": "4c8f6bbc7dfb380850f245f9b43d12a1f571f22f2d267e74e9ab50953e65d583"
+    },
+    {
+      "path": "scripts/check_forbidden_patterns.py",
+      "size": 1330,
+      "sha256": "e43da4cdd8702cf90889f16f5bde69b8d0f3387bedea25123eca90f72f112a87"
+    },
+    {
+      "path": "scripts/validate_governance.py",
+      "size": 1357,
+      "sha256": "3d3ff140f46f9f010d3d86a4ea7aa2a95d5715f403806bb69aa917fd74d83e04"
+    },
+    {
+      "path": "templates/ADR_TEMPLATE.md",
+      "size": 197,
+      "sha256": "905f03f4a31b51ce518252339ebc60d7227aae83dc4fef76ff6bcbb90dd25771"
+    },
+    {
+      "path": "templates/AI_EVALUATION_REPORT.md",
+      "size": 447,
+      "sha256": "bc82b868a0471c059ef9709251cdc7194bb2bcaa66b7ef3722e90b0dbe935a01"
+    },
+    {
+      "path": "templates/MIGRATION_REPORT.md",
+      "size": 232,
+      "sha256": "7ae13563c396e74407cb4a97c294f782c6a85b41b165706a2dc1adaf9a9d3af8"
+    },
+    {
+      "path": "templates/RELEASE_REPORT.md",
+      "size": 343,
+      "sha256": "b8774c99b04f177c8f4079ad8bcfb3fc2e885b215c91c434167826cb30226702"
+    },
+    {
+      "path": "templates/TASK_CONTRACT.md",
+      "size": 283,
+      "sha256": "3150ada53528bae7ebd5ecfbaa4cc09cf4b7f5731cf8d76a8450a2b568b5b2fa"
+    }
+  ]
+}

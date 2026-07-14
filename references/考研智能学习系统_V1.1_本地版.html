@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#163b6d" />
+  <title>研途教练｜考研智能学习规划系统</title>
+  <style>
+    :root{
+      --navy:#102a4c;
+      --navy-2:#163b6d;
+      --blue:#2f6fed;
+      --blue-2:#4e86f7;
+      --blue-soft:#edf4ff;
+      --cyan:#19a7a0;
+      --green:#14845d;
+      --green-soft:#eaf8f2;
+      --yellow:#a56b08;
+      --yellow-soft:#fff6df;
+      --red:#c0394b;
+      --red-soft:#fff0f2;
+      --gray-900:#162033;
+      --gray-700:#445066;
+      --gray-600:#647086;
+      --gray-500:#8490a3;
+      --gray-300:#d6ddea;
+      --gray-200:#e8edf5;
+      --gray-100:#f4f7fb;
+      --white:#ffffff;
+      --shadow:0 12px 35px rgba(20,42,80,.09);
+      --shadow-sm:0 6px 18px rgba(20,42,80,.07);
+      --radius:18px;
+      --radius-sm:12px;
+      --sidebar:236px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--gray-900);
+      background:#eef3f9;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+      line-height:1.55;
+      -webkit-font-smoothing:antialiased;
+    }
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar) 1fr}
+    .sidebar{
+      position:fixed;inset:0 auto 0 0;width:var(--sidebar);z-index:30;
+      display:flex;flex-direction:column;padding:22px 16px 18px;
+      color:white;background:linear-gradient(180deg,#102a4c 0%,#173f72 60%,#13345e 100%);
+      box-shadow:8px 0 30px rgba(10,31,61,.12)
+    }
+    .brand{display:flex;gap:12px;align-items:center;padding:4px 8px 20px}
+    .brand-mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#5e95ff,#1db4aa);box-shadow:0 8px 18px rgba(48,123,255,.35);font-weight:900;font-size:19px}
+    .brand h1{font-size:17px;line-height:1.2;margin:0;letter-spacing:.5px}
+    .brand p{font-size:11px;margin:4px 0 0;color:#b9cbe3}
+    .nav{display:grid;gap:7px;margin-top:6px}
+    .nav-btn{border:0;color:#d7e4f6;background:transparent;border-radius:13px;padding:12px 13px;display:flex;align-items:center;gap:11px;text-align:left;transition:.18s}
+    .nav-btn:hover{background:rgba(255,255,255,.08);color:white}
+    .nav-btn.active{background:rgba(255,255,255,.15);color:white;box-shadow:inset 3px 0 0 #7aa6ff}
+    .nav-icon{width:21px;height:21px;display:grid;place-items:center;font-size:18px}
+    .nav-label{font-weight:700;font-size:14px}
+    .sidebar-foot{margin-top:auto;padding:14px;border-radius:15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}
+    .sidebar-foot .mini{font-size:11px;color:#bcd0e8}
+    .sidebar-foot strong{display:block;margin:5px 0 8px;font-size:14px}
+    .sidebar-foot .meter{height:6px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden}
+    .sidebar-foot .meter i{display:block;height:100%;width:42%;background:#71d0c7;border-radius:999px}
+    .main{grid-column:2;min-width:0}
+    .topbar{
+      height:72px;position:sticky;top:0;z-index:20;background:rgba(247,250,253,.91);backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(207,218,232,.75);display:flex;align-items:center;justify-content:space-between;padding:0 28px
+    }
+    .topbar-left{display:flex;align-items:center;gap:14px}
+    .mobile-menu{display:none;border:0;background:white;width:40px;height:40px;border-radius:12px;box-shadow:var(--shadow-sm)}
+    .page-title{font-size:20px;font-weight:850;letter-spacing:.2px}
+    .page-sub{font-size:12px;color:var(--gray-600);margin-top:2px}
+    .top-actions{display:flex;align-items:center;gap:10px}
+    .pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--gray-200);background:white;padding:8px 11px;border-radius:999px;font-size:12px;color:var(--gray-700)}
+    .avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#2f6fed,#19a7a0);color:white;font-weight:850}
+    .content{padding:26px 28px 94px;max-width:1560px;margin:0 auto}
+    .page{display:none;animation:fade .22s ease}
+    .page.active{display:block}
+    @keyframes fade{from{opacity:.25;transform:translateY(4px)}to{opacity:1;transform:none}}
+    .grid{display:grid;gap:18px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .hero-grid{grid-template-columns:minmax(0,1.7fr) minmax(300px,.8fr)}
+    .card{background:white;border:1px solid #e2e9f3;border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;min-width:0}
+    .card.flat{box-shadow:none}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:15px}
+    .card-title{margin:0;font-size:16px;font-weight:850;color:var(--navy)}
+    .card-note{margin:4px 0 0;color:var(--gray-600);font-size:12px}
+    .eyebrow{font-size:11px;color:var(--blue);font-weight:850;letter-spacing:.7px;text-transform:uppercase}
+    .btn{border:0;border-radius:11px;padding:9px 13px;font-weight:750;font-size:13px;transition:.18s;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--blue);color:white;box-shadow:0 8px 17px rgba(47,111,237,.22)}
+    .btn-secondary{background:var(--blue-soft);color:var(--blue)}
+    .btn-ghost{background:white;color:var(--gray-700);border:1px solid var(--gray-200)}
+    .btn-danger{background:var(--red-soft);color:var(--red)}
+    .btn-small{padding:7px 10px;font-size:12px;border-radius:9px}
+    .btn:disabled{cursor:not-allowed;opacity:.5;transform:none}
+    .hero{background:linear-gradient(120deg,#123661 0%,#245b9c 65%,#1f7c83 115%);color:white;border:0;box-shadow:0 18px 48px rgba(16,52,94,.20);padding:25px}
+    .hero h2{font-size:25px;line-height:1.25;margin:6px 0 8px}
+    .hero p{color:#dceafd;margin:0 0 18px;font-size:13px;max-width:720px}
+    .hero-row{display:flex;gap:9px;flex-wrap:wrap}
+    .hero-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:7px 10px;border-radius:999px;font-size:11px}
+    .hero-actions{display:flex;gap:10px;margin-top:21px;flex-wrap:wrap}
+    .hero .btn-primary{background:white;color:#1f5592}
+    .hero .btn-ghost{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:white}
+    .stat{padding:17px}
+    .stat-label{font-size:12px;color:var(--gray-600)}
+    .stat-value{font-size:24px;font-weight:900;color:var(--navy);margin:5px 0 3px}
+    .stat-foot{font-size:11px;color:var(--gray-500)}
+    .trend-up{color:var(--green);font-weight:750}
+    .trend-down{color:var(--red);font-weight:750}
+    .section-spacer{height:18px}
+    .status-strip{display:flex;align-items:center;gap:13px;flex-wrap:wrap;padding:14px 16px;background:#f6f9fd;border:1px solid var(--gray-200);border-radius:14px;margin:14px 0 16px}
+    .status-strip label{font-size:12px;color:var(--gray-600)}
+    select,input[type="number"],input[type="text"],input[type="date"],input[type="time"],input[type="password"],textarea{
+      border:1px solid var(--gray-300);border-radius:10px;background:white;color:var(--gray-900);padding:9px 10px;outline:none;min-height:39px
+    }
+    select:focus,input:focus,textarea:focus{border-color:#76a1f7;box-shadow:0 0 0 3px rgba(47,111,237,.10)}
+    .status-strip select,.status-strip input{padding:7px 9px;min-height:34px;font-size:12px}
+    .task-list{display:grid;gap:11px}
+    .task{
+      position:relative;border:1px solid var(--gray-200);border-radius:15px;padding:15px 15px 14px 18px;background:white;transition:.18s;overflow:hidden
+    }
+    .task:hover{border-color:#bdd0f5;box-shadow:0 7px 18px rgba(25,61,117,.07)}
+    .task::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#7da1e9}
+    .task[data-priority="必做"]::before{background:var(--blue)}
+    .task[data-priority="建议"]::before{background:var(--cyan)}
+    .task[data-priority="可选"]::before{background:#9aa6b7}
+    .task.done{opacity:.62;background:#f7f9fc}
+    .task.done .task-name{text-decoration:line-through}
+    .task-main{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:flex-start}
+    .check{width:23px;height:23px;border:2px solid #b9c6d8;border-radius:7px;background:white;display:grid;place-items:center;color:white;margin-top:2px;padding:0}
+    .task.done .check{background:var(--green);border-color:var(--green)}
+    .task-name{font-size:14px;font-weight:820;color:var(--gray-900)}
+    .task-meta{display:flex;flex-wrap:wrap;gap:7px;margin:7px 0 8px}
+    .tag{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:750;background:var(--gray-100);color:var(--gray-700)}
+    .tag.blue{background:var(--blue-soft);color:var(--blue)}
+    .tag.green{background:var(--green-soft);color:var(--green)}
+    .tag.yellow{background:var(--yellow-soft);color:var(--yellow)}
+    .tag.red{background:var(--red-soft);color:var(--red)}
+    .task-detail{font-size:12px;color:var(--gray-600);display:grid;gap:4px}
+    .task-detail strong{color:var(--gray-700)}
+    .task-actions{display:flex;gap:7px;align-items:center}
+    .mini-progress{height:7px;background:var(--gray-200);border-radius:999px;overflow:hidden;margin-top:9px}
+    .mini-progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),#58a4ff)}
+    .coach-box{background:linear-gradient(180deg,#f1f6ff,#f8fbff);border:1px solid #dce8fb;border-radius:15px;padding:16px}
+    .coach-head{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+    .coach-avatar{width:37px;height:37px;border-radius:12px;background:var(--navy);display:grid;place-items:center;color:white;font-weight:900}
+    .coach-name{font-weight:850;color:var(--navy);font-size:13px}
+    .coach-role{color:var(--gray-500);font-size:10px}
+    .coach-box p{font-size:12px;color:var(--gray-700);margin:7px 0}
+    .coach-box ul{margin:8px 0 0;padding-left:17px;font-size:12px;color:var(--gray-700)}
+    .coach-box li{margin:5px 0}
+    .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}
+    .tab-btn{border:1px solid var(--gray-200);background:white;color:var(--gray-600);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:750}
+    .tab-btn.active{background:var(--navy);border-color:var(--navy);color:white}
+    .subpage{display:none}
+    .subpage.active{display:block;animation:fade .18s ease}
+    .plan-tree{display:grid;gap:12px}
+    .plan-row{display:grid;grid-template-columns:110px 1fr 110px 92px;gap:15px;align-items:center;padding:15px;border:1px solid var(--gray-200);border-radius:14px;background:white}
+    .plan-level{font-size:12px;font-weight:850;color:var(--blue)}
+    .plan-name{font-size:13px;font-weight:800}
+    .plan-parent{font-size:11px;color:var(--gray-500);margin-top:3px}
+    .progress-label{font-size:11px;color:var(--gray-600);display:flex;justify-content:space-between;margin-bottom:5px}
+    .progress{height:8px;background:var(--gray-200);border-radius:999px;overflow:hidden}
+    .progress i{height:100%;display:block;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:999px}
+    .risk{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;text-align:center}
+    .risk.normal{color:var(--green);background:var(--green-soft)}
+    .risk.slow{color:var(--yellow);background:var(--yellow-soft)}
+    .risk.high{color:var(--red);background:var(--red-soft)}
+    .week-grid{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:9px;overflow:auto;padding-bottom:5px}
+    .day-card{min-height:170px;border:1px solid var(--gray-200);border-radius:13px;padding:11px;background:#fbfcfe}
+    .day-card.today{border-color:#8db0f6;box-shadow:inset 0 0 0 1px #a8c2f8;background:#f5f8ff}
+    .day-name{font-size:11px;font-weight:850;color:var(--gray-600);display:flex;justify-content:space-between}
+    .day-date{font-size:19px;font-weight:900;color:var(--navy);margin:2px 0 10px}
+    .day-item{padding:7px;border-radius:9px;background:white;border:1px solid var(--gray-200);font-size:10px;margin:6px 0;color:var(--gray-700)}
+    .state-machine{display:flex;align-items:center;gap:6px;overflow:auto;padding:5px 1px 12px}
+    .state-step{min-width:100px;position:relative;text-align:center}
+    .state-step:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:19px;color:#a8b4c6;font-weight:900}
+    .state-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;margin:0 auto 6px;background:var(--gray-200);color:var(--gray-600);font-size:11px;font-weight:900;border:3px solid white;box-shadow:0 0 0 1px var(--gray-300)}
+    .state-step.complete .state-dot{background:var(--green);color:white;box-shadow:0 0 0 1px var(--green)}
+    .state-step.current .state-dot{background:var(--blue);color:white;box-shadow:0 0 0 4px rgba(47,111,237,.13)}
+    .state-step.decline .state-dot{background:var(--red);color:white;box-shadow:0 0 0 1px var(--red)}
+    .state-label{font-size:10px;color:var(--gray-600);white-space:nowrap}
+    .evidence-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:13px 0}
+    .evidence-item{border:1px solid var(--gray-200);border-radius:12px;padding:10px;background:#fbfcfe}
+    .evidence-item label{font-size:11px;color:var(--gray-600);display:block;margin-bottom:6px}
+    .evidence-item input{width:100%;min-width:0}
+    .checkline{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray-700);padding:8px 0}
+    .checkline input{width:16px;height:16px}
+    .knowledge-list{display:grid;gap:9px}
+    .knowledge-row{display:grid;grid-template-columns:1fr 115px 90px 50px;gap:12px;align-items:center;border:1px solid var(--gray-200);border-radius:12px;padding:11px 12px}
+    .knowledge-name{font-size:12px;font-weight:800}
+    .knowledge-path{font-size:10px;color:var(--gray-500)}
+    .knowledge-row button{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:11px}
+    .upload-zone{border:1.5px dashed #a9badd;border-radius:15px;padding:20px;text-align:center;background:#f8fbff;transition:.18s}
+    .upload-zone.drag{border-color:var(--blue);background:#eef4ff}
+    .upload-zone input{display:none}
+    .upload-icon{font-size:26px;margin-bottom:7px}
+    .upload-zone strong{font-size:13px;color:var(--navy)}
+    .upload-zone p{font-size:11px;color:var(--gray-500);margin:5px 0 10px}
+    .preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:12px}
+    .preview{border:1px solid var(--gray-200);border-radius:12px;padding:8px;background:white;overflow:hidden}
+    .preview img{width:100%;height:82px;object-fit:cover;border-radius:8px;background:var(--gray-100)}
+    .preview-name{font-size:10px;color:var(--gray-600);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .draft{border:1px solid #d7e5fa;border-radius:14px;background:#f6f9ff;padding:15px;margin-top:13px}
+    .draft-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0}
+    .field label{font-size:11px;color:var(--gray-600);display:block;margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%}
+    .field textarea{min-height:82px;resize:vertical}
+    .wide{grid-column:1/-1}
+    .notice{border-radius:12px;padding:11px 13px;font-size:11px;line-height:1.6}
+    .notice.info{background:var(--blue-soft);color:#28559f;border:1px solid #d8e6ff}
+    .notice.warn{background:var(--yellow-soft);color:#7a5209;border:1px solid #f1dfaf}
+    .notice.danger{background:var(--red-soft);color:#9c2f3e;border:1px solid #f6d2d8}
+    .wrong-list{display:grid;gap:10px}
+    .wrong-card{border:1px solid var(--gray-200);border-radius:14px;padding:14px;background:white}
+    .wrong-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .wrong-title{font-weight:820;font-size:13px}
+    .wrong-meta{font-size:10px;color:var(--gray-500);margin-top:4px}
+    .wrong-body{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;font-size:11px;color:var(--gray-700)}
+    .wrong-body > div{background:#f7f9fc;border-radius:10px;padding:10px}
+    .wrong-actions{display:flex;gap:7px;flex-wrap:wrap}
+    .resource-list{display:grid;gap:9px}
+    .resource{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:12px;border:1px solid var(--gray-200);border-radius:13px;padding:11px}
+    .file-icon{width:42px;height:42px;border-radius:10px;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-size:11px;font-weight:900}
+    .resource-name{font-size:12px;font-weight:800;word-break:break-all}
+    .resource-meta{font-size:10px;color:var(--gray-500);margin-top:3px}
+    .graph-wrap{position:relative;min-height:530px;border-radius:16px;background:radial-gradient(circle at 50% 45%,#f8fbff 0,#f1f5fb 70%);border:1px solid var(--gray-200);overflow:hidden}
+    .graph-svg{position:absolute;inset:0;width:100%;height:100%}
+    .node{position:absolute;transform:translate(-50%,-50%);border:0;border-radius:50%;display:grid;place-items:center;text-align:center;padding:6px;font-size:9px;font-weight:850;box-shadow:0 7px 20px rgba(23,52,93,.15);transition:.18s;line-height:1.2}
+    .node:hover{transform:translate(-50%,-50%) scale(1.08);z-index:4}
+    .node.root{width:86px;height:86px;background:var(--navy);color:white}
+    .node.module{width:72px;height:72px;background:#dce8ff;color:#244f95;border:4px solid white}
+    .node.weak{width:62px;height:62px;background:#ffdfe4;color:#a52f40;border:4px solid white}
+    .node.mid{width:58px;height:58px;background:#fff0bd;color:#8a5e08;border:4px solid white}
+    .node.strong{width:56px;height:56px;background:#d9f3e7;color:#146344;border:4px solid white}
+    .node.unlearned{width:54px;height:54px;background:#e4e8ef;color:#647086;border:4px solid white}
+    .node.repeat{outline:4px solid rgba(192,57,75,.25)}
+    .graph-legend{position:absolute;left:14px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.88);padding:8px 10px;border-radius:10px;border:1px solid var(--gray-200);font-size:9px}
+    .legend-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px}
+    .graph-detail{display:grid;gap:9px}
+    .metric-row{display:grid;grid-template-columns:1fr auto;gap:12px;font-size:11px;align-items:center}
+    .chart{height:230px;display:flex;align-items:flex-end;gap:10px;padding:20px 5px 0;border-bottom:1px solid var(--gray-300);position:relative}
+    .bar-group{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:5px;height:100%;position:relative}
+    .bar{width:24%;min-width:9px;max-width:24px;border-radius:7px 7px 0 0;background:var(--blue);position:relative;transition:.3s}
+    .bar.alt{background:var(--cyan)}
+    .bar-label{position:absolute;bottom:-23px;font-size:9px;color:var(--gray-500);white-space:nowrap}
+    .chart-legend{display:flex;gap:14px;font-size:10px;color:var(--gray-600);margin-top:30px}
+    .chart-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+    .donut-wrap{display:flex;align-items:center;gap:25px;justify-content:center;min-height:220px}
+    .donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--green) 0 26%,var(--blue) 26% 59%,#f4b844 59% 82%,#c7cfdb 82% 100%);position:relative}
+    .donut::after{content:"";position:absolute;inset:27px;background:white;border-radius:50%}
+    .donut-center{position:absolute;inset:0;z-index:2;display:grid;place-items:center;text-align:center;font-size:11px;color:var(--gray-500)}
+    .donut-center strong{font-size:24px;color:var(--navy);display:block}
+    .donut-list{display:grid;gap:8px;font-size:11px;color:var(--gray-700)}
+    .donut-list span{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+    .timeline{display:grid;gap:0}
+    .timeline-item{position:relative;padding:0 0 17px 23px;border-left:2px solid var(--gray-200);margin-left:6px}
+    .timeline-item:last-child{border-left-color:transparent}
+    .timeline-item::before{content:"";position:absolute;left:-6px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px #e8f0ff}
+    .timeline-title{font-size:12px;font-weight:800}
+    .timeline-text{font-size:10px;color:var(--gray-600);margin-top:3px}
+    .settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.65fr);gap:18px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .switch-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-200)}
+    .switch-line:last-child{border-bottom:0}
+    .switch-title{font-size:12px;font-weight:800}
+    .switch-note{font-size:10px;color:var(--gray-500)}
+    .switch{position:relative;width:42px;height:24px}
+    .switch input{display:none}
+    .switch i{position:absolute;inset:0;background:#c9d1dd;border-radius:999px;transition:.18s}
+    .switch i::after{content:"";position:absolute;width:18px;height:18px;background:white;border-radius:50%;left:3px;top:3px;transition:.18s;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+    .switch input:checked + i{background:var(--blue)}
+    .switch input:checked + i::after{transform:translateX(18px)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(8,23,44,.56);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+    .modal-backdrop.open{display:flex}
+    .modal{width:min(680px,100%);max-height:90vh;overflow:auto;background:white;border-radius:19px;padding:21px;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+    .modal-head{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:16px}
+    .modal-head h3{margin:0;font-size:17px;color:var(--navy)}
+    .close{border:0;background:var(--gray-100);width:34px;height:34px;border-radius:10px;color:var(--gray-700)}
+    .modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:17px}
+    .toast{position:fixed;right:22px;bottom:25px;z-index:200;background:#132f54;color:white;border-radius:12px;padding:11px 14px;box-shadow:0 12px 30px rgba(0,0,0,.20);font-size:12px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s}
+    .toast.show{opacity:1;transform:none}
+    .bottom-nav{display:none}
+    .empty{padding:30px;text-align:center;color:var(--gray-500);font-size:12px}
+    .muted{color:var(--gray-500)}
+    .right{text-align:right}
+    .mono{font-variant-numeric:tabular-nums}
+    .divider{height:1px;background:var(--gray-200);margin:15px 0}
+    .hidden{display:none!important}
+    @media (max-width:1180px){
+      .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .hero-grid{grid-template-columns:1fr}
+      .evidence-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .settings-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:900px){
+      :root{--sidebar:0px}
+      .app{display:block}
+      .sidebar{transform:translateX(-105%);width:238px;transition:.22s}
+      .sidebar.open{transform:none}
+      .main{grid-column:auto}
+      .mobile-menu{display:grid;place-items:center}
+      .content{padding:20px 18px 92px}
+      .topbar{padding:0 18px}
+      .top-actions .pill{display:none}
+      .bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:9px;right:9px;bottom:9px;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid #dce4ef;border-radius:17px;padding:5px;box-shadow:0 15px 36px rgba(20,42,80,.18)}
+      .bottom-nav button{border:0;background:transparent;border-radius:11px;padding:7px 2px;color:var(--gray-500);font-size:9px;font-weight:800;display:grid;gap:2px;place-items:center}
+      .bottom-nav button span:first-child{font-size:18px}
+      .bottom-nav button.active{background:var(--blue-soft);color:var(--blue)}
+      .plan-row{grid-template-columns:85px 1fr 80px}.plan-row .risk{display:none}
+    }
+    @media (max-width:680px){
+      .topbar{height:64px}.page-title{font-size:17px}.page-sub{display:none}
+      .content{padding:15px 12px 88px}
+      .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+      .card{padding:15px;border-radius:15px}
+      .hero{padding:20px}.hero h2{font-size:21px}
+      .status-strip{align-items:stretch}.status-strip > div{flex:1;min-width:120px}.status-strip select,.status-strip input{width:100%}
+      .task-main{grid-template-columns:auto 1fr}.task-actions{grid-column:2;justify-content:flex-start;margin-top:5px}.task{padding:13px 12px 13px 16px}
+      .plan-row{grid-template-columns:1fr}.plan-row > div:nth-child(3){width:100%}
+      .evidence-grid,.draft-grid,.form-grid{grid-template-columns:1fr}
+      .knowledge-row{grid-template-columns:1fr 90px}.knowledge-row > :nth-child(3),.knowledge-row > :nth-child(4){display:none}
+      .wrong-body{grid-template-columns:1fr}
+      .resource{grid-template-columns:38px 1fr}.resource .btn{grid-column:2;justify-self:start}
+      .graph-wrap{min-height:470px}
+      .node.root{width:72px;height:72px}.node.module{width:62px;height:62px}.node.weak,.node.mid,.node.strong,.node.unlearned{width:50px;height:50px;font-size:8px}
+      .donut-wrap{flex-direction:column}
+      .modal{padding:16px}
+      .top-actions .avatar{width:34px;height:34px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">研</div>
+      <div><h1>研途教练</h1><p>诊断 · 训练 · 验证 · 纠偏</p></div>
+    </div>
+    <nav class="nav" id="sideNav">
+      <button class="nav-btn active" data-page="today"><span class="nav-icon">⌂</span><span class="nav-label">今日</span></button>
+      <button class="nav-btn" data-page="plan"><span class="nav-icon">▦</span><span class="nav-label">规划</span></button>
+      <button class="nav-btn" data-page="learn"><span class="nav-icon">▣</span><span class="nav-label">学习</span></button>
+      <button class="nav-btn" data-page="progress"><span class="nav-icon">◒</span><span class="nav-label">进度</span></button>
+      <button class="nav-btn" data-page="settings"><span class="nav-icon">⚙</span><span class="nav-label">设置</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="mini">目标项目</div>
+      <strong>大连理工 · 控制学硕</strong>
+      <div class="mini">本阶段真实掌握进度 <span id="sideProgressText">42%</span></div>
+      <div class="meter"><i id="sideProgressBar"></i></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu" id="mobileMenu">☰</button>
+        <div><div class="page-title" id="pageTitle">今日学习</div><div class="page-sub" id="pageSub">先明确今天做什么、为什么做、做到什么程度</div></div>
+      </div>
+      <div class="top-actions">
+        <div class="pill">📅 <span id="topDate"></span></div>
+        <div class="pill">⏳ 距暂定初试 <strong id="countdown">--</strong> 天</div>
+        <div class="avatar">薇</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- TODAY -->
+      <section class="page active" id="page-today">
+        <div class="grid hero-grid">
+          <div class="card hero">
+            <div class="eyebrow" style="color:#9fc1ff">TODAY'S COACHING BRIEF</div>
+            <h2 id="greeting">下午好，今天先完成闭环，不追求把时间排满。</h2>
+            <p id="heroSummary">系统依据周目标、到期复习、知识点训练阶段与个人用时系数生成任务。阅读或拍照只证明发生过学习，不直接提高到“稳定掌握”。</p>
+            <div class="hero-row">
+              <span class="hero-chip">核心科目：数学一 + 841</span>
+              <span class="hero-chip">当前阶段：基础期</span>
+              <span class="hero-chip">导师风格：平衡务实型</span>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-primary" id="generatePlanBtn">智能生成今日计划</button>
+              <button class="btn btn-ghost" data-scroll="evidenceCard">上传完成证据</button>
+            </div>
+          </div>
+          <div class="grid grid-2">
+            <div class="card stat"><div class="stat-label">今日计划</div><div class="stat-value mono" id="todayMinutes">210</div><div class="stat-foot">分钟 · 含 35 分钟机动</div></div>
+            <div class="card stat"><div class="stat-label">到期复习</div><div class="stat-value mono" id="dueCount">3</div><div class="stat-foot"><span class="trend-down">2 项高优先</span></div></div>
+            <div class="card stat"><div class="stat-label">本周完成率</div><div class="stat-value mono" id="weekRate">68%</div><div class="stat-foot"><span class="trend-up">较上周 +7%</span></div></div>
+            <div class="card stat"><div class="stat-label">稳定掌握节点</div><div class="stat-value mono" id="stableCount">12</div><div class="stat-foot">不能用学习时长替代</div></div>
+          </div>
+        </div>
+
+        <div class="section-spacer"></div>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-head"><div><h3 class="card-title">今日任务</h3><p class="card-note">任务必须包含来源、安排原因、训练阶段与可验证标准。</p></div><span class="tag blue" id="taskCompletionTag">0 / 4 完成</span></div>
+            <div class="status-strip">
+              <div><label>可用时间</label><br><input id="availableMinutes" type="number" min="30" step="15" value="245" style="width:82px"> 分钟</div>
+              <div><label>精神状态</label><br><select id="energyLevel"><option value="low">较差</option><option value="medium" selected>一般</option><option value="high">较好</option></select></div>
+              <div><label>今日科目</label><br><select id="subjectFilter"><option value="all">数学一 + 841</option><option value="math">只学数学一</option><option value="841">只学专业课 841</option></select></div>
+              <div style="margin-left:auto"><button class="btn btn-secondary btn-small" id="rebuildPlanBtn">按状态重排</button></div>
+            </div>
+            <div class="task-list" id="todayTaskList"></div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">总教练诊断</h3><p class="card-note">事实、判断、风险与调整分开表达。</p></div><span class="tag green">基于本地记录</span></div>
+              <div class="coach-box" id="coachBox">
+                <div class="coach-head"><div class="coach-avatar">AI</div><div><div class="coach-name">资深考研总教练</div><div class="coach-role">平衡务实型 · 统一前台形象</div></div></div>
+                <p><strong>已确认事实：</strong>本周数学任务完成率高于 841，但“可靠性参数估计”两次基础题正确率低于 70%。</p>
+                <p><strong>教学判断：</strong>专业课目前存在输入多、闭卷输出不足的问题。今天不增加新章节，先补一次无提示回忆和基础题验证。</p>
+                <ul><li>当前风险：月目标中的“可靠性统计分析”可能延后 2—3 天。</li><li>调整：将 90 分钟阅读任务拆成 35 分钟回忆 + 40 分钟基础题。</li><li>验收：闭卷列出 4 个参数估计步骤，基础题正确率 ≥ 80%。</li></ul>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">到期复习队列</h3><p class="card-note">间隔随表现动态变化；失败会回退训练阶段。</p></div><button class="btn btn-ghost btn-small" data-page-jump="learn" data-subtab="training">进入训练台</button></div>
+              <div id="reviewQueue"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-spacer"></div>
+        <div class="grid grid-2">
+          <div class="card" id="evidenceCard">
+            <div class="card-head"><div><h3 class="card-title">每日完成证据</h3><p class="card-note">先生成“待确认草稿”，确认后才写入正式学习记录。</p></div><span class="tag yellow">用户确认必需</span></div>
+            <div class="upload-zone" id="evidenceDrop">
+              <input type="file" id="evidenceInput" accept="image/*" multiple>
+              <div class="upload-icon">▧</div><strong>上传学习清单、做题页、计时截图或复盘照片</strong>
+              <p>支持多张图片。静态版本仅在当前页面预览，不持久化大文件。</p>
+              <button class="btn btn-secondary btn-small" id="chooseEvidenceBtn">选择图片</button>
+            </div>
+            <div class="preview-grid" id="evidencePreview"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <select id="evidenceType"><option>做题本与错题页</option><option>手写学习清单</option><option>讲义、教材学习页</option><option>计时软件截图</option><option>网课学习记录</option><option>模考或章节测试成绩</option><option>当天复盘照片或文字</option></select>
+              <button class="btn btn-primary btn-small" id="analyzeEvidenceBtn" disabled>生成待确认草稿</button>
+            </div>
+            <div id="evidenceDraftArea"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3 class="card-title">今日闭环检查</h3><p class="card-note">完成任务不等于掌握；至少保留一项主动输出证据。</p></div><span class="tag red" id="loopStatus">未闭环</span></div>
+            <div id="loopChecklist"></div>
+            <div class="notice warn" style="margin-top:12px"><strong>证据边界：</strong>看完页面、写满笔记或拍照，只能证明发生了学习行为。掌握度主要依据闭卷回忆、基础应用、变式迁移、无提示重做与间隔保持。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLAN -->
+      <section class="page" id="page-plan">
+        <div class="grid grid-4">
+          <div class="card stat"><div class="stat-label">学期目标完成</div><div class="stat-value">18%</div><div class="stat-foot">处于基础体系搭建期</div></div>
+          <div class="card stat"><div class="stat-label">季度目标完成</div><div class="stat-value">31%</div><div class="stat-foot">数学略快，841 偏慢</div></div>
+          <div class="card stat"><div class="stat-label">月目标风险</div><div class="stat-value" style="color:var(--yellow)">偏慢</div><div class="stat-foot">预计延迟 2 天</div></div>
+          <div class="card stat"><div class="stat-label">个人用时系数</div><div class="stat-value">1.18</div><div class="stat-foot">近 14 天实际 / 预计</div></div>
+        </div>
+        <div class="section-spacer"></div>
+        <div class="card">
+          <div class="card-head"><div><h3 class="card-title">五级规划链</h3><p class="card-note">每一个下级任务都能追溯到上级目标；日执行偏差向上更新风险。</p></div><button class="btn btn-primary btn-small" id="addGoalBtn">新增目标</button></div>
+          <div class="tabs" data-tabs="planLevels">
+            <button class="tab-btn active" data-tab="chain">上下级关系</button>
+            <button class="tab-btn" data-tab="semester">学期</button>
+            <button class="tab-btn" data-tab="quarter">季度</button>
+            <button class="tab-btn" data-tab="month">月度</button>
+            <button class="tab-btn" data-tab="week">周度</button>
+          </div>
+          <div class="subpage active" data-subpage="chain">
+            <div class="plan-tree" id="planTree"></div>
+          </div>
+          <div class="subpage" data-subpage="semester"><div class="notice info">学期目标：完成数学一高数与概率论基础闭环，形成专业课 841 三本核心参考书的章节知识树，并通过阶段测试验证，不以“看完教材”作为验收。</div><div class="section-spacer"></div><div id="semesterGoals"></div></div>
+          <div class="subpage" data-subpage="quarter"><div id="quarterGoals"></div></div>
+          <div class="subpage" data-subpage="month"><div id="monthGoals"></div></div>
+          <div class="subpage" data-subpage="week"><div class="week-grid" id="weekCalendar"></div></div>
+        </div>
+        <div class="section-spacer"></div>
+        <div class="grid grid-2">
+          <div class="card"><div class="card-head"><div><h3 class="card-title">计划调整记录</h3><p class="card-note">重大调整保留依据，不只修改标题。</p></div></div><div class="timeline" id="planTimeline"></div></div>
+          <div class="card"><div class="card-head"><div><h3 class="card-title">计划生成约束</h3><p class="card-note">系统不会机械排满全天。</p></div></div><div class="checkline">✓ 保留至少 15% 机动时间</div><div class="checkline">✓ 状态差时安排短任务与基础复习</div><div class="checkline">✓ 连续超时任务自动拆小并校准预计用时</div><div class="checkline">✓ 前置知识不足时阻止或降级后续任务</div><div class="checkline">✓ 只学某科时不自行补入其他科目</div><div class="checkline">✓ 错题优先，但不让计划被错题全部淹没</div></div>
+        </div>
+      </section>
+
+      <!-- LEARN -->
+      <section class="page" id="page-learn">
+        <div class="tabs" data-tabs="learnTabs">
+          <button class="tab-btn active" data-tab="training">训练台</button>
+          <button class="tab-btn" data-tab="wrong">错题中心</button>
+          <button class="tab-btn" data-tab="resources">资料库</button>
+          <button class="tab-btn" data-tab="graph">知识图谱</button>
+          <button class="tab-btn" data-tab="inbox">收件箱</button>
+        </div>
+
+        <div class="subpage active" data-subpage="training">
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">知识点训练状态机</h3><p class="card-note">状态可前进，也可因抽测失败或重复错因而回退。</p></div><select id="trainingKnowledge"></select></div>
+              <div class="state-machine" id="stateMachine"></div>
+              <div class="notice info" id="stateExplanation"></div>
+              <div class="divider"></div>
+              <h4 style="margin:0 0 9px;color:var(--navy);font-size:13px">本轮训练证据</h4>
+              <div class="evidence-grid">
+                <div class="evidence-item"><label>闭卷回忆</label><input id="recallScore" type="number" min="0" max="100" value="72">%</div>
+                <div class="evidence-item"><label>基础题正确率</label><input id="basicScore" type="number" min="0" max="100" value="75">%</div>
+                <div class="evidence-item"><label>变式题通过率</label><input id="variantScore" type="number" min="0" max="100" value="50">%</div>
+                <div class="evidence-item"><label>迁移题通过率</label><input id="transferScore" type="number" min="0" max="100" value="0">%</div>
+              </div>
+              <div class="checkline"><input type="checkbox" id="noHintCheck"><label for="noHintCheck">本次过程未依赖教材、答案或提示</label></div>
+              <div class="checkline"><input type="checkbox" id="intervalCheck"><label for="intervalCheck">该结果来自间隔复测，而非刚看解析后的即时重做</label></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-primary" id="evaluateMasteryBtn">判定训练阶段</button><button class="btn btn-danger" id="rollbackBtn">记录抽测失败并回退</button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">下一步训练建议</h3><p class="card-note">由当前阶段与缺失证据决定，不笼统建议“多刷题”。</p></div><span class="tag blue" id="currentStageTag">基础应用</span></div>
+              <div class="coach-box" id="trainingAdvice"></div>
+              <div class="divider"></div>
+              <h4 style="margin:0 0 10px;color:var(--navy);font-size:13px">知识点列表</h4>
+              <div class="knowledge-list" id="knowledgeList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpage" data-subpage="wrong">
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">错题分类上传</h3><p class="card-note">题目、附图、作答、批改、答案和解析分开保存，不能混淆。</p></div><span class="tag yellow">草稿区</span></div>
+              <div class="form-grid">
+                <div class="field"><label>科目</label><select id="wrongSubject"><option>数学一</option><option>专业课 841</option></select></div>
+                <div class="field"><label>上传区</label><select id="wrongUploadType"><option>题目图片</option><option>题目附图</option><option>我的作答</option><option>批改痕迹</option><option>标准答案</option><option>原始解析</option><option>补充资料</option></select></div>
+                <div class="field wide"><label>选择图片</label><input type="file" id="wrongImageInput" accept="image/*" multiple></div>
+                <div class="field"><label>章节 / 知识点</label><input id="wrongKnowledge" type="text" placeholder="如：多元函数极值与条件极值"></div>
+                <div class="field"><label>题型 / 难度</label><input id="wrongType" type="text" placeholder="如：计算题 · 中等"></div>
+                <div class="field"><label>一级错因</label><select id="wrongCause"><option>概念不清</option><option>公式记错</option><option>条件遗漏</option><option>题意理解错误</option><option>知识点联系不足</option><option>方法选择错误</option><option>推导步骤错误</option><option>计算错误</option><option>图形或区域判断错误</option><option>书写不规范</option><option>时间不足</option><option>完全不会</option></select></div>
+                <div class="field"><label>深层错因</label><input id="wrongDeepCause" type="text" placeholder="解释为什么会错，而非只记表面错误"></div>
+                <div class="field wide"><label>核心解法 / 关键步骤</label><textarea id="wrongSolution" placeholder="没有原始解析时，可先填写“待 AI 生成，待核验”"></textarea></div>
+              </div>
+              <div class="notice warn" style="margin:12px 0">无解析题目可以生成 AI 解析，但必须标注“AI 生成，待核验”，在用户确认前不得成为正式解析。</div>
+              <button class="btn btn-primary" id="createWrongDraftBtn">生成结构化错题草稿</button>
+              <div id="wrongDraftArea"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">错题修正队列</h3><p class="card-note">解决标准：解释错因 + 隔日无提示重做 + 同类变式 + 间隔复测。</p></div><span class="tag red" id="wrongCountTag">3 道待处理</span></div>
+              <div class="wrong-list" id="wrongList"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpage" data-subpage="resources">
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">正式资料库</h3><p class="card-note">“已上传”“已整理”“已学习”“已掌握”严格分离。</p></div><button class="btn btn-primary btn-small" id="addResourceBtn">导入资料</button></div>
+              <div class="resource-list" id="resourceList"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">资料转化流程</h3><p class="card-note">原始文件要转化为可参与计划的正式学习对象。</p></div></div>
+              <div class="timeline">
+                <div class="timeline-item"><div class="timeline-title">1. 上传至收件箱</div><div class="timeline-text">仅表示原始文件已进入系统，不代表整理完成。</div></div>
+                <div class="timeline-item"><div class="timeline-title">2. 判断内容性质</div><div class="timeline-text">资料 / 题目包 / 笔记 / 完成证据 / 暂不处理。</div></div>
+                <div class="timeline-item"><div class="timeline-title">3. 转化为正式对象</div><div class="timeline-text">学习单元、知识点、题目、错题、复习卡片或学习记录。</div></div>
+                <div class="timeline-item"><div class="timeline-title">4. 进入计划并记录结果</div><div class="timeline-text">记录真实用时、正确率、把握度、卡点与训练阶段。</div></div>
+              </div>
+              <div class="notice info">静态 HTML 原型使用浏览器 localStorage 保存结构化记录。PDF 与图片大文件不会安全地长期保存在浏览器中；正式版应使用 Python 后端、SQLite 与本地文件目录。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpage" data-subpage="graph">
+          <div class="grid" style="grid-template-columns:minmax(0,1.6fr) minmax(280px,.65fr)">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">个人知识图谱</h3><p class="card-note">节点颜色表示掌握度，大小反映错题或练习量，粗边框表示重复错误。</p></div><select id="graphSubject"><option>数学一</option><option>专业课 841</option></select></div>
+              <div class="graph-wrap" id="graphWrap">
+                <svg class="graph-svg" viewBox="0 0 900 530" preserveAspectRatio="none" aria-hidden="true">
+                  <g stroke="#c7d2e3" stroke-width="2" fill="none">
+                    <path d="M450,265 L220,115"/><path d="M450,265 L675,115"/><path d="M450,265 L175,350"/><path d="M450,265 L710,365"/>
+                    <path d="M220,115 L92,70"/><path d="M220,115 L180,205"/><path d="M220,115 L320,52"/>
+                    <path d="M675,115 L590,52"/><path d="M675,115 L795,68"/><path d="M675,115 L760,205"/>
+                    <path d="M175,350 L80,420"/><path d="M175,350 L290,455"/><path d="M710,365 L592,465"/><path d="M710,365 L825,430"/>
+                  </g>
+                </svg>
+                <button class="node root" style="left:50%;top:50%" data-node="数学一">数学一</button>
+                <button class="node module" style="left:24%;top:22%" data-node="高等数学">高等数学</button>
+                <button class="node module" style="left:75%;top:22%" data-node="线性代数">线性代数</button>
+                <button class="node module" style="left:19%;top:67%" data-node="概率论">概率论</button>
+                <button class="node module" style="left:79%;top:69%" data-node="综合训练">综合训练</button>
+                <button class="node strong" style="left:10%;top:13%" data-node="极限与连续">极限<br>连续</button>
+                <button class="node mid" style="left:20%;top:39%" data-node="一元微分">一元<br>微分</button>
+                <button class="node weak repeat" style="left:36%;top:10%" data-node="多元函数微分">多元函数<br>微分</button>
+                <button class="node strong" style="left:65%;top:10%" data-node="矩阵">矩阵</button>
+                <button class="node mid" style="left:89%;top:13%" data-node="特征值">特征值</button>
+                <button class="node unlearned" style="left:85%;top:39%" data-node="二次型">二次型</button>
+                <button class="node weak" style="left:9%;top:80%" data-node="随机变量">随机变量</button>
+                <button class="node mid" style="left:32%;top:86%" data-node="参数估计">参数估计</button>
+                <button class="node unlearned" style="left:66%;top:88%" data-node="真题套卷">真题套卷</button>
+                <button class="node unlearned" style="left:92%;top:81%" data-node="限时模拟">限时模拟</button>
+                <div class="graph-legend"><span><i class="legend-dot" style="background:#e4e8ef"></i>未学习</span><span><i class="legend-dot" style="background:#ffdfe4"></i>薄弱</span><span><i class="legend-dot" style="background:#fff0bd"></i>待巩固</span><span><i class="legend-dot" style="background:#d9f3e7"></i>稳定掌握</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">节点详情</h3><p class="card-note">点击图谱节点查看训练阶段与缺失环节。</p></div></div>
+              <div class="graph-detail" id="graphDetail"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpage" data-subpage="inbox">
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">收件箱</h3><p class="card-note">先判断内容性质，再只显示 2—3 个相关动作。</p></div><span class="tag blue" id="inboxCount">2 项待整理</span></div>
+              <div id="inboxList"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">添加到收件箱</h3><p class="card-note">上传后不会自动成为正式学习对象。</p></div></div>
+              <div class="upload-zone" id="inboxDrop">
+                <input type="file" id="inboxInput" multiple>
+                <div class="upload-icon">＋</div><strong>上传教材、讲义、题目、笔记或证据</strong>
+                <p>先保留原文件，再由你确认后续转化类型。</p>
+                <button class="btn btn-secondary btn-small" id="chooseInboxBtn">选择文件</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROGRESS -->
+      <section class="page" id="page-progress">
+        <div class="grid grid-4">
+          <div class="card stat"><div class="stat-label">闭卷回忆通过率</div><div class="stat-value">74%</div><div class="stat-foot"><span class="trend-up">近 14 天 +6%</span></div></div>
+          <div class="card stat"><div class="stat-label">基础题正确率</div><div class="stat-value">78%</div><div class="stat-foot">数学 82% · 841 71%</div></div>
+          <div class="card stat"><div class="stat-label">变式题通过率</div><div class="stat-value">61%</div><div class="stat-foot"><span class="trend-down">当前主要短板</span></div></div>
+          <div class="card stat"><div class="stat-label">重复错误率</div><div class="stat-value">13%</div><div class="stat-foot">目标 ≤ 8%</div></div>
+        </div>
+        <div class="section-spacer"></div>
+        <div class="grid grid-2">
+          <div class="card"><div class="card-head"><div><h3 class="card-title">计划投入 vs 实际投入</h3><p class="card-note">实际长期高于预计时，自动提高同类型任务用时系数。</p></div><span class="tag yellow">系数 1.18</span></div><div class="chart" id="timeChart"></div><div class="chart-legend"><span><i style="background:var(--blue)"></i>计划分钟</span><span><i style="background:var(--cyan)"></i>实际分钟</span></div></div>
+          <div class="card"><div class="card-head"><div><h3 class="card-title">掌握阶段分布</h3><p class="card-note">学习时长和任务数量不直接代表成果。</p></div></div><div class="donut-wrap"><div class="donut"><div class="donut-center"><div><strong>46</strong>知识节点</div></div></div><div class="donut-list"><div><span style="background:var(--green)"></span>稳定掌握 12</div><div><span style="background:var(--blue)"></span>基础/变式应用 15</div><div><span style="background:#f4b844"></span>已接触/初步理解 11</div><div><span style="background:#c7cfdb"></span>未学习 8</div></div></div></div>
+        </div>
+        <div class="section-spacer"></div>
+        <div class="grid grid-3">
+          <div class="card"><div class="card-head"><div><h3 class="card-title">高频错因</h3><p class="card-note">深层错误机制未修正时，不以原题即时重做判定解决。</p></div></div><div id="causeMetrics"></div></div>
+          <div class="card"><div class="card-head"><div><h3 class="card-title">目标偏差与风险</h3><p class="card-note">日偏差向周、月计划反馈。</p></div></div><div class="timeline"><div class="timeline-item"><div class="timeline-title">841 统计分析：偏慢</div><div class="timeline-text">近 7 天实际用时为预计的 1.31 倍，月目标可能延后 2 天。</div></div><div class="timeline-item"><div class="timeline-title">多元函数微分：重复错因</div><div class="timeline-text">“条件遗漏”在变式题再次出现，节点已从变式应用回退至基础应用。</div></div><div class="timeline-item"><div class="timeline-title">高数极限：稳定</div><div class="timeline-text">两次间隔抽测通过，复习间隔延长至 21 天。</div></div></div></div>
+          <div class="card"><div class="card-head"><div><h3 class="card-title">教师长期观察</h3><p class="card-note">每条观察保存依据、置信度和最近验证日期。</p></div></div><div class="notice info"><strong>观察：</strong>专业课输入多、主动输出偏少<br><strong>依据：</strong>近 10 次 841 任务中，阅读 7 次，闭卷回忆 2 次，基础练习 1 次<br><strong>置信度：</strong>82%　<strong>最近验证：</strong><span id="observationDate"></span><br><strong>策略：</strong>每个新章节至少配 1 次闭卷回忆和 1 组基础题。</div></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="grid">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">考试与学习画像</h3><p class="card-note">系统长期读取这些信息生成个性化计划。</p></div><button class="btn btn-primary btn-small" id="saveSettingsBtn">保存设置</button></div>
+              <div class="form-grid">
+                <div class="field"><label>目标院校</label><input id="schoolSetting" type="text" value="大连理工大学"></div>
+                <div class="field"><label>目标专业</label><input id="majorSetting" type="text" value="控制科学与工程学硕"></div>
+                <div class="field"><label>核心科目</label><input id="subjectsSetting" type="text" value="数学一、专业课 841"></div>
+                <div class="field"><label>当前阶段</label><select id="phaseSetting"><option>基础阶段</option><option>强化阶段</option><option>冲刺阶段</option></select></div>
+                <div class="field"><label>暂定初试日期（可自行修改）</label><input id="examDateSetting" type="date" value="2027-12-25"></div>
+                <div class="field"><label>每日默认可用时间（分钟）</label><input id="defaultMinutesSetting" type="number" min="30" step="15" value="245"></div>
+                <div class="field"><label>高效时段</label><input id="peakTimeSetting" type="text" value="19:30—22:30"></div>
+                <div class="field"><label>导师表达风格</label><select id="coachStyleSetting"><option>严格督导型</option><option selected>平衡务实型</option><option>耐心引导型</option></select></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">固定规则</h3><p class="card-note">表达风格可变，事实判断、学习原则和安全边界不变。</p></div></div>
+              <div class="switch-line"><div><div class="switch-title">每日预留机动时间</div><div class="switch-note">默认不排满全天，预留约 15%</div></div><label class="switch"><input type="checkbox" checked><i></i></label></div>
+              <div class="switch-line"><div><div class="switch-title">到期复习优先</div><div class="switch-note">但不会让错题和复习占满全部计划</div></div><label class="switch"><input type="checkbox" checked><i></i></label></div>
+              <div class="switch-line"><div><div class="switch-title">前置知识阻断</div><div class="switch-note">前置未达最低状态时，阻止或降级后续任务</div></div><label class="switch"><input type="checkbox" checked><i></i></label></div>
+              <div class="switch-line"><div><div class="switch-title">失败自动回退阶段</div><div class="switch-note">抽测失败、重复错因或长期未复习时生效</div></div><label class="switch"><input type="checkbox" checked><i></i></label></div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">本地数据管理</h3><p class="card-note">正式学习记录保存在当前浏览器 localStorage。</p></div></div>
+              <div class="notice warn" style="margin-bottom:13px">请定期导出备份。清除浏览器数据会删除本地记录。静态页面不应保存 API Key，也无法替代后端数据库和文件存储。</div>
+              <div style="display:grid;gap:9px"><button class="btn btn-primary" id="exportBtn">导出 JSON 备份</button><button class="btn btn-ghost" id="importBtn">导入 JSON 备份</button><input type="file" id="importInput" accept="application/json" class="hidden"><button class="btn btn-danger" id="resetBtn">恢复演示初始数据</button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3 class="card-title">能力边界</h3><p class="card-note">此文件是可交互的静态原型。</p></div></div>
+              <div class="checkline">✓ 多层计划与上下级展示</div><div class="checkline">✓ 本地任务反馈与掌握阶段判定</div><div class="checkline">✓ 图片本次会话预览与确认草稿流程</div><div class="checkline">✓ 错题结构化草稿、间隔复习、知识图谱</div><div class="checkline muted">— 真正 OCR、多模态识别与 AI 解析需后端模型</div><div class="checkline muted">— 联网校准、安全 API 调用和大文件持久化需后端</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button class="active" data-page="today"><span>⌂</span><span>今日</span></button>
+  <button data-page="plan"><span>▦</span><span>规划</span></button>
+  <button data-page="learn"><span>▣</span><span>学习</span></button>
+  <button data-page="progress"><span>◒</span><span>进度</span></button>
+  <button data-page="settings"><span>⚙</span><span>设置</span></button>
+</nav>
+
+<div class="modal-backdrop" id="taskModal">
+  <div class="modal">
+    <div class="modal-head"><div><h3>记录真实学习结果</h3><div class="card-note" id="modalTaskName"></div></div><button class="close" data-close-modal>×</button></div>
+    <div class="form-grid">
+      <div class="field"><label>任务状态</label><select id="resultStatus"><option>已完成</option><option>部分完成</option><option>做错</option><option>不会</option><option>跳过</option></select></div>
+      <div class="field"><label>实际用时（分钟）</label><input id="actualMinutes" type="number" min="0" value="45"></div>
+      <div class="field"><label>正确率（%）</label><input id="resultAccuracy" type="number" min="0" max="100" value="80"></div>
+      <div class="field"><label>主观把握度（%）</label><input id="resultConfidence" type="number" min="0" max="100" value="70"></div>
+      <div class="field wide"><label>卡点 / 未完成原因 / 错因</label><textarea id="resultIssue" placeholder="例如：概念边界不清、条件遗漏、任务过大、临时中断等"></textarea></div>
+      <div class="field wide"><label>本次证据类型</label><select id="resultEvidence"><option>闭卷回忆</option><option>基础题表现</option><option>变式题表现</option><option>综合题或混合题</option><option>间隔复习与抽测</option><option>阅读、听课、看解析</option><option>原题即时重做</option></select></div>
+    </div>
+    <div class="notice info" style="margin-top:13px">系统将区分“任务状态”“任务结果”和“知识掌握状态”。阅读或原题即时重做不会单独把知识点标记为稳定掌握。</div>
+    <div class="modal-actions"><button class="btn btn-ghost" data-close-modal>取消</button><button class="btn btn-primary" id="saveTaskResultBtn">确认并更新</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="goalModal">
+  <div class="modal">
+    <div class="modal-head"><h3>新增规划目标</h3><button class="close" data-close-goal>×</button></div>
+    <div class="form-grid">
+      <div class="field"><label>层级</label><select id="goalLevel"><option>学期</option><option>季度</option><option>月度</option><option>周度</option></select></div>
+      <div class="field"><label>科目</label><select id="goalSubject"><option>数学一</option><option>专业课 841</option><option>综合</option></select></div>
+      <div class="field wide"><label>目标名称</label><input id="goalName" type="text" placeholder="写可验证成果，不写“学完某章”"></div>
+      <div class="field"><label>截止日期</label><input id="goalEnd" type="date"></div>
+      <div class="field"><label>预计投入（分钟）</label><input id="goalMinutes" type="number" min="30" value="300"></div>
+      <div class="field wide"><label>完成标准</label><textarea id="goalStandard" placeholder="例如：章节测试 ≥ 80%，完成闭卷回忆、基础题与变式题验证"></textarea></div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-ghost" data-close-goal>取消</button><button class="btn btn-primary" id="saveGoalBtn">保存目标</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY='postgradCoachV11';
+  const STAGES=['未学习','已接触','初步理解','可回忆','基础应用','变式应用','综合迁移','稳定掌握','掌握衰退'];
+  const initialState={
+    version:'1.1',
+    settings:{school:'大连理工大学',major:'控制科学与工程学硕',subjects:'数学一、专业课 841',phase:'基础阶段',examDate:'2027-12-25',defaultMinutes:245,peakTime:'19:30—22:30',coachStyle:'平衡务实型'},
+    today:{availableMinutes:245,energy:'medium',subject:'all'},
+    tasks:[
+      {id:'t1',subject:'数学一',title:'多元函数极值：闭卷回忆 + 基础题 5 题',minutes:65,priority:'必做',source:'周目标 / 薄弱节点',reason:'上次变式题出现“条件遗漏”，先回退到基础应用重新验证',standard:'闭卷写出必要条件与判别流程；5 题正确率 ≥ 80%',from:'变式应用',to:'基础应用',knowledge:'多元函数微分',status:'待完成'},
+      {id:'t2',subject:'专业课 841',title:'可靠性参数估计：无提示复述 4 个步骤',minutes:35,priority:'必做',source:'到期复习',reason:'阅读记录多，但缺少主动提取证据；今日到达 3 天复习点',standard:'脱离资料写出估计流程、适用条件与一个易错点',from:'初步理解',to:'可回忆',knowledge:'可靠性参数估计',status:'待完成'},
+      {id:'t3',subject:'专业课 841',title:'可靠性统计分析：基础计算题 4 题',minutes:50,priority:'建议',source:'错题回炉',reason:'同一深层错因“分布参数含义混淆”累计出现 2 次',standard:'独立完成 4 题，正确率 ≥ 75%；解释每一步参数含义',from:'可回忆',to:'基础应用',knowledge:'可靠性统计分析',status:'待完成'},
+      {id:'t4',subject:'数学一',title:'极限与连续：21 天间隔抽测',minutes:25,priority:'可选',source:'间隔复习',reason:'此前两次测试通过，进行低频保持抽测',standard:'限时完成 3 题且无提示正确率 ≥ 80%',from:'稳定掌握',to:'稳定掌握',knowledge:'极限与连续',status:'待完成'}
+    ],
+    knowledge:[
+      {id:'k1',subject:'数学一',path:'高等数学 / 多元函数微分',name:'多元函数微分',stage:4,recall:76,basic:72,variant:48,transfer:20,errors:4,next:'明天'},
+      {id:'k2',subject:'数学一',path:'高等数学 / 极限与连续',name:'极限与连续',stage:7,recall:92,basic:88,variant:84,transfer:76,errors:1,next:'21 天后'},
+      {id:'k3',subject:'数学一',path:'概率论 / 参数估计',name:'参数估计',stage:3,recall:73,basic:64,variant:30,transfer:0,errors:3,next:'3 天后'},
+      {id:'k4',subject:'专业课 841',path:'可靠性统计分析 / 参数估计',name:'可靠性参数估计',stage:2,recall:58,basic:40,variant:0,transfer:0,errors:2,next:'今天'},
+      {id:'k5',subject:'专业课 841',path:'可靠性统计分析 / 分布模型',name:'可靠性统计分析',stage:3,recall:69,basic:66,variant:35,transfer:0,errors:4,next:'今天'},
+      {id:'k6',subject:'专业课 841',path:'可靠性设计 / 系统模型',name:'串并联系统可靠度',stage:5,recall:86,basic:82,variant:71,transfer:46,errors:1,next:'7 天后'},
+      {id:'k7',subject:'专业课 841',path:'安全性分析 / FMEA',name:'FMEA 基本流程',stage:2,recall:60,basic:0,variant:0,transfer:0,errors:0,next:'待安排'}
+    ],
+    wrongs:[
+      {id:'w1',subject:'数学一',knowledge:'多元函数极值',type:'计算题 · 中等',cause:'条件遗漏',deep:'只记住无约束极值流程，没有先判断约束条件',errors:2,redos:1,next:'明天',status:'待变式验证'},
+      {id:'w2',subject:'专业课 841',knowledge:'可靠性参数估计',type:'计算题 · 中等',cause:'概念不清',deep:'混淆尺度参数与形状参数对失效率曲线的影响',errors:2,redos:0,next:'今天',status:'待无提示重做'},
+      {id:'w3',subject:'数学一',knowledge:'二重积分区域',type:'计算题 · 较难',cause:'图形或区域判断错误',deep:'没有先画区域并检查积分次序的边界表达',errors:1,redos:1,next:'3 天后',status:'待间隔复测'}
+    ],
+    resources:[
+      {name:'3.0真题详解 - 2024回忆版（售后群更新）.pdf',subject:'专业课 841',status:'待整理',unit:'真题 / 题目包'},
+      {name:'841现大纲参考书——可靠性统计分析.pdf',subject:'专业课 841',status:'进行中',unit:'核心参考书'},
+      {name:'841现大纲参考书——可靠性设计分析基础.pdf',subject:'专业课 841',status:'未开始',unit:'核心参考书'},
+      {name:'841现大纲参考书——安全性设计分析与验证.pdf',subject:'专业课 841',status:'未开始',unit:'核心参考书'},
+      {name:'高等数学（上册）复习讲义.pdf',subject:'数学一',status:'进行中',unit:'复习讲义'},
+      {name:'高等数学（下册）复习讲义（多元函数微分、二重积分）.pdf',subject:'数学一',status:'进行中',unit:'复习讲义'},
+      {name:'概率论与数理统计讲义.pdf',subject:'数学一',status:'未开始',unit:'复习讲义'}
+    ],
+    inbox:[
+      {id:'i1',name:'多元函数极值错题照片_07-13.jpg',type:'待判断',status:'待整理'},
+      {id:'i2',name:'可靠性统计分析第2章笔记.pdf',type:'待判断',status:'待整理'}
+    ],
+    goals:[
+      {level:'学期',name:'完成数学一与 841 基础知识体系及阶段测试',parent:'目标院校：大连理工控制学硕',progress:18,risk:'normal'},
+      {level:'季度',name:'数学高数主干 + 841 统计分析/设计基础',parent:'学期目标',progress:31,risk:'normal'},
+      {level:'月度',name:'多元函数微分闭环 + 可靠性统计分析前 4 章',parent:'季度目标',progress:43,risk:'slow'},
+      {level:'周度',name:'完成 3 个薄弱知识点的回忆—基础—变式训练',parent:'月度目标',progress:68,risk:'slow'},
+      {level:'每日',name:'4 项任务，210 分钟有效学习 + 35 分钟机动',parent:'周度目标',progress:0,risk:'normal'}
+    ],
+    records:[],
+    adjustments:[
+      {date:'07-13',title:'拆分 841 阅读任务',text:'近 3 次阅读任务均超时，将 90 分钟任务拆为 35 分钟闭卷回忆与 40 分钟基础练习。'},
+      {date:'07-11',title:'多元函数微分阶段回退',text:'同一深层错因在变式题再次出现，从“变式应用”回退至“基础应用”。'},
+      {date:'07-08',title:'延长极限与连续复习间隔',text:'两次间隔抽测通过，将复习间隔由 14 天延长至 21 天。'}
+    ]
+  };
+
+  let state=loadState();
+  let activeTaskId=null;
+  let evidenceFiles=[];
+
+  function clone(obj){return JSON.parse(JSON.stringify(obj));}
+  function loadState(){
+    try{const raw=localStorage.getItem(STORAGE_KEY);return raw?Object.assign(clone(initialState),JSON.parse(raw)):clone(initialState);}catch(e){return clone(initialState);}
+  }
+  function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+  function el(id){return document.getElementById(id)}
+  function escapeHTML(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+  function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2300)}
+  function formatDate(d){return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`}
+  function pageMeta(page){return {today:['今日学习','先明确今天做什么、为什么做、做到什么程度'],plan:['多层规划','学期—季度—月—周—日向下分解，真实结果向上纠偏'],learn:['学习闭环','知识训练、错题修正、资料转化与知识图谱'],progress:['进度诊断','用证据评价掌握度、错误机制与目标风险'],settings:['系统设置','考试信息、学习画像、规则与本地数据管理']}[page]}
+
+  function navigate(page){
+    document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===`page-${page}`));
+    document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===page));
+    const meta=pageMeta(page);el('pageTitle').textContent=meta[0];el('pageSub').textContent=meta[1];
+    el('sidebar').classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function setupNavigation(){
+    document.querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>navigate(btn.dataset.page)));
+    document.querySelectorAll('[data-page-jump]').forEach(btn=>btn.addEventListener('click',()=>{navigate(btn.dataset.pageJump);if(btn.dataset.subtab) activateTab('learnTabs',btn.dataset.subtab)}));
+    el('mobileMenu').onclick=()=>el('sidebar').classList.toggle('open');
+    document.addEventListener('click',e=>{const b=e.target.closest('[data-scroll]');if(b){const target=el(b.dataset.scroll);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});}})
+  }
+
+  function activateTab(group,tab){
+    const wrap=document.querySelector(`[data-tabs="${group}"]`);if(!wrap)return;
+    wrap.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    let scope=wrap.parentElement;
+    scope.querySelectorAll(':scope > .subpage').forEach(p=>p.classList.toggle('active',p.dataset.subpage===tab));
+  }
+  function setupTabs(){document.querySelectorAll('[data-tabs]').forEach(w=>w.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>activateTab(w.dataset.tabs,b.dataset.tab))));}
+
+  function updateHeader(){
+    const now=new Date();el('topDate').textContent=formatDate(now);
+    const hour=now.getHours();el('greeting').textContent=(hour<11?'上午好':hour<18?'下午好':'晚上好')+'，今天先完成闭环，不追求把时间排满。';
+    const exam=new Date(state.settings.examDate+'T00:00:00');const days=Math.max(0,Math.ceil((exam-now)/(86400000)));el('countdown').textContent=isFinite(days)?days:'--';
+    el('observationDate').textContent=`${now.getMonth()+1}月${now.getDate()}日`;
+  }
+
+  function renderTasks(){
+    const list=el('todayTaskList');list.innerHTML='';
+    const tasks=state.tasks;const done=tasks.filter(t=>t.status==='已完成').length;
+    el('taskCompletionTag').textContent=`${done} / ${tasks.length} 完成`;
+    const mins=tasks.filter(t=>t.status!=='已完成').reduce((a,b)=>a+b.minutes,0);el('todayMinutes').textContent=mins;
+    tasks.forEach(t=>{
+      const div=document.createElement('div');div.className='task'+(t.status==='已完成'?' done':'');div.dataset.priority=t.priority;
+      div.innerHTML=`<div class="task-main"><button class="check" title="记录结果">${t.status==='已完成'?'✓':''}</button><div><div class="task-name">${escapeHTML(t.title)}</div><div class="task-meta"><span class="tag blue">${escapeHTML(t.subject)}</span><span class="tag ${t.priority==='必做'?'red':t.priority==='建议'?'green':''}">${t.priority}</span><span class="tag">${t.minutes} 分钟</span><span class="tag yellow">${escapeHTML(t.from)} → ${escapeHTML(t.to)}</span></div><div class="task-detail"><div><strong>安排原因：</strong>${escapeHTML(t.reason)}</div><div><strong>完成标准：</strong>${escapeHTML(t.standard)}</div><div><strong>来源：</strong>${escapeHTML(t.source)}</div></div></div><div class="task-actions"><button class="btn btn-ghost btn-small task-detail-btn">记录结果</button></div></div>`;
+      div.querySelector('.check').onclick=()=>openTaskModal(t.id);div.querySelector('.task-detail-btn').onclick=()=>openTaskModal(t.id);list.appendChild(div);
+    });
+    renderLoopChecklist();
+  }
+
+  function openTaskModal(id){
+    activeTaskId=id;const t=state.tasks.find(x=>x.id===id);if(!t)return;
+    el('modalTaskName').textContent=t.title;el('actualMinutes').value=t.minutes;el('resultStatus').value=t.status==='已完成'?'已完成':'已完成';el('taskModal').classList.add('open');
+  }
+  function closeTaskModal(){el('taskModal').classList.remove('open');activeTaskId=null}
+  function setupTaskModal(){
+    document.querySelectorAll('[data-close-modal]').forEach(b=>b.onclick=closeTaskModal);
+    el('taskModal').addEventListener('click',e=>{if(e.target===el('taskModal'))closeTaskModal()});
+    el('saveTaskResultBtn').onclick=()=>{
+      const task=state.tasks.find(x=>x.id===activeTaskId);if(!task)return;
+      const result={id:'r'+Date.now(),date:new Date().toISOString(),taskId:task.id,knowledge:task.knowledge,status:el('resultStatus').value,actualMinutes:+el('actualMinutes').value||0,accuracy:+el('resultAccuracy').value||0,confidence:+el('resultConfidence').value||0,issue:el('resultIssue').value,evidence:el('resultEvidence').value};
+      task.status=result.status==='已完成'?'已完成':result.status;state.records.push(result);
+      const k=state.knowledge.find(x=>x.name===task.knowledge);if(k){
+        if(result.evidence==='闭卷回忆')k.recall=result.accuracy;
+        if(result.evidence==='基础题表现')k.basic=result.accuracy;
+        if(result.evidence==='变式题表现')k.variant=result.accuracy;
+        if(result.evidence==='综合题或混合题')k.transfer=result.accuracy;
+        if(result.status==='做错'||result.status==='不会'){k.errors++;k.stage=Math.max(1,k.stage-1)}
+      }
+      saveState();renderAll();closeTaskModal();toast('学习结果已记录，并更新掌握证据');
+    }
+  }
+
+  function buildPlan(){
+    const available=+el('availableMinutes').value||245;const energy=el('energyLevel').value;const subject=el('subjectFilter').value;
+    state.today={availableMinutes:available,energy,subject};
+    const filter=t=>subject==='all'||(subject==='math'?t.subject==='数学一':t.subject==='专业课 841');
+    let pool=clone(initialState.tasks).filter(filter);
+    if(energy==='low') pool=pool.sort((a,b)=>a.minutes-b.minutes).map(t=>({...t,minutes:Math.max(20,Math.round(t.minutes*.75)),reason:'当前状态较差，降低启动成本；'+t.reason}));
+    if(energy==='high') pool=pool.map(t=>t.priority==='可选'?{...t,priority:'建议'}:t);
+    const capacity=Math.floor(available*.85);let used=0;const chosen=[];
+    for(const t of pool){if(used+t.minutes<=capacity||chosen.length<2){chosen.push(t);used+=t.minutes}}
+    chosen.forEach((t,i)=>t.id='t'+Date.now()+i);state.tasks=chosen;saveState();renderTasks();toast(`已按 ${available} 分钟、${energy==='low'?'较差':energy==='high'?'较好':'一般'}状态生成计划，保留约 15% 机动时间`);
+  }
+
+  function renderReviewQueue(){
+    const due=state.knowledge.filter(k=>['今天','明天'].includes(k.next)).slice(0,4);el('dueCount').textContent=due.length;
+    el('reviewQueue').innerHTML=due.map(k=>`<div class="knowledge-row"><div><div class="knowledge-name">${escapeHTML(k.name)}</div><div class="knowledge-path">${escapeHTML(k.subject)} · ${escapeHTML(k.path)}</div></div><span class="tag ${k.next==='今天'?'red':'yellow'}">${k.next}</span><span class="tag blue">${STAGES[k.stage]}</span><button data-open-knowledge="${k.id}">训练</button></div>`).join('')||'<div class="empty">暂无到期复习</div>';
+    document.querySelectorAll('[data-open-knowledge]').forEach(b=>b.onclick=()=>{navigate('learn');activateTab('learnTabs','training');el('trainingKnowledge').value=b.dataset.openKnowledge;renderTraining();});
+  }
+
+  function renderLoopChecklist(){
+    const done=state.tasks.filter(t=>t.status==='已完成').length;const records=state.records.filter(r=>new Date(r.date).toDateString()===new Date().toDateString());
+    const checks=[['至少完成 1 项主动输出任务',records.some(r=>['闭卷回忆','基础题表现','变式题表现','综合题或混合题'].includes(r.evidence))],['记录实际用时与任务结果',records.length>0],['错题或卡点已明确归因',records.some(r=>r.issue.trim())],['完成到期间隔复习',records.some(r=>r.evidence==='间隔复习与抽测')],['上传证据并经用户确认',records.some(r=>r.evidence==='每日照片确认')]];
+    el('loopChecklist').innerHTML=checks.map(c=>`<div class="checkline"><span style="width:20px;height:20px;border-radius:7px;display:grid;place-items:center;background:${c[1]?'var(--green-soft)':'var(--gray-100)'};color:${c[1]?'var(--green)':'var(--gray-500)'};font-weight:900">${c[1]?'✓':'·'}</span>${c[0]}</div>`).join('');
+    const closed=checks.slice(0,3).every(c=>c[1]);el('loopStatus').textContent=closed?'基本闭环':'未闭环';el('loopStatus').className='tag '+(closed?'green':'red');
+  }
+
+  function setupEvidenceUpload(){
+    const input=el('evidenceInput');el('chooseEvidenceBtn').onclick=()=>input.click();input.onchange=()=>handleEvidenceFiles([...input.files]);
+    ['dragenter','dragover'].forEach(ev=>el('evidenceDrop').addEventListener(ev,e=>{e.preventDefault();el('evidenceDrop').classList.add('drag')}));
+    ['dragleave','drop'].forEach(ev=>el('evidenceDrop').addEventListener(ev,e=>{e.preventDefault();el('evidenceDrop').classList.remove('drag')}));
+    el('evidenceDrop').addEventListener('drop',e=>handleEvidenceFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))));
+    el('analyzeEvidenceBtn').onclick=generateEvidenceDraft;
+  }
+  function handleEvidenceFiles(files){evidenceFiles=files;const p=el('evidencePreview');p.innerHTML='';files.forEach(f=>{const url=URL.createObjectURL(f);const d=document.createElement('div');d.className='preview';d.innerHTML=`<img src="${url}" alt="预览"><div class="preview-name">${escapeHTML(f.name)}</div>`;p.appendChild(d)});el('analyzeEvidenceBtn').disabled=!files.length;el('evidenceDraftArea').innerHTML='';}
+  function generateEvidenceDraft(){
+    const type=el('evidenceType').value;el('evidenceDraftArea').innerHTML=`<div class="draft"><div class="card-head"><div><h4 class="card-title" style="font-size:14px">待确认学习记录草稿</h4><p class="card-note">静态原型未进行真实 OCR；以下为演示推断，所有字段均可修改。</p></div><span class="tag yellow">AI 推断 · 待确认</span></div><div class="draft-grid"><div class="field"><label>日期</label><input id="draftDate" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="field"><label>科目</label><select id="draftSubject"><option>数学一</option><option>专业课 841</option></select></div><div class="field"><label>证据类型</label><input value="${escapeHTML(type)}"></div><div class="field"><label>实际用时（分钟）</label><input id="draftMinutes" type="number" value="45"></div><div class="field"><label>题目数</label><input id="draftQuestions" type="number" value="5"></div><div class="field"><label>正确率（%）</label><input id="draftAccuracy" type="number" value="80"></div><div class="field wide"><label>已确认事实 / 待确认内容</label><textarea id="draftFact">已上传 ${evidenceFiles.length} 张图片。图片中的具体章节、题数、用时与正确率尚需用户确认。</textarea></div></div><div class="notice info">确认后仅写入结构化学习记录；原图不会持久化到 localStorage。</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:11px"><button class="btn btn-ghost btn-small" id="discardEvidenceDraft">撤销草稿</button><button class="btn btn-primary btn-small" id="confirmEvidenceDraft">确认写入正式记录</button></div></div>`;
+    el('discardEvidenceDraft').onclick=()=>el('evidenceDraftArea').innerHTML='';
+    el('confirmEvidenceDraft').onclick=()=>{state.records.push({id:'r'+Date.now(),date:new Date(el('draftDate').value).toISOString(),taskId:null,knowledge:'待确认知识点',status:'已完成',actualMinutes:+el('draftMinutes').value||0,accuracy:+el('draftAccuracy').value||0,confidence:60,issue:el('draftFact').value,evidence:'每日照片确认'});saveState();renderLoopChecklist();el('evidenceDraftArea').innerHTML='<div class="notice info" style="margin-top:12px">已由用户确认并写入正式学习记录。</div>';toast('证据草稿已确认');};
+  }
+
+  function renderPlan(){
+    el('planTree').innerHTML=state.goals.map(g=>`<div class="plan-row"><div><div class="plan-level">${g.level}</div></div><div><div class="plan-name">${escapeHTML(g.name)}</div><div class="plan-parent">↳ ${escapeHTML(g.parent)}</div></div><div><div class="progress-label"><span>完成率</span><span>${g.progress}%</span></div><div class="progress"><i style="width:${g.progress}%"></i></div></div><div class="risk ${g.risk}">${g.risk==='normal'?'正常':g.risk==='slow'?'偏慢':'明显滞后'}</div></div>`).join('');
+    const cards=(arr)=>arr.map(g=>`<div class="wrong-card"><div class="wrong-head"><div><div class="wrong-title">${escapeHTML(g.name)}</div><div class="wrong-meta">${g.level} · 父级：${escapeHTML(g.parent)}</div></div><span class="tag blue">${g.progress}%</span></div><div class="mini-progress"><i style="width:${g.progress}%"></i></div></div>`).join('');
+    el('semesterGoals').innerHTML=cards(state.goals.filter(g=>g.level==='学期'));el('quarterGoals').innerHTML=cards(state.goals.filter(g=>g.level==='季度'));el('monthGoals').innerHTML=cards(state.goals.filter(g=>g.level==='月度'));
+    renderWeekCalendar();
+    el('planTimeline').innerHTML=state.adjustments.map(a=>`<div class="timeline-item"><div class="timeline-title">${escapeHTML(a.title)} <span class="tag">${a.date}</span></div><div class="timeline-text">${escapeHTML(a.text)}</div></div>`).join('');
+  }
+  function renderWeekCalendar(){
+    const now=new Date();const monday=new Date(now);monday.setDate(now.getDate()-((now.getDay()+6)%7));const names=['周一','周二','周三','周四','周五','周六','周日'];
+    el('weekCalendar').innerHTML=names.map((n,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);const isToday=d.toDateString()===now.toDateString();const tasks=i===((now.getDay()+6)%7)?state.tasks.slice(0,3):initialState.tasks.slice((i%3),((i%3)+2));return `<div class="day-card ${isToday?'today':''}"><div class="day-name"><span>${n}</span>${isToday?'<span class="tag blue">今天</span>':''}</div><div class="day-date">${d.getDate()}</div>${tasks.map(t=>`<div class="day-item">${escapeHTML(t.subject)} · ${escapeHTML(t.title.split('：')[0])}<br><span class="muted">${t.minutes} 分钟</span></div>`).join('')}</div>`}).join('');
+  }
+  function setupGoalModal(){
+    el('addGoalBtn').onclick=()=>el('goalModal').classList.add('open');document.querySelectorAll('[data-close-goal]').forEach(b=>b.onclick=()=>el('goalModal').classList.remove('open'));
+    el('saveGoalBtn').onclick=()=>{const name=el('goalName').value.trim();if(!name)return toast('请填写目标名称');const level=el('goalLevel').value;const parent={学期:'目标院校',季度:'学期目标',月度:'季度目标',周度:'月度目标'}[level];state.goals.push({level,name,parent,progress:0,risk:'normal'});state.adjustments.unshift({date:`${new Date().getMonth()+1}-${new Date().getDate()}`,title:`新增${level}目标`,text:`${name}；完成标准：${el('goalStandard').value||'待补充'}`});saveState();renderPlan();el('goalModal').classList.remove('open');el('goalName').value='';toast('规划目标已保存');};
+  }
+
+  function renderTrainingSelect(){el('trainingKnowledge').innerHTML=state.knowledge.map(k=>`<option value="${k.id}">${escapeHTML(k.subject)}｜${escapeHTML(k.name)}</option>`).join('');}
+  function renderTraining(){
+    const k=state.knowledge.find(x=>x.id===el('trainingKnowledge').value)||state.knowledge[0];if(!k)return;
+    el('stateMachine').innerHTML=STAGES.map((s,i)=>`<div class="state-step ${i<k.stage?'complete':i===k.stage?(s==='掌握衰退'?'decline':'current'):''}"><div class="state-dot">${i+1}</div><div class="state-label">${s}</div></div>`).join('');
+    el('currentStageTag').textContent=STAGES[k.stage];
+    el('stateExplanation').innerHTML=`<strong>${escapeHTML(k.name)}</strong> 当前处于“${STAGES[k.stage]}”。最近证据：闭卷回忆 ${k.recall}%、基础题 ${k.basic}%、变式题 ${k.variant}%、迁移题 ${k.transfer}%。下次复习：${escapeHTML(k.next)}。`;
+    el('recallScore').value=k.recall;el('basicScore').value=k.basic;el('variantScore').value=k.variant;el('transferScore').value=k.transfer;
+    renderTrainingAdvice(k);
+  }
+  function renderTrainingAdvice(k){
+    let title,diag,tasks;
+    if(k.stage<=2){title='先完成理解与主动回忆';diag='当前缺失的是脱离资料后的可提取证据。阅读完成不能直接进入应用阶段。';tasks=['用自己的话解释“是什么、为什么、何时用”','关闭资料写出定义、公式或完整步骤','若回忆依赖提示，制作最小必要卡片并次日重测'];}
+    else if(k.stage===3){title='从可回忆推进到基础应用';diag='核心知识可以提取，但标准情境中的独立应用证据不足。';tasks=['完成 4—6 道低变异基础题','逐题说明公式适用条件','正确率达到 80% 且关键步骤独立完成'];}
+    else if(k.stage===4){title='优先做同类变式';diag='标准题可做不等于掌握方法。需改变条件、问法或图形，检验是否摆脱原题模板。';tasks=['完成 3 道非原题变式','比较条件变化后方法为何仍适用或不适用','对失败题记录深层错因，并隔日无提示重做'];}
+    else if(k.stage===5){title='训练混合识别与综合迁移';diag='变式题表现已具备基础，但需在没有明显提示的综合情境中识别调用。';tasks=['完成混合题或方法选择题','限时说明为何选择该方法','比较至少一种备选方法'];}
+    else if(k.stage===6){title='进入间隔保持验证';diag='一次综合成功不能证明长期保持。需在不同时间点重复验证。';tasks=['安排 3 天或 7 天后无提示复测','同时包含回忆、变式与迁移题','连续通过后才进入稳定掌握'];}
+    else if(k.stage===7){title='低频抽测，防止掌握衰退';diag='稳定掌握不是永久标签；抽测失败或重复错因出现时必须回退。';tasks=['按 14—30 天间隔抽测','若回忆失败，回退至最近通过阶段','保持少量混合题暴露'];}
+    else{title='执行回退与补救';diag='近期测试失败或重复错因说明掌握不稳定，不能继续沿用“稳定掌握”标签。';tasks=['定位失败来自回忆、基础、变式还是迁移','缩短复习间隔并重做无提示题','通过原题与新题双验证后再推进'];}
+    el('trainingAdvice').innerHTML=`<div class="coach-head"><div class="coach-avatar">AI</div><div><div class="coach-name">${title}</div><div class="coach-role">基于训练阶段与证据缺口</div></div></div><p><strong>教学诊断：</strong>${diag}</p><ul>${tasks.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  }
+  function renderKnowledgeList(){
+    el('knowledgeList').innerHTML=state.knowledge.map(k=>`<div class="knowledge-row"><div><div class="knowledge-name">${escapeHTML(k.name)}</div><div class="knowledge-path">${escapeHTML(k.path)}</div></div><span class="tag ${k.stage>=7?'green':k.stage<=3?'red':'yellow'}">${STAGES[k.stage]}</span><span class="tag">错题 ${k.errors}</span><button data-select-k="${k.id}">训练</button></div>`).join('');
+    document.querySelectorAll('[data-select-k]').forEach(b=>b.onclick=()=>{el('trainingKnowledge').value=b.dataset.selectK;renderTraining();document.querySelector('#page-learn').scrollIntoView({behavior:'smooth'})});
+  }
+  function setupTraining(){
+    el('trainingKnowledge').onchange=renderTraining;
+    el('evaluateMasteryBtn').onclick=()=>{const k=state.knowledge.find(x=>x.id===el('trainingKnowledge').value);if(!k)return;const r=+el('recallScore').value||0,b=+el('basicScore').value||0,v=+el('variantScore').value||0,t=+el('transferScore').value||0;const noHint=el('noHintCheck').checked,interval=el('intervalCheck').checked;let stage=1;if(r>=70)stage=3;if(r>=70&&b>=75&&noHint)stage=4;if(b>=75&&v>=70&&noHint)stage=5;if(v>=70&&t>=65&&noHint)stage=6;if(r>=80&&b>=80&&v>=75&&t>=70&&noHint&&interval)stage=7;k.recall=r;k.basic=b;k.variant=v;k.transfer=t;k.stage=stage;k.next=stage>=7?'21 天后':stage>=5?'7 天后':stage>=3?'3 天后':'明天';saveState();renderAll();toast(`判定为“${STAGES[stage]}”，未满足的高阶证据不会被跳过`)};
+    el('rollbackBtn').onclick=()=>{const k=state.knowledge.find(x=>x.id===el('trainingKnowledge').value);if(!k)return;k.stage=Math.max(2,k.stage-2);k.errors++;k.next='明天';state.adjustments.unshift({date:`${new Date().getMonth()+1}-${new Date().getDate()}`,title:`${k.name} 阶段回退`,text:'记录抽测失败或重复错因，回退到最近可验证训练阶段并缩短复习间隔。'});saveState();renderAll();toast(`已回退至“${STAGES[k.stage]}”并安排补救`)};
+  }
+
+  function renderWrongs(){
+    el('wrongCountTag').textContent=`${state.wrongs.length} 道待处理`;
+    el('wrongList').innerHTML=state.wrongs.map(w=>`<div class="wrong-card"><div class="wrong-head"><div><div class="wrong-title">${escapeHTML(w.subject)}｜${escapeHTML(w.knowledge)}</div><div class="wrong-meta">${escapeHTML(w.type)} · 累计错误 ${w.errors} 次 · 重做 ${w.redos} 次</div></div><span class="tag ${w.errors>=2?'red':'yellow'}">${escapeHTML(w.status)}</span></div><div class="wrong-body"><div><strong>表面错因</strong><br>${escapeHTML(w.cause)}</div><div><strong>深层错因</strong><br>${escapeHTML(w.deep)}</div></div><div class="wrong-actions"><span class="tag blue">下次：${escapeHTML(w.next)}</span><button class="btn btn-secondary btn-small" data-redo="${w.id}">无提示重做</button><button class="btn btn-ghost btn-small" data-variant="${w.id}">记录变式通过</button></div></div>`).join('');
+    document.querySelectorAll('[data-redo]').forEach(b=>b.onclick=()=>{const w=state.wrongs.find(x=>x.id===b.dataset.redo);w.redos++;w.status='待变式验证';w.next='明天';saveState();renderWrongs();toast('已记录无提示重做；仍需同类变式与间隔复测')});
+    document.querySelectorAll('[data-variant]').forEach(b=>b.onclick=()=>{const w=state.wrongs.find(x=>x.id===b.dataset.variant);w.status='待间隔复测';w.next='3 天后';saveState();renderWrongs();toast('已记录变式通过，尚不能直接标记解决')});
+  }
+  function setupWrongDraft(){
+    el('createWrongDraftBtn').onclick=()=>{const knowledge=el('wrongKnowledge').value.trim()||'待确认知识点',deep=el('wrongDeepCause').value.trim()||'待用户补充深层错因';el('wrongDraftArea').innerHTML=`<div class="draft"><div class="card-head"><div><h4 class="card-title" style="font-size:14px">结构化错题草稿</h4><p class="card-note">AI 分类建议可修改，确认后才进入正式错题库。</p></div><span class="tag yellow">待确认</span></div><div class="wrong-body"><div><strong>知识点</strong><br>${escapeHTML(knowledge)}<br><br><strong>错因</strong><br>${escapeHTML(el('wrongCause').value)}</div><div><strong>深层错因</strong><br>${escapeHTML(deep)}<br><br><strong>解析来源</strong><br>${el('wrongSolution').value.trim()?'用户填写 / 原始解析':'AI 生成，待核验'}</div></div><div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn btn-ghost btn-small" id="discardWrongDraft">撤销</button><button class="btn btn-primary btn-small" id="confirmWrongDraft">确认入库</button></div></div>`;el('discardWrongDraft').onclick=()=>el('wrongDraftArea').innerHTML='';el('confirmWrongDraft').onclick=()=>{state.wrongs.unshift({id:'w'+Date.now(),subject:el('wrongSubject').value,knowledge,type:el('wrongType').value||'待分类',cause:el('wrongCause').value,deep,errors:1,redos:0,next:'明天',status:'待无提示重做'});saveState();renderWrongs();el('wrongDraftArea').innerHTML='<div class="notice info" style="margin-top:12px">已确认并进入正式错题库。</div>';toast('错题已确认入库')};};
+  }
+
+  function renderResources(){el('resourceList').innerHTML=state.resources.map((r,i)=>`<div class="resource"><div class="file-icon">PDF</div><div><div class="resource-name">${escapeHTML(r.name)}</div><div class="resource-meta">${escapeHTML(r.subject)} · ${escapeHTML(r.unit)} · 上传状态与学习状态分离</div></div><button class="btn btn-ghost btn-small" data-resource="${i}">${escapeHTML(r.status)}</button></div>`).join('');document.querySelectorAll('[data-resource]').forEach(b=>b.onclick=()=>{const r=state.resources[+b.dataset.resource];const seq=['待整理','未开始','进行中','已完成','归档'];r.status=seq[(seq.indexOf(r.status)+1)%seq.length];saveState();renderResources();toast('资料状态已更新；不影响掌握状态')})}
+
+  const graphNodeInfo={
+    '数学一':{stage:'全科覆盖层',errors:12,recall:74,basic:78,variant:61,transfer:43,missing:'变式与综合迁移'},'高等数学':{stage:'基础应用',errors:6,recall:79,basic:81,variant:58,transfer:42,missing:'多元函数变式'},'线性代数':{stage:'初步理解',errors:2,recall:68,basic:66,variant:34,transfer:0,missing:'二次型前置'},'概率论':{stage:'可回忆',errors:4,recall:72,basic:67,variant:45,transfer:20,missing:'参数估计应用'},'综合训练':{stage:'未学习',errors:0,recall:0,basic:0,variant:0,transfer:0,missing:'前置章节覆盖'},'极限与连续':{stage:'稳定掌握',errors:1,recall:92,basic:88,variant:84,transfer:76,missing:'低频保持'},'一元微分':{stage:'变式应用',errors:1,recall:87,basic:84,variant:73,transfer:55,missing:'综合迁移'},'多元函数微分':{stage:'基础应用',errors:4,recall:76,basic:72,variant:48,transfer:20,missing:'条件识别与变式'},'矩阵':{stage:'稳定掌握',errors:1,recall:89,basic:86,variant:80,transfer:73,missing:'低频保持'},'特征值':{stage:'基础应用',errors:2,recall:78,basic:74,variant:61,transfer:40,missing:'综合题调用'},'二次型':{stage:'未学习',errors:0,recall:0,basic:0,variant:0,transfer:0,missing:'特征值前置'},'随机变量':{stage:'初步理解',errors:3,recall:65,basic:54,variant:20,transfer:0,missing:'分布函数基础'},'参数估计':{stage:'可回忆',errors:3,recall:73,basic:64,variant:30,transfer:0,missing:'基础应用'},'真题套卷':{stage:'未学习',errors:0,recall:0,basic:0,variant:0,transfer:0,missing:'基础阶段尚未完成'},'限时模拟':{stage:'未学习',errors:0,recall:0,basic:0,variant:0,transfer:0,missing:'强化阶段后启用'}
+  };
+  function renderGraphDetail(name='多元函数微分'){
+    const d=graphNodeInfo[name]||graphNodeInfo['数学一'];el('graphDetail').innerHTML=`<div><div class="eyebrow">${escapeHTML(name)}</div><h3 style="margin:5px 0;color:var(--navy)">${escapeHTML(d.stage)}</h3></div><div class="notice ${d.errors>=3?'danger':'info'}">累计错题 ${d.errors} 道。当前缺失环节：<strong>${escapeHTML(d.missing)}</strong></div>${[['闭卷回忆',d.recall],['基础题',d.basic],['变式题',d.variant],['迁移题',d.transfer]].map(m=>`<div class="metric-row"><span>${m[0]}</span><span>${m[1]}%</span><div class="progress" style="grid-column:1/-1"><i style="width:${m[1]}%"></i></div></div>`).join('')}<div class="divider"></div><button class="btn btn-primary" id="graphRecommendBtn">加入本周训练候选</button>`;el('graphRecommendBtn').onclick=()=>toast(`${name} 已加入本周训练候选`);
+  }
+  function setupGraph(){document.querySelectorAll('.node').forEach(n=>n.onclick=()=>renderGraphDetail(n.dataset.node));el('graphSubject').onchange=()=>toast('静态原型已保留专业课 841 的数据接口；当前图示为数学一示例')}
+
+  function renderInbox(){
+    el('inboxCount').textContent=`${state.inbox.filter(x=>x.status==='待整理').length} 项待整理`;
+    el('inboxList').innerHTML=state.inbox.length?state.inbox.map(i=>`<div class="wrong-card"><div class="wrong-head"><div><div class="wrong-title">${escapeHTML(i.name)}</div><div class="wrong-meta">上传状态：${escapeHTML(i.status)} · 内容性质：${escapeHTML(i.type)}</div></div><span class="tag yellow">收件箱</span></div><div class="wrong-actions" style="margin-top:12px"><button class="btn btn-secondary btn-small" data-classify="${i.id}" data-type="资料/讲义">设为资料</button><button class="btn btn-ghost btn-small" data-classify="${i.id}" data-type="题目/题目包">设为题目</button><button class="btn btn-ghost btn-small" data-classify="${i.id}" data-type="完成证据">设为证据</button></div></div>`).join(''):'<div class="empty">收件箱已清空</div>';
+    document.querySelectorAll('[data-classify]').forEach(b=>b.onclick=()=>{const i=state.inbox.find(x=>x.id===b.dataset.classify);i.type=b.dataset.type;i.status='已整理';saveState();renderInbox();toast(`已分类为“${b.dataset.type}”，尚未自动标记学习完成`)})
+  }
+  function setupInbox(){const input=el('inboxInput');el('chooseInboxBtn').onclick=()=>input.click();input.onchange=()=>{[...input.files].forEach(f=>state.inbox.push({id:'i'+Date.now()+Math.random(),name:f.name,type:'待判断',status:'待整理'}));saveState();renderInbox();toast('文件已进入收件箱，等待分类')};}
+
+  function renderProgress(){
+    const plan=[180,210,160,230,200,245,210],actual=[205,225,150,270,238,260,0],labels=['一','二','三','四','五','六','日'];const max=300;el('timeChart').innerHTML=labels.map((l,i)=>`<div class="bar-group"><div class="bar" style="height:${plan[i]/max*100}%"></div><div class="bar alt" style="height:${actual[i]/max*100}%"></div><span class="bar-label">周${l}</span></div>`).join('');
+    const causes=[['条件遗漏',72],['概念不清',64],['计算错误',48],['图形判断',37],['时间不足',24]];el('causeMetrics').innerHTML=causes.map(c=>`<div class="metric-row" style="margin:10px 0"><span>${c[0]}</span><strong>${c[1]}%</strong><div class="progress" style="grid-column:1/-1"><i style="width:${c[1]}%;background:${c[1]>60?'var(--red)':'linear-gradient(90deg,var(--blue),var(--cyan))'}"></i></div></div>`).join('');
+  }
+
+  function setupSettings(){
+    el('saveSettingsBtn').onclick=()=>{state.settings={school:el('schoolSetting').value,major:el('majorSetting').value,subjects:el('subjectsSetting').value,phase:el('phaseSetting').value,examDate:el('examDateSetting').value,defaultMinutes:+el('defaultMinutesSetting').value||245,peakTime:el('peakTimeSetting').value,coachStyle:el('coachStyleSetting').value};saveState();updateHeader();toast('考试信息与学习画像已保存')};
+    el('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`研途教练备份_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);toast('已导出本地备份')};
+    el('importBtn').onclick=()=>el('importInput').click();el('importInput').onchange=()=>{const f=el('importInput').files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{state=JSON.parse(reader.result);saveState();renderAll();toast('备份已导入')}catch(e){toast('导入失败：JSON 格式无效')}};reader.readAsText(f)};
+    el('resetBtn').onclick=()=>{if(confirm('确定恢复演示初始数据？当前本地记录将被覆盖。')){state=clone(initialState);saveState();renderAll();toast('已恢复初始数据')}};
+  }
+  function syncSettingsUI(){const s=state.settings;el('schoolSetting').value=s.school;el('majorSetting').value=s.major;el('subjectsSetting').value=s.subjects;el('phaseSetting').value=s.phase;el('examDateSetting').value=s.examDate;el('defaultMinutesSetting').value=s.defaultMinutes;el('peakTimeSetting').value=s.peakTime;el('coachStyleSetting').value=s.coachStyle;el('availableMinutes').value=state.today.availableMinutes||s.defaultMinutes;el('energyLevel').value=state.today.energy||'medium';el('subjectFilter').value=state.today.subject||'all';}
+
+  function renderTopStats(){
+    const stable=state.knowledge.filter(k=>k.stage===7).length;el('stableCount').textContent=stable;const completed=state.tasks.filter(t=>t.status==='已完成').length;const total=state.tasks.length||1;const rate=Math.round(completed/total*100);el('weekRate').textContent=Math.max(68,rate)+'%';const overall=Math.round(state.knowledge.reduce((a,k)=>a+Math.min(k.stage,7),0)/(state.knowledge.length*7)*100);el('sideProgressText').textContent=overall+'%';el('sideProgressBar').style.width=overall+'%';
+  }
+  function renderAll(){updateHeader();syncSettingsUI();renderTasks();renderReviewQueue();renderPlan();renderTrainingSelect();renderTraining();renderKnowledgeList();renderWrongs();renderResources();renderGraphDetail();renderInbox();renderProgress();renderTopStats();}
+
+  function setupMisc(){
+    el('generatePlanBtn').onclick=buildPlan;el('rebuildPlanBtn').onclick=buildPlan;
+    el('addResourceBtn').onclick=()=>{state.inbox.push({id:'i'+Date.now(),name:'新资料（待选择本地文件）',type:'待判断',status:'待整理'});saveState();renderInbox();navigate('learn');activateTab('learnTabs','inbox');toast('请在收件箱中选择并分类资料')};
+  }
+
+  setupNavigation();setupTabs();setupTaskModal();setupEvidenceUpload();setupGoalModal();setupTraining();setupWrongDraft();setupGraph();setupInbox();setupSettings();setupMisc();renderAll();
+})();
+</script>
+</body>
+</html>

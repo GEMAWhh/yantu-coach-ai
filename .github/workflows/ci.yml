@@ -1,0 +1,62 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Backend checks when project exists
+        shell: bash
+        run: |
+          if [ -f apps/api/pyproject.toml ]; then
+            python -m pip install --upgrade pip
+            pip install -e 'apps/api[dev]'
+            cd apps/api
+            ruff check .
+            pytest
+          else
+            echo 'Backend project not bootstrapped yet.'
+          fi
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Frontend checks when project exists
+        shell: bash
+        run: |
+          if [ -f apps/web/package.json ]; then
+            cd apps/web
+            npm ci
+            npm run typecheck
+            npm run lint
+            npm run test:unit --if-present
+            npm run build
+          else
+            echo 'Frontend project not bootstrapped yet.'
+          fi
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: E2E placeholder
+        run: |
+          if [ -f apps/web/playwright.config.ts ]; then
+            echo 'Bootstrap issue must replace this with the repository E2E command.'
+          else
+            echo 'Playwright not bootstrapped yet.'
+          fi

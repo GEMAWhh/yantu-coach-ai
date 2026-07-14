@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 产品决策请求
+    url: https://github.com/
+    about: 需要产品所有者确认学习规则、重大界面或不可逆数据操作时使用仓库 Discussions/指定流程。
