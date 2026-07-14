@@ -25,6 +25,14 @@ class RuntimeSettings:
         return self.data_root / "database"
 
     @property
+    def database_path(self) -> Path:
+        return self.database_dir / "study.db"
+
+    @property
+    def database_url(self) -> str:
+        return f"sqlite:///{self.database_path.as_posix()}"
+
+    @property
     def files_dir(self) -> Path:
         return self.data_root / "files"
 
@@ -81,6 +89,8 @@ def _guard_environment_separation(environment: AppEnvironment, data_root: Path) 
     default_prod_root = _default_data_root(AppEnvironment.PROD).resolve()
     if environment is not AppEnvironment.PROD and data_root == default_prod_root:
         raise RuntimeError("dev/test runtime must not use the production data directory")
+    if environment is not AppEnvironment.PROD and data_root.name == AppEnvironment.PROD.value:
+        raise RuntimeError("dev/test runtime must not use a production-named data directory")
 
 
 @lru_cache
