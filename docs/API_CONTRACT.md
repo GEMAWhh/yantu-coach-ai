@@ -66,6 +66,12 @@ GET    /goals/{goal_id}/history
 ```http
 GET  /knowledge/nodes
 GET  /knowledge/nodes/{node_id}
+POST /knowledge/nodes
+PATCH /knowledge/nodes/{node_id}
+DELETE /knowledge/nodes/{node_id}
+GET  /knowledge/nodes/{node_id}/tree
+GET  /knowledge/nodes/{node_id}/prerequisites
+POST /knowledge/edges
 GET  /knowledge/nodes/{node_id}/evidence
 POST /knowledge/nodes/{node_id}/evidence
 POST /knowledge/nodes/{node_id}/evaluate

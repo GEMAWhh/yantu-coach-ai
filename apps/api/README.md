@@ -79,3 +79,22 @@ mypy apps/api/app apps/api/tests
 其他顶层字段和二级字段会进入 `unknown_fields`，并保留在迁移报告中。历史
 `knowledge` 掌握数据缺少可验证证据，因此只标记为
 `imported_unverified`，不会直接升级为稳定掌握。
+
+## 知识节点与前置关系
+
+阶段 3 提供正式知识图谱的最小后端边界：
+
+- `POST /api/v1/knowledge/nodes`：创建知识节点，层级必须遵循
+  `subject -> module -> chapter -> knowledge`。
+- `GET /api/v1/knowledge/nodes`：按 `parent_id` 查询节点列表，默认过滤软删除。
+- `GET /api/v1/knowledge/nodes/{node_id}/tree`：返回节点及子树。
+- `PATCH /api/v1/knowledge/nodes/{node_id}`：更新名称、状态、重要度、描述等非结构字段。
+- `DELETE /api/v1/knowledge/nodes/{node_id}`：软删除节点子树，并软删除相关边。
+- `POST /api/v1/knowledge/edges`：创建关系边，支持
+  `belongs_to/prerequisite/similar_to/confused_with/co_tested/transforms_to`。
+- `GET /api/v1/knowledge/nodes/{node_id}/prerequisites`：返回前置是否满足和结构化阻塞原因。
+
+当前前置满足规则先使用前置节点 `status` 判断：
+`satisfied/mastered/completed` 视为满足，其他状态返回
+`PREREQUISITE_NOT_MET`。后续掌握状态机落地后，该判断应切换为正式
+`mastery_snapshots`。
