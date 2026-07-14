@@ -236,12 +236,15 @@ POST /api/v1/wrongbook/records
 GET  /api/v1/wrongbook/{wrong_record_id}
 POST /api/v1/wrongbook/{wrong_record_id}/assets
 POST /api/v1/wrongbook/{wrong_record_id}/attempts
+GET  /api/v1/wrongbook/{wrong_record_id}/history
 GET  /api/v1/wrongbook/planning-candidates
 ```
 
 The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
 
 Wrongbook attempt types are `original_redo`, `no_hint_redo`, `variant`, `interval_test`, and `transfer_test`. `Idempotency-Key` prevents duplicate attempt effects. A correct original redo may move a record to `pending_variant`, but it never resolves the wrong record. Stable correction requires `no_hint_redo`, `variant`, and `interval_test` all passed. A failed attempt rolls the record back to `regressed` and increments `error_count`.
+
+`GET /wrongbook/{wrong_record_id}/history` returns the current wrong record, verification flags, and ordered attempt history. Duplicate idempotency submissions do not add duplicate attempts to history.
 
 ## 15. Implemented goal recalculation and history
 

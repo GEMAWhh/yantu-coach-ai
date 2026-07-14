@@ -100,6 +100,7 @@ tests/fixtures/ai/
 - `WRONG-002`: immediate original redo can only reach `pending_variant`; missing no-hint redo, variant, or interval test prevents `stable_corrected`.
 - `WRONG-003`: failed attempts roll the record back to `regressed`, clear that verification flag, and increment `error_count`.
 - Duplicate attempt submissions with the same `Idempotency-Key` return `created=false` and do not repeat state changes.
+- Wrongbook history returns current record state, verification flags, ordered attempts, request ids, and no duplicate idempotency attempts.
 - Regressed or unresolved wrong records appear as `wrong_record` planning candidates linked to their knowledge node subject.
 
 ## 9. Goal recalculation acceptance coverage

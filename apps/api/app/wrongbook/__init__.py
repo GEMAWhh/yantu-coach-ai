@@ -11,6 +11,7 @@ from app.wrongbook.service import (
     get_wrong_record,
     get_wrong_verification,
     link_question_asset,
+    list_wrong_attempts,
     list_wrongbook_planning_candidates,
     submit_attempt,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "get_wrong_record",
     "get_wrong_verification",
     "link_question_asset",
+    "list_wrong_attempts",
     "list_wrongbook_planning_candidates",
     "submit_attempt",
 ]

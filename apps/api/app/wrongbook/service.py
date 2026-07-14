@@ -203,6 +203,17 @@ def get_wrong_verification(session: Session, wrong_record_id: str) -> WrongVerif
     return verification
 
 
+def list_wrong_attempts(session: Session, wrong_record_id: str) -> list[Attempt]:
+    wrong = get_wrong_record(session, wrong_record_id)
+    return list(
+        session.scalars(
+            select(Attempt)
+            .where(Attempt.wrong_record_id == wrong.id)
+            .order_by(Attempt.attempted_at, Attempt.created_at, Attempt.id)
+        ).all()
+    )
+
+
 def link_question_asset(
     session: Session,
     *,

@@ -103,6 +103,7 @@ def create_app() -> FastAPI:
             "evidence-draft-pipeline",
             "fake-ai-provider",
             "wrongbook-domain",
+            "wrongbook-history",
             "assets-resources-api",
             "graph-analytics-api",
             "data-management-backups",
