@@ -234,4 +234,14 @@ Stage 8 exposes the existing local backup service through API endpoints:
 - `POST /api/v1/backups/{backup_id}/restore`: verifies, creates a pre-restore backup, then restores database and files.
 - `GET /api/v1/exports/full`: creates a full export archive via the same verified backup path.
 
-Responses use backup filenames as ids and do not expose absolute local paths.
+Responses use backup filenames as ids and do not expose absolute local paths. Backups include database, `files/`, and `settings/`.
+
+## Settings profile and rules
+
+Stage 8 adds local settings endpoints:
+
+- `GET /api/v1/settings/profile`: returns the local exam and learning profile, creating a default profile if none exists.
+- `PATCH /api/v1/settings/profile`: partially updates the local profile JSON under the runtime data directory.
+- `GET /api/v1/settings/rules`: returns governed rule files from `config/` with versions, relative paths, hashes, and raw content.
+
+Profile settings are included in backup/restore through the `settings/` data directory.

@@ -317,3 +317,21 @@ GET  /api/v1/exports/full
 `/restore` verifies the target backup first, creates a `pre-restore` backup of the current state, restores the database and files, and returns `pre_restore_backup_id`.
 
 `GET /exports/full` creates an export ZIP through the same verified backup mechanism with label `export`.
+
+## 19. Implemented settings profile and rules
+
+Current implemented settings endpoints are:
+
+```http
+GET   /api/v1/settings/profile
+PATCH /api/v1/settings/profile
+GET   /api/v1/settings/rules
+```
+
+`/settings/profile` persists the local exam and learning profile in `settings/profile.json` under the runtime data directory. The profile currently includes `name`, `target_school`, `target_major`, `exam_date`, `current_phase`, `coach_style`, `timezone`, and `updated_at`.
+
+`PATCH /settings/profile` is partial and rewrites only provided fields. The API response never exposes a local absolute path.
+
+`/settings/rules` returns governed rule files from the repository config directory: `mastery_rules.v1.yaml`, `planning_rules.v1.yaml`, and `quality_gates.yml`. Each item includes a rule key, version, relative path, SHA-256 hash, and raw content. Raw content is returned intentionally so the API does not reinterpret or corrupt existing YAML.
+
+Backups and full exports include both `files/` and `settings/` entries, so profile changes are covered by backup/restore.

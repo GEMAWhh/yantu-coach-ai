@@ -16,6 +16,7 @@ from app.api import (
     mastery_router,
     planning_router,
     reviews_router,
+    settings_router,
     time_calibration_router,
     wrongbook_router,
 )
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
             "assets-resources-api",
             "graph-analytics-api",
             "data-management-backups",
+            "settings-profile-rules",
         ]
         return api_response(
             ApiMetaResponse(
@@ -144,6 +146,7 @@ def create_app() -> FastAPI:
     app.include_router(assets_router)
     app.include_router(insights_router)
     app.include_router(data_management_router)
+    app.include_router(settings_router)
 
     return app
 

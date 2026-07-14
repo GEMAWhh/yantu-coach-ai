@@ -76,14 +76,15 @@ def _backup_sqlite_database(settings: RuntimeSettings, destination: Path) -> Non
 
 def _copy_files_tree(settings: RuntimeSettings, destination_root: Path) -> list[BackupEntry]:
     entries: list[BackupEntry] = []
-    if not settings.files_dir.exists():
-        return entries
-    for source in sorted(path for path in settings.files_dir.rglob("*") if path.is_file()):
-        relative_path = source.relative_to(settings.data_root).as_posix()
-        target = destination_root / Path(relative_path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-        entries.append(_entry(target, relative_path))
+    for source_root in [settings.files_dir, settings.settings_dir]:
+        if not source_root.exists():
+            continue
+        for source in sorted(path for path in source_root.rglob("*") if path.is_file()):
+            relative_path = source.relative_to(settings.data_root).as_posix()
+            target = destination_root / Path(relative_path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            entries.append(_entry(target, relative_path))
     return entries
 
 
@@ -185,6 +186,11 @@ def restore_backup(settings: RuntimeSettings, backup_path: Path) -> BackupResult
         backup_files = staging / "files"
         if backup_files.exists():
             shutil.copytree(backup_files, settings.files_dir)
+        if settings.settings_dir.exists():
+            shutil.rmtree(settings.settings_dir)
+        backup_settings = staging / "settings"
+        if backup_settings.exists():
+            shutil.copytree(backup_settings, settings.settings_dir)
         settings.ensure_runtime_dirs()
 
     return BackupResult(path=backup_path, manifest=manifest, pre_restore_backup=pre_restore)

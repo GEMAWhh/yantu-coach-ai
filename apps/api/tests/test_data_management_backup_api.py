@@ -32,18 +32,25 @@ def test_backup_verify_restore_and_export_round_trip(
     with TestClient(create_app()) as client:
         upload = _upload_png(client)
         asset_id = upload.json()["data"]["id"]
+        profile = client.patch(
+            "/api/v1/settings/profile",
+            json={"name": "backup-user", "target_school": "DUT"},
+        )
         backup = client.post("/api/v1/backups", json={"label": "api_test"})
         backup_id = backup.json()["data"]["backup_id"]
         listed = client.get("/api/v1/backups")
         verified = client.post(f"/api/v1/backups/{backup_id}/verify")
         deleted = client.delete(f"/api/v1/assets/{asset_id}")
+        client.patch("/api/v1/settings/profile", json={"name": "mutated-user"})
         hidden = client.get(f"/api/v1/assets/{asset_id}/metadata")
         restored = client.post(f"/api/v1/backups/{backup_id}/restore")
         metadata = client.get(f"/api/v1/assets/{asset_id}/metadata")
         content = client.get(f"/api/v1/assets/{asset_id}/content")
+        restored_profile = client.get("/api/v1/settings/profile")
         exported = client.get("/api/v1/exports/full")
 
     assert upload.status_code == 200
+    assert profile.status_code == 200
     assert backup.status_code == 200
     assert backup_id.endswith(".zip")
     assert backup.json()["data"]["manifest"]["database"]["path"] == "database/study.db"
@@ -59,6 +66,8 @@ def test_backup_verify_restore_and_export_round_trip(
     assert metadata.json()["data"]["state"] == "inbox"
     assert content.status_code == 200
     assert base64.b64decode(content.json()["data"]["content_base64"]) == PNG_BYTES
+    assert restored_profile.status_code == 200
+    assert restored_profile.json()["data"]["name"] == "backup-user"
     assert exported.status_code == 200
     assert exported.json()["data"]["backup_id"].startswith("export-")
     assert (test_settings.backups_dir / exported.json()["data"]["backup_id"]).is_file()
