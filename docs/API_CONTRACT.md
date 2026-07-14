@@ -316,12 +316,17 @@ Analytics endpoints aggregate existing local data only; they do not create deriv
 Current implemented data-management endpoints are:
 
 ```http
+POST /api/v1/imports/localstorage
+POST /api/v1/imports/localstorage/preview
+POST /api/v1/imports/localstorage/commit
 POST /api/v1/backups
 GET  /api/v1/backups
 POST /api/v1/backups/{backup_id}/verify
 POST /api/v1/backups/{backup_id}/restore
 GET  /api/v1/exports/full
 ```
+
+`POST /imports/localstorage` is a contract-compatible commit endpoint equivalent to `/imports/localstorage/commit`; `/preview` remains the non-mutating validation endpoint.
 
 `POST /backups` creates a local ZIP backup using the existing backup service. Responses use the ZIP filename as `backup_id` and never expose absolute local paths.
 

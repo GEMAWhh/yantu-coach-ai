@@ -46,6 +46,24 @@ def commit_localstorage_import_endpoint(
     request: Request,
     payload: JsonBody,
 ) -> ApiResponse[LocalStorageImportCommitResponse]:
+    return _commit_localstorage_import(request, payload)
+
+
+@router.post(
+    "/localstorage",
+    response_model=ApiResponse[LocalStorageImportCommitResponse],
+)
+def commit_localstorage_import_alias(
+    request: Request,
+    payload: JsonBody,
+) -> ApiResponse[LocalStorageImportCommitResponse]:
+    return _commit_localstorage_import(request, payload)
+
+
+def _commit_localstorage_import(
+    request: Request,
+    payload: JsonBody,
+) -> ApiResponse[LocalStorageImportCommitResponse]:
     settings = get_settings()
     session_factory = get_session_factory(settings.database_url)
     try:

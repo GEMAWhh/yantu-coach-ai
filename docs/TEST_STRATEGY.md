@@ -81,6 +81,14 @@ tests/fixtures/ai/
 - 发布报告和已知问题完成。
 
 
+## 6.1 LocalStorage import coverage
+
+`apps/api/tests/test_localstorage_import.py` covers the localStorage migration boundary:
+
+- `/imports/localstorage/preview` validates payloads without writing import batches.
+- `/imports/localstorage/commit` commits idempotently by source hash.
+- `/imports/localstorage` is a contract-compatible commit alias that returns the same batch on duplicate payloads.
+
 ## 7. Evidence draft acceptance coverage
 
 `apps/api/tests/test_evidence_draft_pipeline.py` covers the first AI-draft gate:
