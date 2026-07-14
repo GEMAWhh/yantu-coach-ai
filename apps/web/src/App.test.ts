@@ -170,4 +170,92 @@ describe("App", () => {
     expect(wrapper.text()).toContain("本周导数应用");
     expect(wrapper.text()).toContain("实际用时比预估多 20 分钟");
   });
+
+  it("renders learning resources, knowledge nodes, and wrongbook candidates from the API", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        const dataByPath: Record<string, unknown> = {
+          "/api/v1/resources": {
+            total: 1,
+            items: [
+              {
+                id: "asset-lecture",
+                resource_type: "asset",
+                asset: {
+                  id: "asset-lecture",
+                  version: 1,
+                  created_at: "2026-07-15T00:00:00Z",
+                  updated_at: "2026-07-15T00:00:00Z",
+                  sha256: "d".repeat(64),
+                  original_name: "lecture.pdf",
+                  storage_path: "files/original/lecture.pdf",
+                  mime_type: "application/pdf",
+                  size_bytes: 2048,
+                  state: "organized",
+                  reference_count: 2,
+                },
+              },
+            ],
+          },
+          "/api/v1/knowledge/nodes": {
+            total: 1,
+            items: [
+              {
+                id: "node-1",
+                version: 1,
+                created_at: "2026-07-15T00:00:00Z",
+                updated_at: "2026-07-15T00:00:00Z",
+                created_by: "user",
+                is_deleted: false,
+                deleted_at: null,
+                subject_id: "math",
+                parent_id: null,
+                code: "MATH-001",
+                name: "导数应用",
+                node_type: "knowledge",
+                importance: 90,
+                exam_frequency: 90,
+                description: null,
+                status: "active",
+              },
+            ],
+          },
+          "/api/v1/wrongbook/planning-candidates": {
+            total: 1,
+            items: [
+              {
+                id: "candidate-1",
+                title: "导数错题无提示重做",
+                subject_id: "math",
+                estimated_minutes: 25,
+                cognitive_load: "medium",
+                source_type: "wrongbook",
+                source_id: "wrong-1",
+                task_type: "wrongbook_variant",
+                difficulty: "medium",
+                review_due: 1,
+                knowledge_importance: 90,
+                weakness: 80,
+                repeat_error: 50,
+              },
+            ],
+          },
+        };
+        return new Response(
+          JSON.stringify({
+            data: dataByPath[path],
+            meta: { request_id: `learning-${path}` },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/learning");
+
+    expect(wrapper.text()).toContain("lecture.pdf");
+    expect(wrapper.text()).toContain("导数应用");
+    expect(wrapper.text()).toContain("导数错题无提示重做");
+  });
 });
