@@ -1,6 +1,6 @@
 # API
 
-FastAPI 本地后端骨架。当前阶段提供系统端点、统一 API 契约、SQLite 初始化、Alembic 迁移和审计事件基础，用于验证服务、环境隔离、错误结构、事务和 CI。
+FastAPI 本地后端骨架。当前阶段提供系统端点、统一 API 契约、SQLite 初始化、Alembic 迁移、审计事件、本地文件存储和备份恢复基础，用于验证服务、环境隔离、错误结构、事务和 CI。
 
 ## 契约端点
 
@@ -29,6 +29,17 @@ alembic -c apps/api/alembic.ini upgrade head
 ```
 
 测试必须设置 `YANTU_APP_ENV=test` 和临时 `YANTU_DATA_ROOT`，不得访问 `data/prod`。
+
+## 文件与备份
+
+当前提供服务层能力，不包含 OCR、PDF 解析或用户上传 UI：
+
+- `app.files.storage.store_original_file`：校验文件名、扩展名、MIME 与文件头，按 SHA-256 去重后写入 `files/original/`。
+- `app.files.storage.release_asset_reference`：减少引用计数。
+- `app.files.storage.delete_asset_file_if_unreferenced`：只允许删除引用计数为 0 的原始文件。
+- `app.files.backup.create_backup`：生成包含 `database/study.db`、`files/` 和 `manifest.json` 的 ZIP。
+- `app.files.backup.verify_backup`：校验 manifest、路径安全和每个条目的 SHA-256。
+- `app.files.backup.restore_backup`：恢复前自动创建 `pre-restore` 备份，恢复后重新建立运行目录。
 
 ## 测试
 
