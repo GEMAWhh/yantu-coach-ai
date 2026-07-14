@@ -91,3 +91,13 @@ tests/fixtures/ai/
 - `EVID-003`: confirmation is idempotent and writes exactly one `evidence.confirmed` audit event.
 - `AI-003`: schema-invalid Fake Provider output becomes `failed`/`needs_correction`, then can be manually patched to `draft`.
 - `EVID-004`: rejected drafts mark the draft and record as rejected without confirmation side effects.
+
+## 8. Wrongbook domain acceptance coverage
+
+`apps/api/tests/test_wrongbook_domain.py` covers the deterministic wrongbook lifecycle:
+
+- `WRONG-001`: seven attachment roles are accepted only as separate strict roles; duplicate role/page links are rejected.
+- `WRONG-002`: immediate original redo can only reach `pending_variant`; missing no-hint redo, variant, or interval test prevents `stable_corrected`.
+- `WRONG-003`: failed attempts roll the record back to `regressed`, clear that verification flag, and increment `error_count`.
+- Duplicate attempt submissions with the same `Idempotency-Key` return `created=false` and do not repeat state changes.
+- Regressed or unresolved wrong records appear as `wrong_record` planning candidates linked to their knowledge node subject.

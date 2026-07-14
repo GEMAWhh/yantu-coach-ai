@@ -1,0 +1,33 @@
+from app.wrongbook.service import (
+    ASSET_ROLES,
+    ATTEMPT_TYPES,
+    REQUIRED_CORRECTION_ATTEMPTS,
+    WRONG_STATUSES,
+    AttemptSubmission,
+    WrongbookError,
+    create_question,
+    create_wrong_record,
+    get_question,
+    get_wrong_record,
+    get_wrong_verification,
+    link_question_asset,
+    list_wrongbook_planning_candidates,
+    submit_attempt,
+)
+
+__all__ = [
+    "ASSET_ROLES",
+    "ATTEMPT_TYPES",
+    "REQUIRED_CORRECTION_ATTEMPTS",
+    "WRONG_STATUSES",
+    "AttemptSubmission",
+    "WrongbookError",
+    "create_question",
+    "create_wrong_record",
+    "get_question",
+    "get_wrong_record",
+    "get_wrong_verification",
+    "link_question_asset",
+    "list_wrongbook_planning_candidates",
+    "submit_attempt",
+]

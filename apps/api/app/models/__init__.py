@@ -8,10 +8,12 @@ from app.models.mastery import MasteryEvidence, MasterySnapshot
 from app.models.planning import Goal, Task, TaskResult
 from app.models.review import ReviewResult, ReviewSchedule
 from app.models.time_calibration import TimeAdjustment, TimeCoefficient
+from app.models.wrongbook import Attempt, Question, QuestionAsset, WrongRecord, WrongVerification
 
 __all__ = [
     "Asset",
     "AIJob",
+    "Attempt",
     "AuditEvent",
     "Base",
     "EvidenceAsset",
@@ -22,6 +24,8 @@ __all__ = [
     "KnowledgeNode",
     "MasteryEvidence",
     "MasterySnapshot",
+    "Question",
+    "QuestionAsset",
     "Goal",
     "ReviewResult",
     "ReviewSchedule",
@@ -29,4 +33,6 @@ __all__ = [
     "TaskResult",
     "TimeAdjustment",
     "TimeCoefficient",
+    "WrongRecord",
+    "WrongVerification",
 ]

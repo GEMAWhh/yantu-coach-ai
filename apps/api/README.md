@@ -174,3 +174,15 @@ Stage 5 adds the first governed AI-draft boundary for daily study evidence:
 - `POST /api/v1/evidence/{record_id}/reject`: marks the current draft and record as rejected.
 
 Current scope is governance only: no OCR, no multimodal parsing, and no automatic mastery or planning side effects before confirmation. Confirmation persists the formal evidence record and audit event; later issues can map confirmed evidence into mastery or wrongbook workflows.
+
+## Wrongbook domain lifecycle
+
+Stage 6 adds the deterministic wrongbook domain model without OCR or AI analysis:
+
+- `POST /api/v1/wrongbook/questions`: creates a structured question and optional knowledge-node link.
+- `POST /api/v1/wrongbook/records`: creates a wrong record with manual causes and an empty verification row.
+- `POST /api/v1/wrongbook/{wrong_id}/assets`: links an existing asset to one of seven strict roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, `supplement`.
+- `POST /api/v1/wrongbook/{wrong_id}/attempts`: records `original_redo`, `no_hint_redo`, `variant`, `interval_test`, or `transfer_test` attempts with `Idempotency-Key` support.
+- `GET /api/v1/wrongbook/planning-candidates`: returns non-resolved wrong records as `wrong_record` planning candidates.
+
+Resolution requires all three required checks: no-hint redo, variant, and interval test. Immediate original redo can advance the record only to `pending_variant`; any failed attempt marks the record `regressed`, clears that verification flag, and increments `error_count`.

@@ -14,6 +14,7 @@ from app.api import (
     planning_router,
     reviews_router,
     time_calibration_router,
+    wrongbook_router,
 )
 from app.db.migrations import initialize_database
 from app.errors import ApiError, VersionConflictError
@@ -96,6 +97,7 @@ def create_app() -> FastAPI:
             "time-calibration",
             "evidence-draft-pipeline",
             "fake-ai-provider",
+            "wrongbook-domain",
         ]
         return api_response(
             ApiMetaResponse(
@@ -131,6 +133,7 @@ def create_app() -> FastAPI:
     app.include_router(reviews_router)
     app.include_router(time_calibration_router)
     app.include_router(evidence_router)
+    app.include_router(wrongbook_router)
 
     return app
 
