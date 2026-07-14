@@ -49,3 +49,33 @@ ruff format --check apps/api
 ruff check apps/api
 mypy apps/api/app apps/api/tests
 ```
+
+## localStorage 导入
+
+阶段 2 提供原型数据一次性导入边界，旧原型 key 固定为
+`postgradCoachV11`。
+
+- `POST /api/v1/imports/localstorage/preview`：只解析和生成迁移预览，不写入数据库。
+- `POST /api/v1/imports/localstorage/commit`：事务化提交导入批次，按
+  `source_key + source_sha256` 幂等；重复提交返回同一个 `batch_id` 且
+  `created=false`。
+
+请求体支持三种形态：
+
+```json
+{"version": "1.1", "settings": {}, "tasks": [], "knowledge": []}
+```
+
+```json
+{"postgradCoachV11": "{\"version\":\"1.1\"}"}
+```
+
+```json
+{"source_key": "postgradCoachV11", "payload": {"version": "1.1"}}
+```
+
+导入服务识别原型顶层字段
+`version/settings/today/tasks/knowledge/wrongs/resources/inbox/goals/records/adjustments`。
+其他顶层字段和二级字段会进入 `unknown_fields`，并保留在迁移报告中。历史
+`knowledge` 掌握数据缺少可验证证据，因此只标记为
+`imported_unverified`，不会直接升级为稳定掌握。

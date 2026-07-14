@@ -6,6 +6,7 @@ from fastapi import FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api import imports_router
 from app.db.migrations import initialize_database
 from app.errors import ApiError, VersionConflictError
 from app.exception_handlers import (
@@ -74,6 +75,8 @@ def create_app() -> FastAPI:
             "response-envelope",
             "error-envelope",
             "version-conflict",
+            "localstorage-import-preview",
+            "localstorage-import-commit",
         ]
         return api_response(
             ApiMetaResponse(
@@ -101,6 +104,8 @@ def create_app() -> FastAPI:
             VersionCheckResponse(status="ok", contract_version=CONTRACT_VERSION),
             request,
         )
+
+    app.include_router(imports_router)
 
     return app
 
