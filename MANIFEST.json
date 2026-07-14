@@ -1,7 +1,7 @@
 {
-  "package": "研途教练_AI研发执行包",
+  "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 74,
+  "file_count": 92,
   "files": [
     {
       "path": ".editorconfig",
@@ -45,8 +45,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "size": 1542,
-      "sha256": "f08daa2a5f44ba20551d656df47343e3a1aea9704d33707eb2db858ac8bf38f6"
+      "size": 1620,
+      "sha256": "ed44d26a41a56b7d4b9e98698909113d76414791f0e4d28d47754c1ec460fc19"
     },
     {
       "path": ".github/workflows/governance.yml",
@@ -60,8 +60,8 @@
     },
     {
       "path": ".gitignore",
-      "size": 357,
-      "sha256": "d9b3ad5c492c3429e40836d6f1b0aaa7837c6d35a32eef256b9e0a7e35a317f0"
+      "size": 369,
+      "sha256": "9069c07083ab08ba347d62b5fe288e195a3b0300a05ec8095730de49aa377b1d"
     },
     {
       "path": "AGENTS.md",
@@ -80,23 +80,113 @@
     },
     {
       "path": "Makefile",
-      "size": 345,
-      "sha256": "200523c4923edf646b59fe0b314c7048dc6c69c12962336f4dc1153700f4804f"
+      "size": 622,
+      "sha256": "5d583658b3a39b0db7a28c11c3a3a591b2a1864a07cdec2852c1951d00738faa"
     },
     {
       "path": "README.md",
-      "size": 3879,
-      "sha256": "5bb751d81bd62d303f163b7d24ee6fe0c0dfaf7f37224aa7eb420069ca799a05"
+      "size": 4623,
+      "sha256": "053b2d8d171af68bf9796651594c73bd3831218ed88dc90a0cf5e46957870420"
     },
     {
       "path": "apps/api/README.md",
-      "size": 104,
-      "sha256": "f6fc1a88d17fdf90cf73d15664701c97eff63e97d0416f6a42d792becfd4865a"
+      "size": 504,
+      "sha256": "caf480ba2f6470015365f2bf9391b16d5dd1ab28bdfddcb450b4b0ae86f165e9"
+    },
+    {
+      "path": "apps/api/app/__init__.py",
+      "size": 31,
+      "sha256": "2fcffae1a5e035dc1061ca5b6cad7c8329c2cbb7f4ae4c5fde59d219f57aa95d"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "size": 1045,
+      "sha256": "018108803edb9b189b47fe179c68abdbd6e69ec13bde833e772d01eee63a52b0"
+    },
+    {
+      "path": "apps/api/app/schemas/__init__.py",
+      "size": 28,
+      "sha256": "468e6d6aef1be9a69aa4e6c04cb8454bd9cf125f6af59bc4b63cc2972d273a87"
+    },
+    {
+      "path": "apps/api/app/schemas/health.py",
+      "size": 283,
+      "sha256": "d01cec7dee3e7798f47bf4bdacfc39205d69e9b70d2c691afb36a746aa1bd541"
+    },
+    {
+      "path": "apps/api/app/settings.py",
+      "size": 2657,
+      "sha256": "34b1a14bd059c600c6c0c3601a325aa5be1990194d2b2d1301b7ff08abc0ccbc"
+    },
+    {
+      "path": "apps/api/pyproject.toml",
+      "size": 710,
+      "sha256": "6d911d1d077fd8d33e04c055b123d04a61a028cd9fd518923326d078fc2885a8"
+    },
+    {
+      "path": "apps/api/tests/test_health.py",
+      "size": 1277,
+      "sha256": "5995e156ea726abbdc4cd5a8404f0170f8eb386cf815e41d97747b250ba74176"
     },
     {
       "path": "apps/web/README.md",
-      "size": 128,
-      "sha256": "6b8bfaee58b095cf47a9d411b85424f72e33d2c8747147a6ce15a1cf6b90831d"
+      "size": 316,
+      "sha256": "c5eb38661397a7b9e9d410c89a365ca0e911023a1d9929bac3af4371f7d520e1"
+    },
+    {
+      "path": "apps/web/eslint.config.js",
+      "size": 615,
+      "sha256": "eb31241129e129e10edd533040778a9c3f304c2fc53f68e67298f124d386d262"
+    },
+    {
+      "path": "apps/web/index.html",
+      "size": 300,
+      "sha256": "4302161fb5664086262f269e1c299736774ee1c2841ef6b3ea5ffdd70f3d4f9c"
+    },
+    {
+      "path": "apps/web/package-lock.json",
+      "size": 202788,
+      "sha256": "399de071d6ab2cea3298b043f28d569cfed498b7672c488d118faa7a939af60d"
+    },
+    {
+      "path": "apps/web/package.json",
+      "size": 788,
+      "sha256": "afdc3baa083d4c067680f11128d45203a06066e07551b00b6e43d5002dd0583a"
+    },
+    {
+      "path": "apps/web/src/App.test.ts",
+      "size": 492,
+      "sha256": "c60db964a717bbb4044fea05d14138f156d3734ccf61180e34ab6a3e43af9a36"
+    },
+    {
+      "path": "apps/web/src/App.vue",
+      "size": 1434,
+      "sha256": "edc31a573dcdbe40599ec308034da4000ce9351c2eb963e8175e6c67236cdf58"
+    },
+    {
+      "path": "apps/web/src/env.d.ts",
+      "size": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "apps/web/src/main.ts",
+      "size": 117,
+      "sha256": "af7ef294573d7ae68a4db670e76238282743c3e7cf925f26c7df3c9d01ae88ed"
+    },
+    {
+      "path": "apps/web/src/styles.css",
+      "size": 1561,
+      "sha256": "229d90c31b378267c38daab2424b3636659551057bea09174c25d91b696e51b3"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "size": 461,
+      "sha256": "8620d16730fbd9b5c093ac80e1d3d6ee77f3f5399a848504c0437da15575edcc"
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "size": 186,
+      "sha256": "40125e96eaa5bb9dd946106b4bf7cd245711daac8f103f5578c0fba643691e39"
     },
     {
       "path": "config/evidence_analysis.schema.json",
@@ -122,6 +212,11 @@
       "path": "config/wrong_question_analysis.schema.json",
       "size": 2506,
       "sha256": "2d11a77bdee1f07b55e45fb7617818ad4dd9dedc7652a61449b0e07d30570aa9"
+    },
+    {
+      "path": "data/README.md",
+      "size": 275,
+      "sha256": "dde10f9198eb05cdcc5bd027795cd98c0eedaa4419996076f0224a733044a4da"
     },
     {
       "path": "docs/ACCEPTANCE_MATRIX.md",
@@ -332,11 +427,6 @@
       "path": "references/README.md",
       "size": 276,
       "sha256": "8afae80fe5c876e529a41005cd55ebf5d1e2cc841e81836f9a89a5db2429faa6"
-    },
-    {
-      "path": "references/考研智能学习系统_V1.1_本地版.html",
-      "size": 103936,
-      "sha256": "4c8f6bbc7dfb380850f245f9b43d12a1f571f22f2d267e74e9ab50953e65d583"
     },
     {
       "path": "scripts/check_forbidden_patterns.py",

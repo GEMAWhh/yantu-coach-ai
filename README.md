@@ -78,7 +78,51 @@ python scripts/check_forbidden_patterns.py .
 
 CI 会自动执行同类检查。任何失败均不得绕过。
 
-## 8. 当前仓库门禁限制
+## 8. 本地启动命令
+
+### 后端
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e "apps/api[dev]"
+$env:YANTU_APP_ENV = "dev"
+uvicorn app.main:app --app-dir apps/api --host 127.0.0.1 --port 8000 --reload
+```
+
+健康检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+### 前端
+
+```powershell
+cd apps/web
+npm ci
+npm run dev
+```
+
+默认地址：`http://127.0.0.1:5173`。
+
+### 全量检查
+
+```powershell
+python scripts/validate_governance.py
+python scripts/check_forbidden_patterns.py .
+python -m pytest apps/api
+ruff format --check apps/api
+ruff check apps/api
+mypy apps/api/app apps/api/tests
+cd apps/web
+npm run typecheck
+npm run lint
+npm run test:unit
+npm run build
+```
+
+## 9. 当前仓库门禁限制
 
 当前仓库位于个人账号的私有仓库中，未升级 GitHub Pro/Team。GitHub Rulesets 和私有仓库分支保护不会被强制执行。
 
