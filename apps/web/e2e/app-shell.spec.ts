@@ -42,4 +42,13 @@ test.describe("Vue prototype shell", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/today$/);
   });
+
+  test("shows planning buffer and single-subject constraint on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/planning");
+    await expect(page.getByText("20%")).toBeVisible();
+    await expect(page.getByText(/只学数学一.*841/)).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow).toBe(false);
+  });
 });
