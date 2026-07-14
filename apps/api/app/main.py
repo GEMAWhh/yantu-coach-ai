@@ -6,7 +6,13 @@ from fastapi import FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import imports_router, knowledge_router, mastery_router, planning_router
+from app.api import (
+    imports_router,
+    knowledge_router,
+    mastery_router,
+    planning_router,
+    reviews_router,
+)
 from app.db.migrations import initialize_database
 from app.errors import ApiError, VersionConflictError
 from app.exception_handlers import (
@@ -83,6 +89,8 @@ def create_app() -> FastAPI:
             "mastery-state-machine",
             "goals-tasks",
             "task-results",
+            "review-scheduler",
+            "review-results",
         ]
         return api_response(
             ApiMetaResponse(
@@ -115,6 +123,7 @@ def create_app() -> FastAPI:
     app.include_router(knowledge_router)
     app.include_router(mastery_router)
     app.include_router(planning_router)
+    app.include_router(reviews_router)
 
     return app
 

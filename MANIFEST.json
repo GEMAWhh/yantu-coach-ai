@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 184,
+  "file_count": 191,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 6462,
-      "sha256": "14b57ecafa5ad8adf73ff45dc496328b924e8b0be670629d457de3fd7655cdae"
+      "size": 7107,
+      "sha256": "67f5679f2658eac4dc77cafdfb73c53b7dda732af28418d254567b67c6c9fe18"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 305,
-      "sha256": "21a827a5e2debb6574d2aa4d9d9876ff2fe46048370ddafe35280c6b715f5e80"
+      "size": 399,
+      "sha256": "7807b84e3c8fe2c31eeefffdaf8c16c368b15bcb127acfd755616932067c1d92"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -129,6 +129,11 @@
       "sha256": "3d0056f20263b3d5cbc7c7d5f8ffaa281ac370288e27754ef528920b74d3ebc7"
     },
     {
+      "path": "apps/api/app/api/reviews.py",
+      "size": 3563,
+      "sha256": "92cc2b580949deb3f630acf2b351572e1eaf265c1012f32159bfd4b926cbdd41"
+    },
+    {
       "path": "apps/api/app/db/__init__.py",
       "size": 31,
       "sha256": "c09a1e9998915d9671218296afef3f96b9f15103be130e8dada009f9ddbdf1ef"
@@ -140,8 +145,8 @@
     },
     {
       "path": "apps/api/app/db/migrations.py",
-      "size": 2065,
-      "sha256": "d388d775a8cdcae23793f7757441ec1a83c2c27579009dd6ad295fdac5403136"
+      "size": 2070,
+      "sha256": "b0514df20092334dedcfbfecbdab877bed8bc2d71f8e2fc6d0e084dab0882ca6"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -195,8 +200,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4256,
-      "sha256": "888eacabf01daf53843618247d762d02da9f821a74c65b288f048ccb87ee1511"
+      "size": 4398,
+      "sha256": "fd7b5517f4b395caf77d6acce1dccc2d5420ffa62153519a061223e907b5289f"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -215,8 +220,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 544,
-      "sha256": "e59839c69155c7de0b3db16f03b75a7a9523567a9181fe306e62b3cde68a7da0"
+      "size": 645,
+      "sha256": "a516beeff632848c54c5dc2f4dc6007da7de7450d34c9e8c8d5a17bca1603301"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -254,6 +259,11 @@
       "sha256": "10223b2884c576e9387716dff9331b03db05d9cb5fc6dd9eb6ad9d29067a6a02"
     },
     {
+      "path": "apps/api/app/models/review.py",
+      "size": 4276,
+      "sha256": "2cfdf826411e04743d97e7cbd820bd323011f367e909929f2604683052a342b9"
+    },
+    {
       "path": "apps/api/app/planning/__init__.py",
       "size": 976,
       "sha256": "118250c551eef003b1a439381e8f07b5205791ebe48cc8f307dca7bf4f9c59be"
@@ -277,6 +287,16 @@
       "path": "apps/api/app/responses.py",
       "size": 1433,
       "sha256": "e213b474c4f85902d8a4ebd2cfd4cea68b86859b8e5e716313034c48418fc6cf"
+    },
+    {
+      "path": "apps/api/app/reviews/__init__.py",
+      "size": 535,
+      "sha256": "fa2de1c22011d43ac994f8d78767d97a69cfe9256f72e2f6bcb45676c63a2a80"
+    },
+    {
+      "path": "apps/api/app/reviews/service.py",
+      "size": 13640,
+      "sha256": "c75bf7eac4a463716da6fac43eb557838097c9d10a6c829cb9b7b74d63626fe0"
     },
     {
       "path": "apps/api/app/schemas/__init__.py",
@@ -317,6 +337,11 @@
       "path": "apps/api/app/schemas/planning.py",
       "size": 14373,
       "sha256": "0fa767bdbab9bfe5756ab62b8756842bd84e66f106ddef67ff95cd54c07d3be0"
+    },
+    {
+      "path": "apps/api/app/schemas/reviews.py",
+      "size": 6281,
+      "sha256": "bab9069a084a1722ffc109051122d4be982291a24a79b250933db737b5830632"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -379,6 +404,11 @@
       "sha256": "9fe9679aa181ba32646127991ac386dbff977b57beb48af556ee7eada823ed29"
     },
     {
+      "path": "apps/api/migrations/versions/0007_review_scheduler.py",
+      "size": 7186,
+      "sha256": "b1387efa52519bab63a1be21c1a29a7357485ed921f0370ff7c7fb3dd58ad4c1"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -427,6 +457,11 @@
       "path": "apps/api/tests/test_planning_engine.py",
       "size": 6236,
       "sha256": "04158f8c5c1d201d45d129ae64e72accfbd47c63a90a9e15ba16f5077aec70aa"
+    },
+    {
+      "path": "apps/api/tests/test_review_scheduler.py",
+      "size": 10609,
+      "sha256": "a8dcb7e585f668b868792793506399625b056d0b330c18d19ec64fc1ffd7052e"
     },
     {
       "path": "apps/web/README.md",
@@ -685,8 +720,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 4744,
-      "sha256": "e3e4479c14fb57015e83ba1038919bbf65146adc1effe5d7d799f93f6b5db839"
+      "size": 5112,
+      "sha256": "e58880ee6f9c989ae2187664cc242a91b1f8c1dee1cfee45812c8af8972b40a9"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -695,8 +730,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 5410,
-      "sha256": "010dbd6430077c214cc19b99a53978a6b67a6a09920f2d1d9eb248fab6ee5974"
+      "size": 5977,
+      "sha256": "1497552daa2ec4cc023c9ae76740d7bd45599c5bd0dcaf0e6c04869cd99e5847"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -730,8 +765,8 @@
     },
     {
       "path": "docs/PRODUCT_SPEC.md",
-      "size": 5069,
-      "sha256": "d7c9a160b134b769ed8207e2ee7a2b52059cce90978870477c7b7a8ebbb63c08"
+      "size": 5231,
+      "sha256": "1e42a4869ee9ee3e7109f997944aa2b1fb720c00f3b98c350e59f044986d753f"
     },
     {
       "path": "docs/RELEASE_PROCESS.md",
@@ -750,8 +785,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 2226,
-      "sha256": "b5dd3da74c3cdc69846b9016de873363f7aad29baafe66253184ad77b76dde4a"
+      "size": 2436,
+      "sha256": "0eb1a9360c57a4a69ddd1550b3f0e03e11a2eb8390c2b007cc39d19894bdb35f"
     },
     {
       "path": "docs/UI_STANDARD.md",
