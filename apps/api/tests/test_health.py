@@ -27,10 +27,13 @@ def test_health_uses_isolated_test_data_dir(
 
     assert response.status_code == 200
     assert response.json() == {
-        "status": "ok",
-        "service": "yantu-coach-api",
-        "environment": "test",
-        "data_root": "data/test",
+        "data": {
+            "status": "ok",
+            "service": "yantu-coach-api",
+            "environment": "test",
+            "data_root": "data/test",
+        },
+        "meta": {"request_id": response.headers["x-request-id"]},
     }
     assert (data_root / "database").is_dir()
     assert (data_root / "files" / "original").is_dir()
