@@ -8,12 +8,16 @@
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint .",
-    "test:unit": "vitest run --environment jsdom"
+    "test:unit": "vitest run --environment jsdom src",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "pinia": "2.3.0",
+    "vue-router": "4.5.0",
     "vue": "3.5.13"
   },
   "devDependencies": {
+    "@playwright/test": "1.49.1",
     "@eslint/js": "9.17.0",
     "@types/node": "22.10.5",
     "@vitejs/plugin-vue": "5.2.1",

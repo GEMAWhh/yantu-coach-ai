@@ -52,10 +52,17 @@ jobs:
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
-      - name: E2E placeholder
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Playwright E2E when project exists
+        shell: bash
         run: |
           if [ -f apps/web/playwright.config.ts ]; then
-            echo 'Bootstrap issue must replace this with the repository E2E command.'
+            cd apps/web
+            npm ci
+            npx playwright install --with-deps chromium
+            npm run test:e2e
           else
             echo 'Playwright not bootstrapped yet.'
           fi
