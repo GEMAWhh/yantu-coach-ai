@@ -123,3 +123,14 @@ tests/fixtures/ai/
 - `POST /assets/{asset_id}/restore` restores deleted assets to `inbox`.
 - `POST /resources` promotes an asset to the organized resource index.
 - MIME masquerade and path traversal uploads are rejected with asset-specific error codes.
+
+## 11. Graph and analytics coverage
+
+`apps/api/tests/test_graph_analytics_api.py` covers the read-only insight API boundary:
+
+- `GET /graph/full` returns clickable knowledge-node ids plus prerequisite edges.
+- Graph node metrics include latest mastery stage and evidence count.
+- `GET /graph/weak` filters latest mastery snapshots below stage 4 and preserves blocking reasons.
+- `GET /analytics/overview` aggregates knowledge, goals, tasks, task results, wrong records, mastery snapshots, task status, and goal risk.
+- `GET /analytics/time` aggregates estimated and actual minutes by subject.
+- `GET /analytics/errors`, `/analytics/mastery`, and `/analytics/goal-risk` expose wrong-record distribution, mastery stage distribution, and risky goals.

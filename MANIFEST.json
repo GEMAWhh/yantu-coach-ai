@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 220,
+  "file_count": 225,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 11558,
-      "sha256": "f96a6845bd3f7e103328a5521ff4f6b921fc5bf8bb9424cddc1aa3b4fd56cb5f"
+      "size": 12355,
+      "sha256": "02879d91a3649ab8e2891aaeb60ece2848f1eb4e8bc78084d35fb09634918b59"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 732,
-      "sha256": "40c295e2568eb3ca40f8cee08fd13f0a06270ceb802947417a7a66bf6caa7c47"
+      "size": 810,
+      "sha256": "b41cc0154c8bfbc31640dcab4d63d3cf5c7e8f6b944a70efb689ea37b168a7c8"
     },
     {
       "path": "apps/api/app/api/assets.py",
@@ -122,6 +122,11 @@
       "path": "apps/api/app/api/imports.py",
       "size": 2233,
       "sha256": "d082c42ce39befc05620bd7e4975d7512bab9be37cab31054d319fd3d8145cdf"
+    },
+    {
+      "path": "apps/api/app/api/insights.py",
+      "size": 2929,
+      "sha256": "cb48e340446340f9c7ff10fbc628423ad45f1fa4b4c4922f25fc427b57079e20"
     },
     {
       "path": "apps/api/app/api/knowledge.py",
@@ -229,6 +234,16 @@
       "sha256": "667045c131d1c2005e707b445b493771b01f312583b124599d6926055ddbeb2f"
     },
     {
+      "path": "apps/api/app/insights/__init__.py",
+      "size": 46,
+      "sha256": "4a304538ec87eb0eb0b7c87f571a315dc56fe8ebade58d1c588b289cf6438636"
+    },
+    {
+      "path": "apps/api/app/insights/service.py",
+      "size": 9086,
+      "sha256": "ab6aebb1fa290e1ab3bf87f6ab12c4fa62b06a0ece2f0b77ea0834f8e5371621"
+    },
+    {
       "path": "apps/api/app/knowledge/__init__.py",
       "size": 683,
       "sha256": "2428769a65120954603dc29203c9332ab37bf212a8eda2f005c5769c6c4e481e"
@@ -240,8 +255,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4869,
-      "sha256": "18018b572c333b38628ae506c63d7b477b9e4055c24eba3fbeb003dc364b9860"
+      "size": 4965,
+      "sha256": "968e7ca102c67528f37f2217ce039f09dbe945a1bf69e66419bfbff795452f9f"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -382,6 +397,11 @@
       "path": "apps/api/app/schemas/imports.py",
       "size": 2051,
       "sha256": "f6bf494e1de8a99ebea3c132e56b4661acf59fde1d4286d84243d25531bc78bd"
+    },
+    {
+      "path": "apps/api/app/schemas/insights.py",
+      "size": 2822,
+      "sha256": "7277fb2b652bf57179ba583e0470383276956c1988176d3f333440f1f1bfafa3"
     },
     {
       "path": "apps/api/app/schemas/knowledge.py",
@@ -567,6 +587,11 @@
       "path": "apps/api/tests/test_goals_tasks.py",
       "size": 11096,
       "sha256": "f1de49759d28d7e6480bd6fe7a2bcc670880d9c8a800901b13d2e5487518eaaf"
+    },
+    {
+      "path": "apps/api/tests/test_graph_analytics_api.py",
+      "size": 8957,
+      "sha256": "331e8feac2bd186f7f8f77f7c1bf81ba2c2654743d1f13e55d1e1867d5c83662"
     },
     {
       "path": "apps/api/tests/test_health.py",
@@ -865,8 +890,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 9867,
-      "sha256": "2ea8509f7910035a9cb259d1532bbf183f73b31f582c754c53aaa38dba2263af"
+      "size": 10845,
+      "sha256": "2c0495284e348e9b7099b0141215cd35982babaff5e45233f1259bc1d16c4468"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -930,8 +955,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 5625,
-      "sha256": "5cb09979c4a818506a28b297a9c1fe99a9412a8a01ed441133beb46047caece1"
+      "size": 6374,
+      "sha256": "b9b95ecaa80b2281a379195ac0056a57aecc116693967797def8b75d7701fe61"
     },
     {
       "path": "docs/UI_STANDARD.md",

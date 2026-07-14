@@ -209,3 +209,17 @@ Stage 7 starts the file/resource API boundary on top of the existing local file 
 - `POST /api/v1/resources` and `GET /api/v1/resources`: promote an asset to `organized` and list organized/archived assets as lightweight resource entries.
 
 The resource index intentionally reuses `assets.state`; a separate `resources` table is deferred until the product model defines catalog metadata.
+
+## Graph and analytics
+
+Stage 7 also adds read-only insight endpoints:
+
+- `GET /api/v1/graph/full`: returns knowledge nodes and edges with clickable `object_id` values.
+- `GET /api/v1/graph/weak`: returns weak knowledge nodes from latest mastery snapshots below stage 4.
+- `GET /api/v1/analytics/overview`: aggregates top-level knowledge, goal, task, result, wrongbook, and mastery counts.
+- `GET /api/v1/analytics/time`: aggregates estimated and actual minutes by subject.
+- `GET /api/v1/analytics/errors`: aggregates wrong records by status and knowledge node.
+- `GET /api/v1/analytics/mastery`: aggregates latest mastery stage distribution.
+- `GET /api/v1/analytics/goal-risk`: lists risky goals with direct goal object ids.
+
+These endpoints are read-only and use existing domain tables only.

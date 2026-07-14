@@ -277,3 +277,23 @@ Assets are deduplicated by SHA-256. API responses expose only relative `storage_
 `DELETE /assets/{asset_id}` is a soft delete that hides metadata/content from normal reads while preserving the stored file and reference count. `/restore` moves a deleted asset back to `inbox`.
 
 `POST /resources` promotes an existing non-deleted asset from `inbox` to `organized`. `GET /resources` returns the organized/archived asset index as `resource_type=asset` entries. A separate resource table is intentionally deferred until the product model defines catalog fields such as tags, folders, or study-unit links.
+
+## 17. Implemented graph and analytics
+
+Current implemented read-only insight endpoints are:
+
+```http
+GET /api/v1/graph/full
+GET /api/v1/graph/weak
+GET /api/v1/analytics/overview
+GET /api/v1/analytics/time
+GET /api/v1/analytics/errors
+GET /api/v1/analytics/mastery
+GET /api/v1/analytics/goal-risk
+```
+
+`/graph/full` returns clickable knowledge-node objects and knowledge edges. Node ids use the stable `knowledge:{knowledge_node_id}` format, and each node also returns `object_type` and `object_id` for direct UI navigation.
+
+`/graph/weak` returns knowledge nodes whose latest mastery snapshot is below stage 4. Items include latest stage, evidence count, repeat error rate, and blocking reasons.
+
+Analytics endpoints aggregate existing local data only; they do not create derived records. Current coverage includes overview counts, estimated/actual time by subject, wrong-record status and knowledge-node distribution, latest mastery stage distribution, and risky goal lists.
