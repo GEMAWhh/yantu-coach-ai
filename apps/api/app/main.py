@@ -105,6 +105,7 @@ def create_app() -> FastAPI:
             "wrongbook-domain",
             "wrongbook-history",
             "wrongbook-result-shortcuts",
+            "wrongbook-draft-pipeline",
             "assets-resources-api",
             "graph-analytics-api",
             "data-management-backups",

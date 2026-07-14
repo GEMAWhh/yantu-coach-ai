@@ -164,3 +164,13 @@ tests/fixtures/ai/
 - Shortcut endpoints force `variant` and `interval_test` attempt types without accepting an explicit `attempt_type`.
 - The endpoints reuse the same deterministic wrongbook state machine as `/attempts`.
 - `Idempotency-Key` prevents duplicate shortcut submissions from adding duplicate attempts or redo counts.
+
+## 15. Wrongbook draft pipeline coverage
+
+`apps/api/tests/test_wrongbook_domain.py` covers the wrongbook AI draft governance boundary:
+
+- `POST /wrongbook/{wrong_id}/analyze` creates a fake-provider `ai_jobs` row and a `wrongbook_drafts` row.
+- Unconfirmed drafts do not mutate formal wrong-record cause fields.
+- Invalid drafts return `AI_DRAFT_NOT_CONFIRMED` on confirmation and keep the wrong record unchanged.
+- `PATCH /wrongbook/{wrong_id}/draft` revalidates structured JSON and can repair a failed draft.
+- `POST /wrongbook/{wrong_id}/confirm` is idempotent after first confirmation and writes one audit event.

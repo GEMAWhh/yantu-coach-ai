@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.database import get_session_factory
 from app.errors import ApiError
+from app.models.evidence import AIJob
 from app.request_context import get_request_id
 from app.responses import api_response
 from app.schemas.common import ApiResponse
@@ -18,8 +19,14 @@ from app.schemas.wrongbook import (
     QuestionAssetResponse,
     QuestionCreate,
     QuestionResponse,
+    WrongbookAIJobResponse,
+    WrongbookAnalyzeRequest,
+    WrongbookAnalyzeResponse,
     WrongbookCandidateListResponse,
     WrongbookCandidateResponse,
+    WrongbookConfirmResponse,
+    WrongbookDraftResponse,
+    WrongbookDraftUpdate,
     WrongbookHistoryResponse,
     WrongRecordCreate,
     WrongRecordDetailResponse,
@@ -29,14 +36,18 @@ from app.schemas.wrongbook import (
 from app.settings import get_settings
 from app.wrongbook.service import (
     WrongbookError,
+    analyze_wrong_record,
+    confirm_wrongbook_draft,
     create_question,
     create_wrong_record,
     get_wrong_record,
     get_wrong_verification,
+    get_wrongbook_draft,
     link_question_asset,
     list_wrong_attempts,
     list_wrongbook_planning_candidates,
     submit_attempt,
+    update_wrongbook_draft,
 )
 
 router = APIRouter(prefix="/api/v1/wrongbook", tags=["wrongbook"])
@@ -102,6 +113,92 @@ def get_wrong_record_endpoint(
                 record=WrongRecordResponse.from_model(record),
                 verification=WrongVerificationResponse.from_model(verification),
             )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.post("/{wrong_record_id}/analyze", response_model=ApiResponse[WrongbookAnalyzeResponse])
+def analyze_wrongbook_record(
+    request: Request,
+    wrong_record_id: str,
+    payload: WrongbookAnalyzeRequest,
+) -> ApiResponse[WrongbookAnalyzeResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            draft = analyze_wrong_record(
+                session,
+                wrong_record_id,
+                provider_mode=payload.provider_mode,
+            )
+            ai_job = session.get(AIJob, draft.ai_job_id)
+            if ai_job is None:
+                raise WrongbookError(
+                    "wrongbook ai job not found",
+                    code="WRONGBOOK_AI_JOB_NOT_FOUND",
+                    status_code=404,
+                    details={"ai_job_id": draft.ai_job_id},
+                )
+            response = WrongbookAnalyzeResponse(
+                draft=WrongbookDraftResponse.from_model(draft),
+                ai_job=WrongbookAIJobResponse.from_model(ai_job),
+            )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.get("/{wrong_record_id}/draft", response_model=ApiResponse[WrongbookDraftResponse])
+def get_wrongbook_record_draft(
+    request: Request,
+    wrong_record_id: str,
+) -> ApiResponse[WrongbookDraftResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory() as session:
+            response = WrongbookDraftResponse.from_model(
+                get_wrongbook_draft(session, wrong_record_id)
+            )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.patch("/{wrong_record_id}/draft", response_model=ApiResponse[WrongbookDraftResponse])
+def update_wrongbook_record_draft(
+    request: Request,
+    wrong_record_id: str,
+    payload: WrongbookDraftUpdate,
+) -> ApiResponse[WrongbookDraftResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            draft = update_wrongbook_draft(
+                session,
+                wrong_record_id,
+                structured_json=payload.structured_json,
+            )
+            response = WrongbookDraftResponse.from_model(draft)
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.post("/{wrong_record_id}/confirm", response_model=ApiResponse[WrongbookConfirmResponse])
+def confirm_wrongbook_record_draft(
+    request: Request,
+    wrong_record_id: str,
+) -> ApiResponse[WrongbookConfirmResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            confirmation = confirm_wrongbook_draft(
+                session,
+                wrong_record_id,
+                request_id=get_request_id(request),
+            )
+            response = WrongbookConfirmResponse.from_confirmation(confirmation)
     except WrongbookError as exc:
         raise _api_wrongbook_error(exc) from exc
     return api_response(response, request)

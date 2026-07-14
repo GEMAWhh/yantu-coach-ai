@@ -5,9 +5,17 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.wrongbook import Attempt, Question, QuestionAsset, WrongRecord, WrongVerification
+from app.models.evidence import AIJob
+from app.models.wrongbook import (
+    Attempt,
+    Question,
+    QuestionAsset,
+    WrongbookDraft,
+    WrongRecord,
+    WrongVerification,
+)
 from app.planning.engine import PlanningCandidate
-from app.wrongbook.service import AttemptSubmission
+from app.wrongbook.service import AttemptSubmission, WrongbookConfirmation
 
 AssetRole = Literal[
     "statement",
@@ -33,6 +41,9 @@ WrongStatus = Literal[
     "stable_corrected",
     "regressed",
 ]
+WrongbookDraftStatus = Literal["draft", "needs_correction", "confirmed"]
+AIJobStatus = Literal["queued", "running", "succeeded", "failed"]
+ProviderMode = Literal["valid", "invalid_schema"]
 
 
 class QuestionCreate(BaseModel):
@@ -304,6 +315,117 @@ class WrongbookHistoryResponse(BaseModel):
     verification: WrongVerificationResponse
     attempts: list[AttemptResponse]
     total_attempts: int
+
+
+class WrongbookAIJobResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    job_type: str
+    provider: str
+    model_name: str
+    prompt_version: str
+    status: AIJobStatus
+    attempts: int
+    input_json: dict[str, object]
+    output_json: dict[str, object] | None
+    error_code: str | None
+    error_message: str | None
+    started_at: datetime
+    completed_at: datetime | None
+
+    @classmethod
+    def from_model(cls, job: AIJob) -> WrongbookAIJobResponse:
+        return cls(
+            id=job.id,
+            version=job.version,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+            job_type=job.job_type,
+            provider=job.provider,
+            model_name=job.model_name,
+            prompt_version=job.prompt_version,
+            status=cast(AIJobStatus, job.status),
+            attempts=job.attempts,
+            input_json=job.input_json,
+            output_json=job.output_json,
+            error_code=job.error_code,
+            error_message=job.error_message,
+            started_at=job.started_at,
+            completed_at=job.completed_at,
+        )
+
+
+class WrongbookDraftResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    wrong_record_id: str
+    ai_job_id: str
+    status: WrongbookDraftStatus
+    schema_version: Literal["wrongbook-analysis-v1"]
+    structured_json: dict[str, object]
+    validation_errors: list[str]
+    confirmed_at: datetime | None
+    confirmed_once: bool
+
+    @classmethod
+    def from_model(cls, draft: WrongbookDraft) -> WrongbookDraftResponse:
+        return cls(
+            id=draft.id,
+            version=draft.version,
+            created_at=draft.created_at,
+            updated_at=draft.updated_at,
+            wrong_record_id=draft.wrong_record_id,
+            ai_job_id=draft.ai_job_id,
+            status=cast(WrongbookDraftStatus, draft.status),
+            schema_version="wrongbook-analysis-v1",
+            structured_json=draft.structured_json,
+            validation_errors=draft.validation_errors_json,
+            confirmed_at=draft.confirmed_at,
+            confirmed_once=draft.confirmed_once,
+        )
+
+
+class WrongbookAnalyzeRequest(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    provider_mode: ProviderMode = "valid"
+
+
+class WrongbookAnalyzeResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    draft: WrongbookDraftResponse
+    ai_job: WrongbookAIJobResponse
+
+
+class WrongbookDraftUpdate(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    structured_json: dict[str, object]
+
+
+class WrongbookConfirmResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    record: WrongRecordResponse
+    draft: WrongbookDraftResponse
+    created: bool
+
+    @classmethod
+    def from_confirmation(cls, confirmation: WrongbookConfirmation) -> WrongbookConfirmResponse:
+        return cls(
+            record=WrongRecordResponse.from_model(confirmation.wrong_record),
+            draft=WrongbookDraftResponse.from_model(confirmation.draft),
+            created=confirmation.created,
+        )
 
 
 class WrongbookCandidateResponse(BaseModel):
