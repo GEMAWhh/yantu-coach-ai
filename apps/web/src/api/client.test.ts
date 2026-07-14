@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiClient } from "./client";
-import type { ApiResponse, HealthPayload, TodayPayload } from "./contracts";
+import type { ApiResponse, HealthPayload, SettingsRulesPayload, TodayPayload } from "./contracts";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -94,5 +94,31 @@ describe("ApiClient", () => {
 
     await expect(client.today("2026-07-14")).resolves.toEqual(payload);
     expect(calls).toEqual(["/api/v1/today?date=2026-07-14"]);
+  });
+
+  it("loads governed settings rules through the settings API contract", async () => {
+    const payload: ApiResponse<SettingsRulesPayload> = {
+      data: {
+        total: 1,
+        items: [
+          {
+            key: "mastery",
+            version: "mastery-v1.0.0",
+            path: "config/mastery_rules.v1.yaml",
+            sha256: "a".repeat(64),
+            content: "version: mastery-v1.0.0",
+          },
+        ],
+      },
+      meta: { request_id: "client-settings-rules" },
+    };
+    const calls: string[] = [];
+    const client = new ApiClient("", async (input) => {
+      calls.push(String(input));
+      return jsonResponse(payload);
+    });
+
+    await expect(client.settingsRules()).resolves.toEqual(payload);
+    expect(calls).toEqual(["/api/v1/settings/rules"]);
   });
 });

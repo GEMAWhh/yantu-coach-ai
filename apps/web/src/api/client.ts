@@ -5,6 +5,8 @@ import type {
   ApiResponse,
   GoalTreeListPayload,
   HealthPayload,
+  SettingsProfilePayload,
+  SettingsRulesPayload,
   TodayPayload,
 } from "./contracts";
 
@@ -40,6 +42,14 @@ export class ApiClient {
 
   goalsTree(): Promise<ApiResponse<GoalTreeListPayload>> {
     return this.get<GoalTreeListPayload>("/api/v1/goals/tree");
+  }
+
+  settingsProfile(): Promise<ApiResponse<SettingsProfilePayload>> {
+    return this.get<SettingsProfilePayload>("/api/v1/settings/profile");
+  }
+
+  settingsRules(): Promise<ApiResponse<SettingsRulesPayload>> {
+    return this.get<SettingsRulesPayload>("/api/v1/settings/rules");
   }
 
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {

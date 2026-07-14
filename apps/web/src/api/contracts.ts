@@ -88,3 +88,27 @@ export type GoalTreeListPayload = {
   items: GoalTreePayload[];
   total: number;
 };
+
+export type SettingsProfilePayload = {
+  name: string;
+  target_school: string | null;
+  target_major: string | null;
+  exam_date: string | null;
+  current_phase: string | null;
+  coach_style: string;
+  timezone: string;
+  updated_at: string;
+};
+
+export type SettingsRulePayload = {
+  key: string;
+  version: string | null;
+  path: string;
+  sha256: string;
+  content: string;
+};
+
+export type SettingsRulesPayload = {
+  items: SettingsRulePayload[];
+  total: number;
+};
