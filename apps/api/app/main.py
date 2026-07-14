@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import (
     assets_router,
+    data_management_router,
     evidence_router,
     imports_router,
     insights_router,
@@ -103,6 +104,7 @@ def create_app() -> FastAPI:
             "wrongbook-domain",
             "assets-resources-api",
             "graph-analytics-api",
+            "data-management-backups",
         ]
         return api_response(
             ApiMetaResponse(
@@ -141,6 +143,7 @@ def create_app() -> FastAPI:
     app.include_router(wrongbook_router)
     app.include_router(assets_router)
     app.include_router(insights_router)
+    app.include_router(data_management_router)
 
     return app
 

@@ -223,3 +223,15 @@ Stage 7 also adds read-only insight endpoints:
 - `GET /api/v1/analytics/goal-risk`: lists risky goals with direct goal object ids.
 
 These endpoints are read-only and use existing domain tables only.
+
+## Data management backups
+
+Stage 8 exposes the existing local backup service through API endpoints:
+
+- `POST /api/v1/backups`: creates a ZIP backup with database, files, manifest, hashes, and safe relative archive paths.
+- `GET /api/v1/backups`: lists available backup archives by filename id.
+- `POST /api/v1/backups/{backup_id}/verify`: validates manifest and archive integrity.
+- `POST /api/v1/backups/{backup_id}/restore`: verifies, creates a pre-restore backup, then restores database and files.
+- `GET /api/v1/exports/full`: creates a full export archive via the same verified backup path.
+
+Responses use backup filenames as ids and do not expose absolute local paths.
