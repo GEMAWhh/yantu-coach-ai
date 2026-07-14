@@ -18,9 +18,10 @@ jobs:
           if [ -f apps/api/pyproject.toml ]; then
             python -m pip install --upgrade pip
             pip install -e 'apps/api[dev]'
-            cd apps/api
-            ruff check .
-            pytest
+            ruff format --check apps/api
+            ruff check apps/api
+            mypy apps/api/app apps/api/tests
+            pytest apps/api
           else
             echo 'Backend project not bootstrapped yet.'
           fi
