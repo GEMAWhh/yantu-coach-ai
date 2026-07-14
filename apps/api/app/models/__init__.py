@@ -2,5 +2,6 @@ from app.models.asset import Asset
 from app.models.audit import AuditEvent
 from app.models.base import Base
 from app.models.import_batch import ImportBatch
+from app.models.knowledge import KnowledgeEdge, KnowledgeNode
 
-__all__ = ["Asset", "AuditEvent", "Base", "ImportBatch"]
+__all__ = ["Asset", "AuditEvent", "Base", "ImportBatch", "KnowledgeEdge", "KnowledgeNode"]

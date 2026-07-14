@@ -62,6 +62,9 @@ AIJob ── AIDraft ── ConfirmationAudit
 
 关系：belongs_to / prerequisite / similar_to / confused_with / co_tested / transforms_to。
 
+当前 `prerequisite` 约定：`source_node_id` 是前置节点，
+`target_node_id` 是被阻塞节点。写入时必须防止前置环路。
+
 ### mastery_evidence
 
 `knowledge_node_id, evidence_type, source_type, source_id, score, sample_count, hint_level, occurred_at, confirmed`
