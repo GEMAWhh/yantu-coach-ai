@@ -10,10 +10,13 @@ import type {
   AnalyticsTimePayload,
   GoalTreeListPayload,
   HealthPayload,
+  KnowledgeNodeListPayload,
+  ResourceListPayload,
   SettingsProfilePayload,
   SettingsRulesPayload,
   TodayPayload,
   WeakGraphPayload,
+  WrongbookCandidateListPayload,
 } from "./contracts";
 
 export class ApiClientError extends Error {
@@ -80,6 +83,18 @@ export class ApiClient {
 
   weakGraph(): Promise<ApiResponse<WeakGraphPayload>> {
     return this.get<WeakGraphPayload>("/api/v1/graph/weak");
+  }
+
+  resources(): Promise<ApiResponse<ResourceListPayload>> {
+    return this.get<ResourceListPayload>("/api/v1/resources");
+  }
+
+  knowledgeNodes(): Promise<ApiResponse<KnowledgeNodeListPayload>> {
+    return this.get<KnowledgeNodeListPayload>("/api/v1/knowledge/nodes");
+  }
+
+  wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {
+    return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
   }
 
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {

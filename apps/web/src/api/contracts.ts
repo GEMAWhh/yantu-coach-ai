@@ -190,3 +190,73 @@ export type WeakGraphPayload = {
   items: WeakNodePayload[];
   total: number;
 };
+
+export type AssetPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  sha256: string;
+  original_name: string;
+  storage_path: string;
+  mime_type: "image/png" | "image/jpeg" | "application/pdf";
+  size_bytes: number;
+  state: "inbox" | "organized" | "archived" | "deleted";
+  reference_count: number;
+};
+
+export type ResourcePayload = {
+  id: string;
+  resource_type: "asset";
+  asset: AssetPayload;
+};
+
+export type ResourceListPayload = {
+  items: ResourcePayload[];
+  total: number;
+};
+
+export type KnowledgeNodePayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  subject_id: string;
+  parent_id: string | null;
+  code: string;
+  name: string;
+  node_type: "subject" | "module" | "chapter" | "knowledge";
+  importance: number | null;
+  exam_frequency: number | null;
+  description: string | null;
+  status: string;
+};
+
+export type KnowledgeNodeListPayload = {
+  items: KnowledgeNodePayload[];
+  total: number;
+};
+
+export type WrongbookCandidatePayload = {
+  id: string;
+  title: string;
+  subject_id: string;
+  estimated_minutes: number;
+  cognitive_load: "low" | "medium" | "high";
+  source_type: string;
+  source_id: string | null;
+  task_type: string;
+  difficulty: string | null;
+  review_due: number;
+  knowledge_importance: number;
+  weakness: number;
+  repeat_error: number;
+};
+
+export type WrongbookCandidateListPayload = {
+  items: WrongbookCandidatePayload[];
+  total: number;
+};
