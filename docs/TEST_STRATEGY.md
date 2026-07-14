@@ -156,3 +156,11 @@ tests/fixtures/ai/
 - `PATCH /settings/profile` persists partial updates into the runtime data directory.
 - `GET /settings/rules` returns the three governed rule files with relative paths, versions, SHA-256 hashes, and raw content.
 - Rules responses do not expose local absolute file paths.
+
+## 14. Wrongbook result shortcut coverage
+
+`apps/api/tests/test_wrongbook_domain.py` covers `POST /wrongbook/{wrong_id}/variant-results` and `POST /wrongbook/{wrong_id}/interval-results`:
+
+- Shortcut endpoints force `variant` and `interval_test` attempt types without accepting an explicit `attempt_type`.
+- The endpoints reuse the same deterministic wrongbook state machine as `/attempts`.
+- `Idempotency-Key` prevents duplicate shortcut submissions from adding duplicate attempts or redo counts.

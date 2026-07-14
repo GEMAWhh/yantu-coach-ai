@@ -11,7 +11,9 @@ from app.schemas.common import ApiResponse
 from app.schemas.wrongbook import (
     AttemptCreate,
     AttemptResponse,
+    AttemptResultCreate,
     AttemptSubmitResponse,
+    AttemptType,
     QuestionAssetLink,
     QuestionAssetResponse,
     QuestionCreate,
@@ -160,6 +162,67 @@ def submit_wrong_attempt(
             submission = submit_attempt(
                 session,
                 wrong_record_id,
+                idempotency_key=idempotency_key,
+                request_id=get_request_id(request),
+                **payload.model_dump(),
+            )
+            response = AttemptSubmitResponse.from_submission(submission)
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.post(
+    "/{wrong_record_id}/variant-results", response_model=ApiResponse[AttemptSubmitResponse]
+)
+def submit_wrong_variant_result(
+    request: Request,
+    wrong_record_id: str,
+    payload: AttemptResultCreate,
+    idempotency_key: IdempotencyKey = None,
+) -> ApiResponse[AttemptSubmitResponse]:
+    return _submit_fixed_attempt(
+        request,
+        wrong_record_id,
+        attempt_type="variant",
+        payload=payload,
+        idempotency_key=idempotency_key,
+    )
+
+
+@router.post(
+    "/{wrong_record_id}/interval-results", response_model=ApiResponse[AttemptSubmitResponse]
+)
+def submit_wrong_interval_result(
+    request: Request,
+    wrong_record_id: str,
+    payload: AttemptResultCreate,
+    idempotency_key: IdempotencyKey = None,
+) -> ApiResponse[AttemptSubmitResponse]:
+    return _submit_fixed_attempt(
+        request,
+        wrong_record_id,
+        attempt_type="interval_test",
+        payload=payload,
+        idempotency_key=idempotency_key,
+    )
+
+
+def _submit_fixed_attempt(
+    request: Request,
+    wrong_record_id: str,
+    *,
+    attempt_type: AttemptType,
+    payload: AttemptResultCreate,
+    idempotency_key: str | None,
+) -> ApiResponse[AttemptSubmitResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            submission = submit_attempt(
+                session,
+                wrong_record_id,
+                attempt_type=attempt_type,
                 idempotency_key=idempotency_key,
                 request_id=get_request_id(request),
                 **payload.model_dump(),

@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 13733,
-      "sha256": "3b8089327369e7b08ec71f7875bb77f4870acdcdc43cd899b655b8a22152daeb"
+      "size": 13948,
+      "sha256": "dc848f8e614cb7b74d0dd413e5ead96db68b3b448c9c448e9701206211b42259"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -165,8 +165,8 @@
     },
     {
       "path": "apps/api/app/api/wrongbook.py",
-      "size": 6691,
-      "sha256": "68acc590fe3d54bd83a62c2eb3bafd7649ee877c913a008c31a24bc1a6845c61"
+      "size": 8539,
+      "sha256": "6a2bb02533bf7f15a26fb5842b9712971479dd7a4fbbf1d004d947a753653227"
     },
     {
       "path": "apps/api/app/assets/__init__.py",
@@ -275,8 +275,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 5211,
-      "sha256": "5a69efd55596419a2d5596224c40567e83897e37581bbe9a15cc7d45f45e1b7b"
+      "size": 5253,
+      "sha256": "980f2451a6be7728f898a7f3ba724c3e3da0e9b73edea047973d204d7c66233a"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -465,8 +465,8 @@
     },
     {
       "path": "apps/api/app/schemas/wrongbook.py",
-      "size": 10158,
-      "sha256": "4706823366ec7888bb8d4236ce85406e5db4789160d3cc0c40ebf4313798e721"
+      "size": 10576,
+      "sha256": "d4d2d6f534c0a839b31dd6ad59e8f6b2638b1b79303583207dd5c34a421037ee"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -680,8 +680,8 @@
     },
     {
       "path": "apps/api/tests/test_wrongbook_domain.py",
-      "size": 9700,
-      "sha256": "9490b4c187051f7ef4c854f2fac9a706f1d7b54521647af2fee673e4ce52e59a"
+      "size": 11851,
+      "sha256": "2f80ee113fd4818772e32636c3f1241721599355874f192988e8022f18f3d2b3"
     },
     {
       "path": "apps/web/README.md",
@@ -940,8 +940,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 13054,
-      "sha256": "1a05c28c78b0d0845e325d5507502cb80bdbb3a4dfdbe8efa2cbbb52eb6434f4"
+      "size": 13526,
+      "sha256": "96a2f091e9265ebafaa83d60f0d34afa4c50133fafef94148b45888514264a76"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -1005,8 +1005,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 7750,
-      "sha256": "fc56eddbd0d62a3cbcf8ed60904a50a3db71e094ceac9df55d84a7f16d15d29e"
+      "size": 8249,
+      "sha256": "db3eb97d09936a3764372ef87ddf4c762cd776f5c337af489bee660253d88715"
     },
     {
       "path": "docs/UI_STANDARD.md",

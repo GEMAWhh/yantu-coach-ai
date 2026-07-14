@@ -183,6 +183,7 @@ Stage 6 adds the deterministic wrongbook domain model without OCR or AI analysis
 - `POST /api/v1/wrongbook/records`: creates a wrong record with manual causes and an empty verification row.
 - `POST /api/v1/wrongbook/{wrong_id}/assets`: links an existing asset to one of seven strict roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, `supplement`.
 - `POST /api/v1/wrongbook/{wrong_id}/attempts`: records `original_redo`, `no_hint_redo`, `variant`, `interval_test`, or `transfer_test` attempts with `Idempotency-Key` support.
+- `POST /api/v1/wrongbook/{wrong_id}/variant-results` and `/interval-results`: shortcut result submissions that force `variant` or `interval_test` while reusing the same attempt state machine and idempotency rules.
 - `GET /api/v1/wrongbook/{wrong_id}/history`: returns the current record, verification flags, and ordered attempt history.
 - `GET /api/v1/wrongbook/planning-candidates`: returns non-resolved wrong records as `wrong_record` planning candidates.
 
