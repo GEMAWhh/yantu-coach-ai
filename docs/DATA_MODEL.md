@@ -52,6 +52,9 @@ AIJob ── AIDraft ── ConfirmationAudit
 
 `task_id, result_type, completion_ratio, actual_minutes, question_count, correct_count, accuracy, confidence, hint_level, focus_level, difficulty_rating, problem_description, confirmed_at`
 
+当前实现额外保存 `idempotency_key` 和 `request_id`。提交结果用于更新目标进度，
+但不会直接创建或修改掌握快照。
+
 ### knowledge_nodes
 
 `subject_id, parent_id, code, name, node_type, importance, exam_frequency, description, status`

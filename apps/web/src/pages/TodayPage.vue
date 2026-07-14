@@ -1,10 +1,54 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+
+import { ApiClient } from "../api/client";
+import type { TaskPayload } from "../api/contracts";
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
-import { useMockStudyStore } from "../stores/mockStudy";
+import { useMockStudyStore, type TodayTask, type Tone } from "../stores/mockStudy";
 
 const study = useMockStudyStore();
+const apiTasks = ref<TodayTask[] | null>(null);
+const taskSourceLabel = computed(() => (apiTasks.value ? "正式数据" : "模拟数据"));
+const taskSourceTone = computed<Tone>(() => (apiTasks.value ? "green" : "cyan"));
+const todayTasks = computed(() => apiTasks.value ?? study.todayTasks);
+
+function toneForStatus(status: TaskPayload["status"]): Tone {
+  if (status === "completed") {
+    return "green";
+  }
+  if (status === "skipped" || status === "withdrawn") {
+    return "red";
+  }
+  if (status === "in_progress") {
+    return "blue";
+  }
+  return "neutral";
+}
+
+function mapTask(task: TaskPayload): TodayTask {
+  return {
+    id: task.id,
+    subject: task.subject_id ?? task.task_type,
+    title: task.title,
+    source: `${task.source_type}${task.source_id ? ` / ${task.source_id}` : ""}`,
+    reason: task.reason ?? task.completion_standard ?? "待补充执行理由",
+    estimateMinutes: task.estimated_minutes,
+    status: task.status,
+    tone: toneForStatus(task.status),
+  };
+}
+
+onMounted(async () => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const response = await new ApiClient().today(today);
+    apiTasks.value = response.data.tasks.map(mapTask);
+  } catch {
+    apiTasks.value = null;
+  }
+});
 </script>
 
 <template>
@@ -50,14 +94,14 @@ const study = useMockStudyStore();
             <h2>今日任务</h2>
           </div>
           <StatusTag
-            label="模拟数据"
-            tone="cyan"
+            :label="taskSourceLabel"
+            :tone="taskSourceTone"
           />
         </div>
 
         <div class="task-list">
           <article
-            v-for="task in study.todayTasks"
+            v-for="task in todayTasks"
             :key="task.id"
             class="task-card"
           >

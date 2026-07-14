@@ -49,6 +49,9 @@ POST   /tasks/{task_id}/withdraw
 
 `POST /today/generate` 必须返回任务解释分项、机动时间和未纳入候选的原因。
 
+`POST /tasks/{task_id}/results` 必须支持 `Idempotency-Key`，重复提交同一 key
+返回同一结果；任务状态与任务结果分离，结果不得直接推动掌握阶段。
+
 ## 3. 规划
 
 ```http

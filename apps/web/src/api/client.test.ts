@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiClient } from "./client";
-import type { ApiResponse, HealthPayload } from "./contracts";
+import type { ApiResponse, HealthPayload, TodayPayload } from "./contracts";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -53,5 +53,46 @@ describe("ApiClient", () => {
         request_id: "client-409",
       },
     });
+  });
+
+  it("loads today tasks through the planning API contract", async () => {
+    const payload: ApiResponse<TodayPayload> = {
+      data: {
+        date: "2026-07-14",
+        total_tasks: 1,
+        estimated_minutes: 45,
+        tasks: [
+          {
+            id: "task-1",
+            version: 1,
+            goal_id: "goal-1",
+            subject_id: "math",
+            knowledge_node_id: null,
+            title: "Closed-book recall",
+            task_type: "study",
+            priority: "must",
+            source_type: "goal",
+            source_id: "goal-1",
+            planned_date: "2026-07-14",
+            estimated_minutes: 45,
+            current_stage: 2,
+            target_stage: 3,
+            reason: "Traceable weekly goal",
+            completion_standard: "Recall without hints",
+            prerequisite_status: "satisfied",
+            status: "pending",
+          },
+        ],
+      },
+      meta: { request_id: "client-today" },
+    };
+    const calls: string[] = [];
+    const client = new ApiClient("", async (input) => {
+      calls.push(String(input));
+      return jsonResponse(payload);
+    });
+
+    await expect(client.today("2026-07-14")).resolves.toEqual(payload);
+    expect(calls).toEqual(["/api/v1/today?date=2026-07-14"]);
   });
 });

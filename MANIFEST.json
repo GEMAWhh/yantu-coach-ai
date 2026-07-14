@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 175,
+  "file_count": 182,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 4900,
-      "sha256": "a40408dd34bd363c7425d5d798e69eeb11fc67e1fbaa01ce1d4ca5296f3410f1"
+      "size": 5877,
+      "sha256": "beb5297e73084066b325e6cd17f6ea2bb67dfa8834c367f56eba7d87912d6afb"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 231,
-      "sha256": "b98be98099ee36f207c6c461c73d862e9d52c7cf2e28a2e8e889eaf44e162308"
+      "size": 305,
+      "sha256": "21a827a5e2debb6574d2aa4d9d9876ff2fe46048370ddafe35280c6b715f5e80"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -124,6 +124,11 @@
       "sha256": "a01bb6dcd773f1a345ba87c5b036e5b15d97181bc1e8d5d1c705b297e3851a4d"
     },
     {
+      "path": "apps/api/app/api/planning.py",
+      "size": 9516,
+      "sha256": "037cb39386157e9b32585537976051f5ee84f582ab36bb1fc7a193aead2a38d1"
+    },
+    {
       "path": "apps/api/app/db/__init__.py",
       "size": 31,
       "sha256": "c09a1e9998915d9671218296afef3f96b9f15103be130e8dada009f9ddbdf1ef"
@@ -135,8 +140,8 @@
     },
     {
       "path": "apps/api/app/db/migrations.py",
-      "size": 2075,
-      "sha256": "8edf552af7a8f121d7b54a49cf0f4037a480e87cd812d681686c34d5050af5a6"
+      "size": 2065,
+      "sha256": "d388d775a8cdcae23793f7757441ec1a83c2c27579009dd6ad295fdac5403136"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -190,8 +195,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4144,
-      "sha256": "e023eb8d8382530fbed93e5567131385de03fb0082447aa964d11df44c0a1498"
+      "size": 4256,
+      "sha256": "888eacabf01daf53843618247d762d02da9f821a74c65b288f048ccb87ee1511"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -210,8 +215,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 447,
-      "sha256": "831a92339739beb197a1cd9586b65d30ae52587ae2f8080da1b39ed8b815e494"
+      "size": 544,
+      "sha256": "e59839c69155c7de0b3db16f03b75a7a9523567a9181fe306e62b3cde68a7da0"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -242,6 +247,21 @@
       "path": "apps/api/app/models/mastery.py",
       "size": 4391,
       "sha256": "83e0942cdc06698cc53f16c5310893e062e1507dc6c57091c4d40c3f1ba60d41"
+    },
+    {
+      "path": "apps/api/app/models/planning.py",
+      "size": 6854,
+      "sha256": "10223b2884c576e9387716dff9331b03db05d9cb5fc6dd9eb6ad9d29067a6a02"
+    },
+    {
+      "path": "apps/api/app/planning/__init__.py",
+      "size": 636,
+      "sha256": "0a92e8c302c6db505d13cff9c35f0343cc15171f03b061f56090b92e67388f1c"
+    },
+    {
+      "path": "apps/api/app/planning/service.py",
+      "size": 18475,
+      "sha256": "2b81249af7eeadf73fdb15be20920896b3248b4c7f21cb484ba0f5a0c08baf02"
     },
     {
       "path": "apps/api/app/request_context.py",
@@ -287,6 +307,11 @@
       "path": "apps/api/app/schemas/meta.py",
       "size": 495,
       "sha256": "d86ef2e357bd934eecbc435533d5228199af0f60cba76e1a26dce79c560f1bee"
+    },
+    {
+      "path": "apps/api/app/schemas/planning.py",
+      "size": 10459,
+      "sha256": "d6178f4714a90ea1c2f5dd05f7332898c3f87ff0ac9691bd0d58a14167c4c5a8"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -344,6 +369,11 @@
       "sha256": "db31d877311abc8a2b960e92e0d5029971892d510c10422345910537049b459b"
     },
     {
+      "path": "apps/api/migrations/versions/0006_goals_tasks.py",
+      "size": 10144,
+      "sha256": "9fe9679aa181ba32646127991ac386dbff977b57beb48af556ee7eada823ed29"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -362,6 +392,11 @@
       "path": "apps/api/tests/test_file_storage_backup.py",
       "size": 7051,
       "sha256": "ee61de20076ac307085da7cb4b584e2551ac72cbe414e85410ac7dd80ecade7b"
+    },
+    {
+      "path": "apps/api/tests/test_goals_tasks.py",
+      "size": 11096,
+      "sha256": "f1de49759d28d7e6480bd6fe7a2bcc670880d9c8a800901b13d2e5487518eaaf"
     },
     {
       "path": "apps/api/tests/test_health.py",
@@ -485,18 +520,18 @@
     },
     {
       "path": "apps/web/src/api/client.test.ts",
-      "size": 1596,
-      "sha256": "1b0392cfd218abd25a6fd8bd9fe124491af676f468c87bf9bac32dda2af4c2f0"
+      "size": 2882,
+      "sha256": "e069f1f408e892995d03606911e97a4be3066342fd7bc1450cab2f865a6eb073"
     },
     {
       "path": "apps/web/src/api/client.ts",
-      "size": 1291,
-      "sha256": "21980236e4a126946d36e29da2545dd3dda41f808e2de21361f98c340a19b60a"
+      "size": 1619,
+      "sha256": "e0a2335860f85302a4f0f31c8e5010660b6af2bfa72c2c4cacae883391798f46"
     },
     {
       "path": "apps/web/src/api/contracts.ts",
-      "size": 647,
-      "sha256": "e4b8e0b62c815cd6d0af3fb9e2540dd98c1093f2d2be345f8edb54fc7cfbf32d"
+      "size": 2030,
+      "sha256": "447384a160c8e850cd7446c9ed61c920aa7aafd5cca126da8bc07fa7a566d180"
     },
     {
       "path": "apps/web/src/app/navigation.test.ts",
@@ -545,8 +580,8 @@
     },
     {
       "path": "apps/web/src/pages/PlanningPage.vue",
-      "size": 2361,
-      "sha256": "1845f03bd6e85d960248e686c7223381ea881e72d0f5c43f0b071ebce161c4f9"
+      "size": 3801,
+      "sha256": "d17d2f47f52a603fa7cf32dab56e2d9d12205db66e018d8191d88d7edc384053"
     },
     {
       "path": "apps/web/src/pages/ProgressPage.vue",
@@ -560,8 +595,8 @@
     },
     {
       "path": "apps/web/src/pages/TodayPage.vue",
-      "size": 3408,
-      "sha256": "54d536028c344ed50205560efc75cd850b22181ee3a7f7eddede848b263ba4f5"
+      "size": 4833,
+      "sha256": "ec51f722cf39292b1f209013a6f4f80e8803132fefbda7d07caebeb3f70d2e23"
     },
     {
       "path": "apps/web/src/router/index.ts",
@@ -640,8 +675,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 4173,
-      "sha256": "f2ef0d4073e8099920ceab5706a779dcdaae93d1c34a792f8dd019afadbace52"
+      "size": 4359,
+      "sha256": "96df9f09c146995f6da792480248ebd1079bed4ef94c756a32636d6257aae6d7"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -650,8 +685,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 5261,
-      "sha256": "6fa2095635de343210f5c805d3a150d75b7698df41b167d4594a11036d34ffb5"
+      "size": 5410,
+      "sha256": "010dbd6430077c214cc19b99a53978a6b67a6a09920f2d1d9eb248fab6ee5974"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -685,8 +720,8 @@
     },
     {
       "path": "docs/PRODUCT_SPEC.md",
-      "size": 4655,
-      "sha256": "f03dcd3893e41d481d10df93e8e49a9bef085bb3518ebe16e418a43a403bd57b"
+      "size": 4835,
+      "sha256": "90fbbef6a0513a5f6ffc2f4bd37727eb7739e411f5375d6afa33e7c5442ea2f2"
     },
     {
       "path": "docs/RELEASE_PROCESS.md",
