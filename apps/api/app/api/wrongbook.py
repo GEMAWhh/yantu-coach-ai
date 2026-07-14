@@ -10,6 +10,7 @@ from app.responses import api_response
 from app.schemas.common import ApiResponse
 from app.schemas.wrongbook import (
     AttemptCreate,
+    AttemptResponse,
     AttemptSubmitResponse,
     QuestionAssetLink,
     QuestionAssetResponse,
@@ -17,6 +18,7 @@ from app.schemas.wrongbook import (
     QuestionResponse,
     WrongbookCandidateListResponse,
     WrongbookCandidateResponse,
+    WrongbookHistoryResponse,
     WrongRecordCreate,
     WrongRecordDetailResponse,
     WrongRecordResponse,
@@ -30,6 +32,7 @@ from app.wrongbook.service import (
     get_wrong_record,
     get_wrong_verification,
     link_question_asset,
+    list_wrong_attempts,
     list_wrongbook_planning_candidates,
     submit_attempt,
 )
@@ -96,6 +99,28 @@ def get_wrong_record_endpoint(
             response = WrongRecordDetailResponse(
                 record=WrongRecordResponse.from_model(record),
                 verification=WrongVerificationResponse.from_model(verification),
+            )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.get("/{wrong_record_id}/history", response_model=ApiResponse[WrongbookHistoryResponse])
+def get_wrong_history_endpoint(
+    request: Request,
+    wrong_record_id: str,
+) -> ApiResponse[WrongbookHistoryResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory() as session:
+            record = get_wrong_record(session, wrong_record_id)
+            verification = get_wrong_verification(session, wrong_record_id)
+            attempts = list_wrong_attempts(session, wrong_record_id)
+            response = WrongbookHistoryResponse(
+                record=WrongRecordResponse.from_model(record),
+                verification=WrongVerificationResponse.from_model(verification),
+                attempts=[AttemptResponse.from_model(attempt) for attempt in attempts],
+                total_attempts=len(attempts),
             )
     except WrongbookError as exc:
         raise _api_wrongbook_error(exc) from exc

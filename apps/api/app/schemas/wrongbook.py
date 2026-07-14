@@ -285,6 +285,15 @@ class AttemptSubmitResponse(BaseModel):
         )
 
 
+class WrongbookHistoryResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    record: WrongRecordResponse
+    verification: WrongVerificationResponse
+    attempts: list[AttemptResponse]
+    total_attempts: int
+
+
 class WrongbookCandidateResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 

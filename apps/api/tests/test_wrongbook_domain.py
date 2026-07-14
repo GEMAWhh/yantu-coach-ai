@@ -97,6 +97,7 @@ def test_original_redo_and_missing_verification_cannot_resolve_wrong_record(
             json={"attempt_type": "no_hint_redo", "is_correct": True},
             headers={"Idempotency-Key": "no-hint-pass"},
         )
+        history = client.get(f"/api/v1/wrongbook/{wrong_id}/history")
 
     assert original["record"]["current_status"] == "pending_variant"
     assert original["verification"]["original_redo_passed"] is True
@@ -112,6 +113,21 @@ def test_original_redo_and_missing_verification_cannot_resolve_wrong_record(
     assert duplicate.status_code == 200
     assert duplicate_body["data"]["created"] is False
     assert duplicate_body["data"]["attempt"]["id"] == no_hint_body["data"]["attempt"]["id"]
+    history_body = history.json()
+    assert history.status_code == 200
+    assert history_body["data"]["record"]["current_status"] == "stable_corrected"
+    assert (
+        history_body["data"]["verification"]["last_attempt_id"]
+        == no_hint_body["data"]["attempt"]["id"]
+    )
+    assert history_body["data"]["total_attempts"] == 4
+    assert [attempt["attempt_type"] for attempt in history_body["data"]["attempts"]] == [
+        "original_redo",
+        "variant",
+        "interval_test",
+        "no_hint_redo",
+    ]
+    assert history_body["data"]["attempts"][-1]["request_id"] == "wrong-no-hint"
 
     session_factory = get_session_factory(test_settings.database_url)
     with session_factory() as session:
