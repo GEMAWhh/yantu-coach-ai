@@ -46,6 +46,97 @@ describe("App", () => {
     expect(wrapper.get('[data-testid="page-title"]').text()).toBe("五层规划");
   });
 
+  it("renders today's tasks and metrics from the API when available", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        expect(path).toMatch(/^\/api\/v1\/today\?date=/);
+        return new Response(
+          JSON.stringify({
+            data: {
+              date: "2026-07-15",
+              total_tasks: 1,
+              estimated_minutes: 45,
+              tasks: [
+                {
+                  id: "task-api-1",
+                  version: 1,
+                  goal_id: "goal-week",
+                  subject_id: "math",
+                  knowledge_node_id: "node-1",
+                  title: "API 今日任务",
+                  task_type: "practice",
+                  priority: "high",
+                  source_type: "goal",
+                  source_id: "goal-week",
+                  planned_date: "2026-07-15",
+                  estimated_minutes: 45,
+                  current_stage: 2,
+                  target_stage: 3,
+                  reason: "后端计划生成",
+                  completion_standard: "提交练习结果",
+                  prerequisite_status: "satisfied",
+                  status: "pending",
+                },
+              ],
+            },
+            meta: { request_id: "today" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/today");
+
+    expect(wrapper.text()).toContain("API 今日任务");
+    expect(wrapper.text()).toContain("1 项");
+    expect(wrapper.text()).toContain("预计 45 分钟");
+  });
+
+  it("renders planning goal tree from the API when available", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        expect(String(input)).toBe("/api/v1/goals/tree");
+        return new Response(
+          JSON.stringify({
+            data: {
+              total: 1,
+              items: [
+                {
+                  id: "goal-semester",
+                  version: 1,
+                  parent_id: null,
+                  level: "semester",
+                  subject_id: "math",
+                  title: "API 学期目标",
+                  description: null,
+                  start_date: "2026-07-01",
+                  end_date: "2026-12-20",
+                  estimated_minutes: 1000,
+                  actual_minutes: 250,
+                  completion_standard: "完成闭环",
+                  progress: 25,
+                  risk_status: "normal",
+                  status: "active",
+                  adjustment_reason: null,
+                  children: [],
+                },
+              ],
+            },
+            meta: { request_id: "goals" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/planning");
+
+    expect(wrapper.text()).toContain("API 学期目标");
+    expect(wrapper.text()).toContain("25% · 250/1000 min");
+  });
+
   it("renders settings profile and rules from the API when available", async () => {
     vi.stubGlobal(
       "fetch",

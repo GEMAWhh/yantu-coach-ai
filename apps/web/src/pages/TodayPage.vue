@@ -2,17 +2,37 @@
 import { computed, onMounted, ref } from "vue";
 
 import { ApiClient } from "../api/client";
-import type { TaskPayload } from "../api/contracts";
+import type { TaskPayload, TodayPayload } from "../api/contracts";
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
 import { useMockStudyStore, type TodayTask, type Tone } from "../stores/mockStudy";
 
 const study = useMockStudyStore();
-const apiTasks = ref<TodayTask[] | null>(null);
-const taskSourceLabel = computed(() => (apiTasks.value ? "正式数据" : "模拟数据"));
-const taskSourceTone = computed<Tone>(() => (apiTasks.value ? "green" : "cyan"));
-const todayTasks = computed(() => apiTasks.value ?? study.todayTasks);
+const apiToday = ref<TodayPayload | null>(null);
+const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
+const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
+const todayTasks = computed(() => apiToday.value?.tasks.map(mapTask) ?? study.todayTasks);
+const todayMetrics = computed(() => [
+  {
+    label: "今日任务",
+    value: `${apiToday.value?.total_tasks ?? 4} 项`,
+    detail: `预计 ${apiToday.value?.estimated_minutes ?? 125} 分钟`,
+    tone: "blue" as Tone,
+  },
+  {
+    label: "机动时间",
+    value: apiToday.value ? "按计划规则保留" : "35 分钟",
+    detail: "计划不排满全天",
+    tone: "green" as Tone,
+  },
+  {
+    label: "待确认草稿",
+    value: "2 份",
+    detail: "确认前不写正式记录",
+    tone: "yellow" as Tone,
+  },
+]);
 
 function toneForStatus(status: TaskPayload["status"]): Tone {
   if (status === "completed") {
@@ -44,9 +64,9 @@ onMounted(async () => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const response = await new ApiClient().today(today);
-    apiTasks.value = response.data.tasks.map(mapTask);
+    apiToday.value = response.data;
   } catch {
-    apiTasks.value = null;
+    apiToday.value = null;
   }
 });
 </script>
@@ -59,28 +79,18 @@ onMounted(async () => {
     <PageHeader
       kicker="今日"
       title="今日行动"
-      description="把周目标压到今天可执行的任务、证据确认和复盘动作；当前页面只使用模拟数据。"
+      description="把周目标压到今天可执行的任务、证据确认和复盘动作；API 不可用时保留原型数据。"
       action-label="开始第一项"
     />
 
     <div class="metric-grid">
       <MetricCard
-        label="今日任务"
-        value="4 项"
-        detail="预计 125 分钟"
-        tone="blue"
-      />
-      <MetricCard
-        label="机动时间"
-        value="35 分钟"
-        detail="计划不排满全天"
-        tone="green"
-      />
-      <MetricCard
-        label="待确认草稿"
-        value="2 份"
-        detail="确认前不写正式记录"
-        tone="yellow"
+        v-for="metric in todayMetrics"
+        :key="metric.label"
+        :label="metric.label"
+        :value="metric.value"
+        :detail="metric.detail"
+        :tone="metric.tone"
       />
     </div>
 
