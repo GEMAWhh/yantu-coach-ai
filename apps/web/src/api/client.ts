@@ -3,11 +3,17 @@ import type {
   ApiErrorResponse,
   ApiMetaPayload,
   ApiResponse,
+  AnalyticsErrorsPayload,
+  AnalyticsGoalRiskPayload,
+  AnalyticsMasteryPayload,
+  AnalyticsOverviewPayload,
+  AnalyticsTimePayload,
   GoalTreeListPayload,
   HealthPayload,
   SettingsProfilePayload,
   SettingsRulesPayload,
   TodayPayload,
+  WeakGraphPayload,
 } from "./contracts";
 
 export class ApiClientError extends Error {
@@ -50,6 +56,30 @@ export class ApiClient {
 
   settingsRules(): Promise<ApiResponse<SettingsRulesPayload>> {
     return this.get<SettingsRulesPayload>("/api/v1/settings/rules");
+  }
+
+  analyticsOverview(): Promise<ApiResponse<AnalyticsOverviewPayload>> {
+    return this.get<AnalyticsOverviewPayload>("/api/v1/analytics/overview");
+  }
+
+  analyticsTime(): Promise<ApiResponse<AnalyticsTimePayload>> {
+    return this.get<AnalyticsTimePayload>("/api/v1/analytics/time");
+  }
+
+  analyticsErrors(): Promise<ApiResponse<AnalyticsErrorsPayload>> {
+    return this.get<AnalyticsErrorsPayload>("/api/v1/analytics/errors");
+  }
+
+  analyticsMastery(): Promise<ApiResponse<AnalyticsMasteryPayload>> {
+    return this.get<AnalyticsMasteryPayload>("/api/v1/analytics/mastery");
+  }
+
+  analyticsGoalRisk(): Promise<ApiResponse<AnalyticsGoalRiskPayload>> {
+    return this.get<AnalyticsGoalRiskPayload>("/api/v1/analytics/goal-risk");
+  }
+
+  weakGraph(): Promise<ApiResponse<WeakGraphPayload>> {
+    return this.get<WeakGraphPayload>("/api/v1/graph/weak");
   }
 
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {
