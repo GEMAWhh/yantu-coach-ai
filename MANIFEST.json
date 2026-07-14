@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 92,
+  "file_count": 103,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 504,
-      "sha256": "caf480ba2f6470015365f2bf9391b16d5dd1ab28bdfddcb450b4b0ae86f165e9"
+      "size": 748,
+      "sha256": "91603a32eca5e69cf253b0b7c5d7b686c4f8b3b79635d993ab8dc17e950a8305"
     },
     {
       "path": "apps/api/app/__init__.py",
@@ -99,9 +99,34 @@
       "sha256": "2fcffae1a5e035dc1061ca5b6cad7c8329c2cbb7f4ae4c5fde59d219f57aa95d"
     },
     {
+      "path": "apps/api/app/errors.py",
+      "size": 757,
+      "sha256": "2f1550905681b58d36ab989648106bd50a3c10b40019910c4096a4f330d98b2f"
+    },
+    {
+      "path": "apps/api/app/exception_handlers.py",
+      "size": 2192,
+      "sha256": "4dcd9e3fd9de1026ccf69bfda80fde136b6accd1aa84fa95b581b0c014097270"
+    },
+    {
       "path": "apps/api/app/main.py",
-      "size": 1045,
-      "sha256": "018108803edb9b189b47fe179c68abdbd6e69ec13bde833e772d01eee63a52b0"
+      "size": 3647,
+      "sha256": "4f74ab6678985bfc960aa8bf33fcc4cd6a28be4576f876ab4f14053d5ddf162e"
+    },
+    {
+      "path": "apps/api/app/middleware.py",
+      "size": 517,
+      "sha256": "07c9bb14812044f87afc92e8fe71363417f13a6fad7d4056d12386c676220e7c"
+    },
+    {
+      "path": "apps/api/app/request_context.py",
+      "size": 515,
+      "sha256": "dbaca887b460cf07d6ef6dafc69930c0510bb24f10a82c699825b8d53c194dbb"
+    },
+    {
+      "path": "apps/api/app/responses.py",
+      "size": 1433,
+      "sha256": "e213b474c4f85902d8a4ebd2cfd4cea68b86859b8e5e716313034c48418fc6cf"
     },
     {
       "path": "apps/api/app/schemas/__init__.py",
@@ -109,9 +134,19 @@
       "sha256": "468e6d6aef1be9a69aa4e6c04cb8454bd9cf125f6af59bc4b63cc2972d273a87"
     },
     {
+      "path": "apps/api/app/schemas/common.py",
+      "size": 598,
+      "sha256": "f99759465ad5dd9355b050afeaabc18ff8247cce901a2a7307db82ad759d4325"
+    },
+    {
       "path": "apps/api/app/schemas/health.py",
       "size": 283,
       "sha256": "d01cec7dee3e7798f47bf4bdacfc39205d69e9b70d2c691afb36a746aa1bd541"
+    },
+    {
+      "path": "apps/api/app/schemas/meta.py",
+      "size": 495,
+      "sha256": "d86ef2e357bd934eecbc435533d5228199af0f60cba76e1a26dce79c560f1bee"
     },
     {
       "path": "apps/api/app/settings.py",
@@ -124,14 +159,19 @@
       "sha256": "6d911d1d077fd8d33e04c055b123d04a61a028cd9fd518923326d078fc2885a8"
     },
     {
+      "path": "apps/api/tests/test_contract_errors.py",
+      "size": 3706,
+      "sha256": "ba014495c20ae9775f2554a3212aab2d0c5c9681b589818ae1c948aac0a9045b"
+    },
+    {
       "path": "apps/api/tests/test_health.py",
-      "size": 1277,
-      "sha256": "5995e156ea726abbdc4cd5a8404f0170f8eb386cf815e41d97747b250ba74176"
+      "size": 1388,
+      "sha256": "702e591a7e26d7c0fbb8e810eb7cefd9261d30d11318ddaad7ebd33ea767acd5"
     },
     {
       "path": "apps/web/README.md",
-      "size": 316,
-      "sha256": "c5eb38661397a7b9e9d410c89a365ca0e911023a1d9929bac3af4371f7d520e1"
+      "size": 358,
+      "sha256": "9db59c8de7a79a9f25a1502dafedb053ed0971b107300b3ea2ebda2ccdea848c"
     },
     {
       "path": "apps/web/eslint.config.js",
@@ -162,6 +202,21 @@
       "path": "apps/web/src/App.vue",
       "size": 1434,
       "sha256": "edc31a573dcdbe40599ec308034da4000ce9351c2eb963e8175e6c67236cdf58"
+    },
+    {
+      "path": "apps/web/src/api/client.test.ts",
+      "size": 1596,
+      "sha256": "1b0392cfd218abd25a6fd8bd9fe124491af676f468c87bf9bac32dda2af4c2f0"
+    },
+    {
+      "path": "apps/web/src/api/client.ts",
+      "size": 1291,
+      "sha256": "21980236e4a126946d36e29da2545dd3dda41f808e2de21361f98c340a19b60a"
+    },
+    {
+      "path": "apps/web/src/api/contracts.ts",
+      "size": 647,
+      "sha256": "e4b8e0b62c815cd6d0af3fb9e2540dd98c1093f2d2be345f8edb54fc7cfbf32d"
     },
     {
       "path": "apps/web/src/env.d.ts",
@@ -230,8 +285,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 3300,
-      "sha256": "f783b56aabefb6a5544778d7bbf30b1d8386827fe9ea0b6435919170b73b80a7"
+      "size": 3979,
+      "sha256": "85049ddaa0b73ab231d27215862ce030b0f4b2ca36179d8b18792893e6903fbb"
     },
     {
       "path": "docs/ARCHITECTURE.md",

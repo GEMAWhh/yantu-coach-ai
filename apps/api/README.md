@@ -1,6 +1,15 @@
 # API
 
-FastAPI 本地后端骨架。当前阶段只提供 `/health` 和 `/api/v1/health`，用于验证服务、环境隔离和 CI。
+FastAPI 本地后端骨架。当前阶段提供系统端点和统一 API 契约，用于验证服务、环境隔离、错误结构和 CI。
+
+## 契约端点
+
+- `GET /health`
+- `GET /api/v1/health`
+- `GET /api/v1/meta`
+- `POST /api/v1/meta/version-check`
+
+成功响应统一使用 `{data, meta}`；错误响应统一使用 `{error}`；每次响应都带 `X-Request-ID`。
 
 ## 本地运行
 

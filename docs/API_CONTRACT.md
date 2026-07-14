@@ -4,6 +4,29 @@
 
 ## 1. 通用规则
 
+- 成功响应统一使用 envelope：
+
+```json
+{
+  "data": {},
+  "meta": {"request_id": "..."}
+}
+```
+
+- 错误响应统一使用 envelope：
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": {"errors": []},
+    "request_id": "..."
+  }
+}
+```
+
+- 每次请求必须返回 `X-Request-ID` 响应头，响应体中的 `request_id` 必须与其一致；
 - 创建、确认、提交结果等写操作接受 `Idempotency-Key`；
 - 资源版本通过 `version` 或 `If-Match` 防止覆盖；
 - 分页：`page`, `page_size`，返回 `items`, `total`；
@@ -128,10 +151,23 @@ POST /imports/localstorage
 GET  /exports/full
 ```
 
-## 11. 错误代码示例
+## 11. 系统与契约端点
+
+```http
+GET  /health
+GET  /api/v1/health
+GET  /api/v1/meta
+POST /api/v1/meta/version-check
+```
+
+`POST /api/v1/meta/version-check` 使用 `If-Match: contract-v1` 验证版本冲突响应结构。
+
+## 12. 错误代码示例
 
 - `VALIDATION_ERROR`
+- `NOT_FOUND`
 - `VERSION_CONFLICT`
+- `INTERNAL_SERVER_ERROR`
 - `PREREQUISITE_NOT_MET`
 - `MASTERY_TRANSITION_BLOCKED`
 - `AI_DRAFT_NOT_CONFIRMED`
