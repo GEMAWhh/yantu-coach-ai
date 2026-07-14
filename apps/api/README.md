@@ -182,6 +182,7 @@ Stage 6 adds the deterministic wrongbook domain model without OCR or AI analysis
 
 - `POST /api/v1/wrongbook/questions`: creates a structured question and optional knowledge-node link.
 - `POST /api/v1/wrongbook/records`: creates a wrong record with manual causes and an empty verification row.
+- `POST /api/v1/wrongbook/drafts`: creates a manual structured draft for an existing wrong record without mutating formal cause fields.
 - `POST /api/v1/wrongbook/{wrong_id}/analyze`: runs the fake wrongbook provider and stores a governed draft plus AI job.
 - `GET /api/v1/wrongbook/{wrong_id}/draft` and `PATCH /draft`: read or replace the latest structured draft without mutating the formal wrong record.
 - `POST /api/v1/wrongbook/{wrong_id}/confirm`: copies only a valid draft into the formal surface cause, deep cause, and prerequisite gap fields.

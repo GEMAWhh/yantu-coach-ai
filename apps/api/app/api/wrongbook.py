@@ -25,6 +25,7 @@ from app.schemas.wrongbook import (
     WrongbookCandidateListResponse,
     WrongbookCandidateResponse,
     WrongbookConfirmResponse,
+    WrongbookDraftCreate,
     WrongbookDraftResponse,
     WrongbookDraftUpdate,
     WrongbookHistoryResponse,
@@ -40,6 +41,7 @@ from app.wrongbook.service import (
     confirm_wrongbook_draft,
     create_question,
     create_wrong_record,
+    create_wrongbook_draft,
     get_wrong_record,
     get_wrong_verification,
     get_wrongbook_draft,
@@ -97,6 +99,36 @@ def planning_candidates(request: Request) -> ApiResponse[WrongbookCandidateListR
             for candidate in list_wrongbook_planning_candidates(session)
         ]
     return api_response(WrongbookCandidateListResponse(items=items, total=len(items)), request)
+
+
+@router.post("/drafts", response_model=ApiResponse[WrongbookAnalyzeResponse])
+def create_wrongbook_manual_draft(
+    request: Request,
+    payload: WrongbookDraftCreate,
+) -> ApiResponse[WrongbookAnalyzeResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            draft = create_wrongbook_draft(
+                session,
+                payload.wrong_record_id,
+                structured_json=payload.structured_json,
+            )
+            ai_job = session.get(AIJob, draft.ai_job_id)
+            if ai_job is None:
+                raise WrongbookError(
+                    "wrongbook ai job not found",
+                    code="WRONGBOOK_AI_JOB_NOT_FOUND",
+                    status_code=404,
+                    details={"ai_job_id": draft.ai_job_id},
+                )
+            response = WrongbookAnalyzeResponse(
+                draft=WrongbookDraftResponse.from_model(draft),
+                ai_job=WrongbookAIJobResponse.from_model(ai_job),
+            )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
 
 
 @router.get("/{wrong_record_id}", response_model=ApiResponse[WrongRecordDetailResponse])

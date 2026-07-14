@@ -289,6 +289,34 @@ def test_invalid_wrongbook_ai_draft_cannot_confirm_or_mutate_record(
     assert confirmed.json()["data"]["record"]["surface_cause"] == "sign error"
 
 
+def test_manual_wrongbook_draft_endpoint_uses_confirmation_gate(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        wrong_id = _create_wrong_record(client, include_causes=False)
+        created = client.post(
+            "/api/v1/wrongbook/drafts",
+            json={
+                "wrong_record_id": wrong_id,
+                "structured_json": _wrongbook_draft_payload(),
+            },
+        )
+        before_confirm = client.get(f"/api/v1/wrongbook/{wrong_id}")
+        confirmed = client.post(f"/api/v1/wrongbook/{wrong_id}/confirm")
+
+    assert created.status_code == 200
+    created_body = created.json()["data"]
+    assert created_body["draft"]["wrong_record_id"] == wrong_id
+    assert created_body["draft"]["status"] == "draft"
+    assert created_body["draft"]["validation_errors"] == []
+    assert created_body["ai_job"]["job_type"] == "wrongbook_manual_draft"
+    assert created_body["ai_job"]["provider"] == "manual"
+    assert before_confirm.status_code == 200
+    assert before_confirm.json()["data"]["record"]["surface_cause"] is None
+    assert confirmed.status_code == 200
+    assert confirmed.json()["data"]["record"]["surface_cause"] == "sign error"
+
+
 def test_failed_attempt_rolls_back_and_wrong_record_enters_planning_candidates(
     test_settings: RuntimeSettings,
 ) -> None:
