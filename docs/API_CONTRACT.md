@@ -91,10 +91,15 @@ GET  /knowledge/nodes/{node_id}/history
 ## 5. 复习
 
 ```http
-GET  /reviews/due
+GET  /reviews/due?date=YYYY-MM-DD
 POST /reviews/{review_id}/results
 POST /reviews/recalculate
 ```
+
+`GET /reviews/due` 返回到期复习计划和可直接传入今日计划引擎的
+`review_schedule` 候选任务。`POST /reviews/{review_id}/results` 必须支持
+`Idempotency-Key`；独立通过会延长间隔，失败会写入 `interval_test` 证据并触发掌握回退，
+同一日期的即时重做只记录结果，不计入独立时间点。
 
 ## 6. 每日证据
 

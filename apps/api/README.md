@@ -140,3 +140,13 @@ mypy apps/api/app apps/api/tests
 - 低精力会拒绝高认知负荷任务，单科过滤会严格拒绝其他科目。
 - 前置未满足任务返回 `PREREQUISITE_NOT_MET`，连续 3 天未完成返回诊断原因。
 - 每个入选任务返回 `score.breakdown` 与 `explanations`；每个拒绝任务返回 `reasons`。
+
+## 间隔复习调度
+
+阶段 3 提供 `review-v1.0.0` 的最小复习调度边界：
+
+- `POST /api/v1/reviews/recalculate`：基于最新掌握快照生成或刷新复习计划。
+- `GET /api/v1/reviews/due?date=YYYY-MM-DD`：返回到期复习，并给出可传入今日计划引擎的候选任务。
+- `POST /api/v1/reviews/{schedule_id}/results`：提交复习结果，支持 `Idempotency-Key` 幂等。
+- 独立通过会逐步延长间隔；失败会写入 `interval_test` 证据、触发掌握回退并缩短下一次间隔。
+- 同一日期即时重做会保留结果，但 `independent_timepoint=false`，不计入连续独立通过。

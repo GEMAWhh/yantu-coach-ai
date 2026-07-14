@@ -84,7 +84,16 @@ variant_question / integrated_question / interval_test / repeat_deep_cause。
 
 ### review_schedules
 
-`knowledge_node_id, source_type, source_id, due_at, interval_days, review_type, status, scheduling_reason, algorithm_version`
+`knowledge_node_id, subject_id, current_stage, status, due_at, interval_days, pass_streak, fail_streak, last_reviewed_at, last_result_id, source_snapshot_id, rule_version, next_reason`
+
+当前实现使用 `review-v1.0.0`，按 `mastery_rules.v1.yaml` 的阶段基础间隔生成到期时间。
+
+### review_results
+
+`schedule_id, knowledge_node_id, result_type, score, sample_count, correct_count, accuracy, occurred_at, independent_timepoint, evidence_id, snapshot_id, request_id`
+
+当前实现额外保存 `idempotency_key`。独立复习结果会创建 `interval_test` 掌握证据；
+失败结果会触发掌握回退并缩短下一次间隔，同日即时重做不计入独立时间点。
 
 ### assets
 
