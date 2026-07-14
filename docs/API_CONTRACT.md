@@ -205,3 +205,23 @@ POST /api/v1/meta/version-check
 - `ASSET_TYPE_INVALID`
 - `BACKUP_VERIFICATION_FAILED`
 - `MIGRATION_FAILED_ROLLED_BACK`
+
+
+## 13. Implemented evidence draft boundary
+
+Current implemented evidence endpoints are JSON based, not multipart based:
+
+```http
+POST /api/v1/evidence/uploads
+POST /api/v1/evidence/{record_id}/analyze
+GET  /api/v1/evidence/{record_id}/draft
+PATCH /api/v1/evidence/{record_id}/draft
+POST /api/v1/evidence/{record_id}/confirm
+POST /api/v1/evidence/{record_id}/reject
+```
+
+`/uploads` accepts `study_date`, optional `subject_id`, and `files[]` with `original_name`, `mime_type`, and `content_base64`. Supported MIME types are `image/png`, `image/jpeg`, and `application/pdf`.
+
+`/analyze` uses the Fake Provider. `provider_mode=valid` creates a schema-valid draft; `provider_mode=invalid_schema` stores a failed `ai_job` and a `needs_correction` draft with validation errors. The draft schema id is `evidence-analysis-v1`.
+
+Unconfirmed drafts must not write formal evidence fields, tasks, mastery evidence, or mastery snapshots. `/confirm` is idempotent: the first valid confirmation copies structured fields into `evidence_records` and writes one `evidence.confirmed` audit event; repeated confirmation returns `created=false`.

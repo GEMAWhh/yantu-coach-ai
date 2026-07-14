@@ -174,3 +174,21 @@ variant_question / integrated_question / interval_test / repeat_deep_cause。
 - 掌握快照不可无证据来源；
 - 删除文件前检查引用计数；
 - 恢复备份前先备份当前状态。
+
+
+## 6. Implemented evidence draft tables
+
+Migration `0009_evidence_draft_pipeline` adds these concrete tables:
+
+- `ai_jobs`: `job_type`, `provider`, `model_name`, `prompt_version`, `status`, `attempts`, `input_json`, `output_json`, `error_code`, `error_message`, `started_at`, `completed_at`.
+- `evidence_records`: `created_by`, `study_date`, `subject_id`, `status`, `asset_count`, `confirmed_facts_json`, `inferences_json`, `uncertain_fields_json`, `teaching_judgment_json`, `suggested_actions_json`, `confirmed_at`, `rejected_at`.
+- `evidence_assets`: `evidence_record_id`, `asset_id`, `page_order`.
+- `evidence_drafts`: `evidence_record_id`, `ai_job_id`, `status`, `schema_version`, `structured_json`, `validation_errors_json`, `confirmed_at`, `rejected_at`, `rejection_reason`, `confirmed_once`.
+
+Status values currently used:
+
+- `evidence_records.status`: `pending`, `confirmed`, `rejected`.
+- `evidence_drafts.status`: `draft`, `needs_correction`, `confirmed`, `rejected`.
+- `ai_jobs.status`: `succeeded`, `failed`.
+
+Unconfirmed drafts are isolated from `tasks`, `mastery_evidence`, and `mastery_snapshots`. Confirmation copies only the validated structured evidence fields into the formal record and writes an audit event.

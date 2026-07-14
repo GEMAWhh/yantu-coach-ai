@@ -161,3 +161,16 @@ mypy apps/api/app apps/api/tests
 - 连续超时会提高 `overtime_streak`，达到阈值后在调整记录中给出拆分建议。
 - `POST /api/v1/today/generate` 会读取最新系数，先校准候选任务预计用时再生成计划。
 - `GET /api/v1/time-calibration/coefficients|adjustments` 可查看当前系数和调整依据。
+
+
+## Daily evidence draft pipeline
+
+Stage 5 adds the first governed AI-draft boundary for daily study evidence:
+
+- `POST /api/v1/evidence/uploads`: accepts JSON/base64 files and links multiple images or PDFs to one `evidence_record`.
+- `POST /api/v1/evidence/{record_id}/analyze`: runs the deterministic Fake Provider and stores an `ai_job` plus `evidence_draft`.
+- `GET|PATCH /api/v1/evidence/{record_id}/draft`: reads or edits the structured draft. Schema-invalid payloads stay in `needs_correction`.
+- `POST /api/v1/evidence/{record_id}/confirm`: idempotently copies a valid draft into the formal evidence record and writes `evidence.confirmed` audit once.
+- `POST /api/v1/evidence/{record_id}/reject`: marks the current draft and record as rejected.
+
+Current scope is governance only: no OCR, no multimodal parsing, and no automatic mastery or planning side effects before confirmation. Confirmation persists the formal evidence record and audit event; later issues can map confirmed evidence into mastery or wrongbook workflows.

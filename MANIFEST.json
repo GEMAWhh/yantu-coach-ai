@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 199,
+  "file_count": 206,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 7797,
-      "sha256": "ac76fee12554c6d7bab916f2e67ada1b58afc5fded00c8b0e4cd54c3ebee74e3"
+      "size": 8831,
+      "sha256": "e4a9af37ca64d389be877c26020019fa0efbd65424120bcd0ae133b48f3deb0f"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,13 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 501,
-      "sha256": "a68098a4919b9dde9819c225e109e6654710670122c08bb63188ece05867c0d4"
+      "size": 579,
+      "sha256": "a6138617a3220dcc8319f625fa3f0892887474c8c968823f18382e8678b57003"
+    },
+    {
+      "path": "apps/api/app/api/evidence.py",
+      "size": 6796,
+      "sha256": "0afe296865cab0a571d51096dace126bc6051da7817e1cb6989aecafd6e6f049"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -150,13 +155,23 @@
     },
     {
       "path": "apps/api/app/db/migrations.py",
-      "size": 2070,
-      "sha256": "c9cfe39b22daa3e2495b55f4c8018c9b8a79448f374cd0c232c2004b3a22d60d"
+      "size": 2077,
+      "sha256": "538ddf83ce36b94f9e0f61699429fb60916c2be81844426208e6d1580344f2ce"
     },
     {
       "path": "apps/api/app/errors.py",
       "size": 757,
       "sha256": "2f1550905681b58d36ab989648106bd50a3c10b40019910c4096a4f330d98b2f"
+    },
+    {
+      "path": "apps/api/app/evidence/__init__.py",
+      "size": 722,
+      "sha256": "14cde5d28905c3351bc8c479b77f769c1587c59e4f84a8914fabcb3c6188a532"
+    },
+    {
+      "path": "apps/api/app/evidence/service.py",
+      "size": 13921,
+      "sha256": "8525248accb97cbc4d5f9eca3fbbd089c13ca95df44625d59843eab43a9429b4"
     },
     {
       "path": "apps/api/app/exception_handlers.py",
@@ -205,8 +220,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4507,
-      "sha256": "accb34ac93820fee33e39ac521cf54349eb011d59b0c998e79b89b224f4c7b92"
+      "size": 4639,
+      "sha256": "e4c68ed072fe435c69cb9745907fc06cbd26e774231fdb266362d5401d19c2d5"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -225,8 +240,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 762,
-      "sha256": "a4bc41530ae7529d275b6f55b857e0a1ba16b394b72afc0ee97ab3656c95d724"
+      "size": 923,
+      "sha256": "5f84f11a660e75ea62be87af646083a2165ea433b696d9b4618adbe5693fc5c4"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -242,6 +257,11 @@
       "path": "apps/api/app/models/base.py",
       "size": 177,
       "sha256": "c09957332dd24fa4a70134022c6162bab3bad3d98cf40500664a1744d6765d76"
+    },
+    {
+      "path": "apps/api/app/models/evidence.py",
+      "size": 5370,
+      "sha256": "315f5f302e1dfe7cdbdcb206d23e35ea53f8f76c91040dbd5c6f27f87b3090e5"
     },
     {
       "path": "apps/api/app/models/import_batch.py",
@@ -317,6 +337,11 @@
       "path": "apps/api/app/schemas/common.py",
       "size": 598,
       "sha256": "f99759465ad5dd9355b050afeaabc18ff8247cce901a2a7307db82ad759d4325"
+    },
+    {
+      "path": "apps/api/app/schemas/evidence.py",
+      "size": 6642,
+      "sha256": "a009db25f1348b760f11df5fe32513e61f95fb36511ca3383b3ba315e7764eac"
     },
     {
       "path": "apps/api/app/schemas/health.py",
@@ -439,6 +464,11 @@
       "sha256": "6e7ed4e68265da11ec9f95e1d5fa169e35ccf2f348cf8ce52e3ad1d423174cb4"
     },
     {
+      "path": "apps/api/migrations/versions/0009_evidence_draft_pipeline.py",
+      "size": 6074,
+      "sha256": "1346303f495d291fc5b320f6165305e829f1958a704f4010536ac452ed655e9c"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -457,6 +487,11 @@
       "path": "apps/api/tests/test_database_foundation.py",
       "size": 5111,
       "sha256": "bdedebc14167a98c218e63c04905ab0ae9e0e7347fd773e0f95e4db1d010e559"
+    },
+    {
+      "path": "apps/api/tests/test_evidence_draft_pipeline.py",
+      "size": 7980,
+      "sha256": "d30246b9c6b5553e0f36fddc76dc90934aec604d53cf9d65c6c86bf15da1be66"
     },
     {
       "path": "apps/api/tests/test_file_storage_backup.py",
@@ -760,8 +795,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 5705,
-      "sha256": "dd5dd25df08fae321128d4a7076f8f3f70f245ac0e29268bdb5e376d9646596e"
+      "size": 6831,
+      "sha256": "8197ef329688ae47d125f9c61260ca74ccddbeeb312b4260a13b6ac8de1b6e3f"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -770,8 +805,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 6839,
-      "sha256": "f58ac5dcccf60e3ec3650c88d2f94ec6f6ef295b6a919e864f3cbeee8a4a19bc"
+      "size": 8070,
+      "sha256": "1bf025cd1cf73709ff7f83f26da655adf6cf8a34a0a4fe6bb53f6324c226504b"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -825,8 +860,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 2918,
-      "sha256": "5bf8ddd260b2bd27c950f139f51fd2b1e1acb15e016847556fa59f272d05d01c"
+      "size": 3656,
+      "sha256": "72518377ff25d6d0e6c21cbd6af044811624d9d067dc11e29232e4ec06d00263"
     },
     {
       "path": "docs/UI_STANDARD.md",

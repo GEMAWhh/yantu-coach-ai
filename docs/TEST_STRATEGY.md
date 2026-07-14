@@ -79,3 +79,15 @@ tests/fixtures/ai/
 - 自动备份、模拟失败和回滚；
 - 关键数据一致性检查；
 - 发布报告和已知问题完成。
+
+
+## 7. Evidence draft acceptance coverage
+
+`apps/api/tests/test_evidence_draft_pipeline.py` covers the first AI-draft gate:
+
+- `EVID-001`: two uploaded files are linked to one evidence record with stable page order.
+- `AI-002`: Fake Provider valid output conforms to `evidence-analysis-v1`.
+- `EVID-002`: unconfirmed drafts do not create tasks, mastery evidence, mastery snapshots, or formal confirmed fields.
+- `EVID-003`: confirmation is idempotent and writes exactly one `evidence.confirmed` audit event.
+- `AI-003`: schema-invalid Fake Provider output becomes `failed`/`needs_correction`, then can be manually patched to `draft`.
+- `EVID-004`: rejected drafts mark the draft and record as rejected without confirmation side effects.
