@@ -205,6 +205,10 @@ Migration `0010_wrongbook_domain` adds these concrete tables:
 
 Current wrong statuses are `pending_analysis`, `pending_no_hint_redo`, `pending_variant`, `pending_interval`, `stable_corrected`, and `regressed`. Required stable correction checks are no-hint redo, variant, and interval test.
 
+Migration `0012_wrongbook_draft_pipeline` adds `wrongbook_drafts`: `wrong_record_id`, `ai_job_id`, `status`, `schema_version`, `structured_json`, `validation_errors_json`, `confirmed_at`, and `confirmed_once`.
+
+Wrongbook drafts reuse `ai_jobs` with `job_type=wrongbook_analysis`. Current draft statuses are `draft`, `needs_correction`, and `confirmed`. Records created without cause fields start at `pending_analysis`; confirmation copies only validated `surface_cause`, `deep_cause`, and `prerequisite_gap` into `wrong_records`, moves them to `pending_no_hint_redo`, and writes a `wrongbook.draft_confirmed` audit event.
+
 ## 8. Implemented goal history events
 
 Migration `0011_goal_recalculation_history` adds `goal_history_events`:

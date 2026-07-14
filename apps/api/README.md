@@ -181,13 +181,16 @@ Stage 6 adds the deterministic wrongbook domain model without OCR or AI analysis
 
 - `POST /api/v1/wrongbook/questions`: creates a structured question and optional knowledge-node link.
 - `POST /api/v1/wrongbook/records`: creates a wrong record with manual causes and an empty verification row.
+- `POST /api/v1/wrongbook/{wrong_id}/analyze`: runs the fake wrongbook provider and stores a governed draft plus AI job.
+- `GET /api/v1/wrongbook/{wrong_id}/draft` and `PATCH /draft`: read or replace the latest structured draft without mutating the formal wrong record.
+- `POST /api/v1/wrongbook/{wrong_id}/confirm`: copies only a valid draft into the formal surface cause, deep cause, and prerequisite gap fields.
 - `POST /api/v1/wrongbook/{wrong_id}/assets`: links an existing asset to one of seven strict roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, `supplement`.
 - `POST /api/v1/wrongbook/{wrong_id}/attempts`: records `original_redo`, `no_hint_redo`, `variant`, `interval_test`, or `transfer_test` attempts with `Idempotency-Key` support.
 - `POST /api/v1/wrongbook/{wrong_id}/variant-results` and `/interval-results`: shortcut result submissions that force `variant` or `interval_test` while reusing the same attempt state machine and idempotency rules.
 - `GET /api/v1/wrongbook/{wrong_id}/history`: returns the current record, verification flags, and ordered attempt history.
 - `GET /api/v1/wrongbook/planning-candidates`: returns non-resolved wrong records as `wrong_record` planning candidates.
 
-Resolution requires all three required checks: no-hint redo, variant, and interval test. Immediate original redo can advance the record only to `pending_variant`; any failed attempt marks the record `regressed`, clears that verification flag, and increments `error_count`.
+Wrong records created without cause fields start at `pending_analysis`; confirming a valid draft moves them to `pending_no_hint_redo`. Resolution requires all three required checks: no-hint redo, variant, and interval test. Immediate original redo can advance the record only to `pending_variant`; any failed attempt marks the record `regressed`, clears that verification flag, and increments `error_count`.
 
 ## Goal recalculation and history
 

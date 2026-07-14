@@ -4,15 +4,28 @@ from http import HTTPStatus
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import literal_column, select
 from sqlalchemy.orm import Session
 
 from app.models.asset import Asset
 from app.models.base import utc_now
+from app.models.evidence import AIJob
 from app.models.knowledge import KnowledgeNode
-from app.models.wrongbook import Attempt, Question, QuestionAsset, WrongRecord, WrongVerification
+from app.models.wrongbook import (
+    Attempt,
+    Question,
+    QuestionAsset,
+    WrongbookDraft,
+    WrongRecord,
+    WrongVerification,
+)
 from app.planning.engine import PlanningCandidate
 from app.services.audit import write_audit_event
+
+WRONGBOOK_SCHEMA_VERSION = "wrongbook-analysis-v1"
+FAKE_PROVIDER = "fake"
+FAKE_MODEL_NAME = "fake-wrongbook-provider"
+FAKE_PROMPT_VERSION = "wrongbook-draft-fake-v1"
 
 AssetRole = Literal[
     "statement",
@@ -38,6 +51,7 @@ WrongStatus = Literal[
     "stable_corrected",
     "regressed",
 ]
+ProviderMode = Literal["valid", "invalid_schema"]
 
 ASSET_ROLES = {
     "statement",
@@ -86,6 +100,13 @@ class AttemptSubmission:
     attempt: Attempt
     wrong_record: WrongRecord
     verification: WrongVerification
+    created: bool
+
+
+@dataclass(frozen=True)
+class WrongbookConfirmation:
+    wrong_record: WrongRecord
+    draft: WrongbookDraft
     created: bool
 
 
@@ -159,6 +180,11 @@ def create_wrong_record(
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             details={"error_count": error_count},
         )
+    initial_status = (
+        "pending_no_hint_redo"
+        if surface_cause and deep_cause and prerequisite_gap
+        else "pending_analysis"
+    )
     wrong = WrongRecord(
         id=str(uuid4()),
         question_id=question.id,
@@ -168,7 +194,7 @@ def create_wrong_record(
         prerequisite_gap=prerequisite_gap,
         error_count=error_count,
         redo_count=0,
-        current_status="pending_no_hint_redo",
+        current_status=initial_status,
         next_review_at=next_review_at,
         created_by=created_by,
     )
@@ -212,6 +238,162 @@ def list_wrong_attempts(session: Session, wrong_record_id: str) -> list[Attempt]
             .order_by(Attempt.attempted_at, Attempt.created_at, Attempt.id)
         ).all()
     )
+
+
+def analyze_wrong_record(
+    session: Session,
+    wrong_record_id: str,
+    *,
+    provider_mode: ProviderMode = "valid",
+) -> WrongbookDraft:
+    wrong = get_wrong_record(session, wrong_record_id)
+    question = get_question(session, wrong.question_id)
+    asset_ids = _asset_ids_for_question(session, question.id)
+    started_at = utc_now()
+    output = _fake_provider_output(wrong, question, asset_ids, provider_mode)
+    validation_errors = validate_wrongbook_payload(output)
+    job_status = "succeeded" if not validation_errors else "failed"
+    job = AIJob(
+        id=str(uuid4()),
+        job_type="wrongbook_analysis",
+        provider=FAKE_PROVIDER,
+        model_name=FAKE_MODEL_NAME,
+        prompt_version=FAKE_PROMPT_VERSION,
+        status=job_status,
+        attempts=1,
+        input_json={
+            "wrong_record_id": wrong.id,
+            "question_id": question.id,
+            "asset_ids": asset_ids,
+        },
+        output_json=output,
+        error_code=None if not validation_errors else "AI_OUTPUT_SCHEMA_INVALID",
+        error_message=None if not validation_errors else "; ".join(validation_errors),
+        started_at=started_at,
+        completed_at=utc_now(),
+    )
+    session.add(job)
+    session.flush()
+    draft = WrongbookDraft(
+        id=str(uuid4()),
+        wrong_record_id=wrong.id,
+        ai_job_id=job.id,
+        status="draft" if not validation_errors else "needs_correction",
+        schema_version=WRONGBOOK_SCHEMA_VERSION,
+        structured_json=output,
+        validation_errors_json=validation_errors,
+    )
+    session.add(draft)
+    session.flush()
+    return draft
+
+
+def get_wrongbook_draft(session: Session, wrong_record_id: str) -> WrongbookDraft:
+    get_wrong_record(session, wrong_record_id)
+    draft = session.scalar(
+        select(WrongbookDraft)
+        .where(WrongbookDraft.wrong_record_id == wrong_record_id)
+        .order_by(literal_column("rowid").desc())
+    )
+    if draft is None:
+        raise WrongbookError(
+            "wrongbook draft not found",
+            code="WRONGBOOK_DRAFT_NOT_FOUND",
+            status_code=HTTPStatus.NOT_FOUND,
+            details={"wrong_record_id": wrong_record_id},
+        )
+    return draft
+
+
+def update_wrongbook_draft(
+    session: Session,
+    wrong_record_id: str,
+    *,
+    structured_json: dict[str, Any],
+) -> WrongbookDraft:
+    draft = get_wrongbook_draft(session, wrong_record_id)
+    if draft.status == "confirmed":
+        raise WrongbookError(
+            "confirmed wrongbook draft cannot be edited",
+            code="WRONGBOOK_DRAFT_FINALIZED",
+            status_code=HTTPStatus.CONFLICT,
+            details={"draft_id": draft.id, "status": draft.status},
+        )
+    validation_errors = validate_wrongbook_payload(structured_json)
+    draft.structured_json = structured_json
+    draft.validation_errors_json = validation_errors
+    draft.status = "draft" if not validation_errors else "needs_correction"
+    session.flush()
+    return draft
+
+
+def confirm_wrongbook_draft(
+    session: Session,
+    wrong_record_id: str,
+    *,
+    request_id: str | None = None,
+    actor_type: str = "system",
+) -> WrongbookConfirmation:
+    wrong = get_wrong_record(session, wrong_record_id)
+    draft = get_wrongbook_draft(session, wrong.id)
+    if draft.status == "confirmed":
+        return WrongbookConfirmation(wrong_record=wrong, draft=draft, created=False)
+    if draft.status != "draft":
+        raise WrongbookError(
+            "only valid wrongbook draft can be confirmed",
+            code="AI_DRAFT_NOT_CONFIRMED",
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            details={"draft_id": draft.id, "status": draft.status},
+        )
+    payload = draft.structured_json
+    wrong.surface_cause = payload["surface_cause"]
+    wrong.deep_cause = payload["deep_cause"]
+    wrong.prerequisite_gap = payload["prerequisite_gap"]
+    if wrong.current_status == "pending_analysis":
+        wrong.current_status = "pending_no_hint_redo"
+    now = utc_now()
+    draft.status = "confirmed"
+    draft.confirmed_at = now
+    draft.confirmed_once = True
+    write_audit_event(
+        session,
+        event_type="wrongbook.draft_confirmed",
+        actor_type=actor_type,
+        object_type="wrong_record",
+        object_id=wrong.id,
+        after_json={
+            "draft_id": draft.id,
+            "schema_version": draft.schema_version,
+            "surface_cause": wrong.surface_cause,
+            "deep_cause": wrong.deep_cause,
+            "prerequisite_gap": wrong.prerequisite_gap,
+        },
+        reason="confirmed wrongbook draft into formal wrong record",
+        request_id=request_id,
+    )
+    session.flush()
+    return WrongbookConfirmation(wrong_record=wrong, draft=draft, created=True)
+
+
+def validate_wrongbook_payload(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    required = {
+        "surface_cause",
+        "deep_cause",
+        "prerequisite_gap",
+        "remediation_plan",
+        "uncertain_fields",
+    }
+    extra = set(payload) - required
+    missing = required - set(payload)
+    errors.extend(f"missing:{field}" for field in sorted(missing))
+    errors.extend(f"extra:{field}" for field in sorted(extra))
+    for field in ("surface_cause", "deep_cause", "prerequisite_gap"):
+        if field in payload and not isinstance(payload[field], str):
+            errors.append(f"type:{field}")
+    _validate_remediation_plan(payload.get("remediation_plan"), errors)
+    _validate_uncertain_fields(payload.get("uncertain_fields"), errors)
+    return errors
 
 
 def link_question_asset(
@@ -514,6 +696,92 @@ def _validate_optional_range(
                 "maximum": maximum,
             },
         )
+
+
+def _validate_remediation_plan(value: object, errors: list[str]) -> None:
+    if not isinstance(value, list):
+        errors.append("type:remediation_plan")
+        return
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.append(f"type:remediation_plan[{index}]")
+            continue
+        extra = set(item) - {"action", "reason", "priority"}
+        errors.extend(f"extra:remediation_plan[{index}].{field}" for field in sorted(extra))
+        for field in ("action", "reason", "priority"):
+            if field not in item:
+                errors.append(f"missing:remediation_plan[{index}].{field}")
+            elif not isinstance(item[field], str):
+                errors.append(f"type:remediation_plan[{index}].{field}")
+
+
+def _validate_uncertain_fields(value: object, errors: list[str]) -> None:
+    if not isinstance(value, list):
+        errors.append("type:uncertain_fields")
+        return
+    for index, item in enumerate(value):
+        if not isinstance(item, dict):
+            errors.append(f"type:uncertain_fields[{index}]")
+            continue
+        extra = set(item) - {"field", "reason", "confidence"}
+        errors.extend(f"extra:uncertain_fields[{index}].{field}" for field in sorted(extra))
+        for field in ("field", "reason", "confidence"):
+            if field not in item:
+                errors.append(f"missing:uncertain_fields[{index}].{field}")
+        for field in ("field", "reason"):
+            if field in item and not isinstance(item[field], str):
+                errors.append(f"type:uncertain_fields[{index}].{field}")
+        confidence = item.get("confidence")
+        if (
+            not isinstance(confidence, int | float)
+            or isinstance(confidence, bool)
+            or not 0 <= confidence <= 1
+        ):
+            errors.append(f"range:uncertain_fields[{index}].confidence")
+
+
+def _fake_provider_output(
+    wrong: WrongRecord,
+    question: Question,
+    asset_ids: list[str],
+    provider_mode: ProviderMode,
+) -> dict[str, Any]:
+    if provider_mode == "invalid_schema":
+        return {"surface_cause": "calculation slip"}
+    return {
+        "surface_cause": wrong.surface_cause or "answer process mismatch",
+        "deep_cause": wrong.deep_cause or "core method was not retrieved without cues",
+        "prerequisite_gap": wrong.prerequisite_gap or "prerequisite concept needs targeted review",
+        "remediation_plan": [
+            {
+                "action": "redo_without_hints",
+                "reason": f"question:{question.id}",
+                "priority": "high",
+            },
+            {
+                "action": "variant_practice",
+                "reason": f"asset_count:{len(asset_ids)}",
+                "priority": "normal",
+            },
+        ],
+        "uncertain_fields": [
+            {
+                "field": "image_content",
+                "reason": "fake provider does not inspect attached image or PDF content",
+                "confidence": 0.25,
+            }
+        ],
+    }
+
+
+def _asset_ids_for_question(session: Session, question_id: str) -> list[str]:
+    return list(
+        session.scalars(
+            select(QuestionAsset.asset_id)
+            .where(QuestionAsset.question_id == question_id)
+            .order_by(QuestionAsset.page_order)
+        ).all()
+    )
 
 
 def _short_text(value: str, limit: int = 80) -> str:

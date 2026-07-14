@@ -1,7 +1,8 @@
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, utc_now
@@ -132,5 +133,30 @@ class WrongVerification(Base):
     interval_test_passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     transfer_test_passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_attempt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+    __mapper_args__ = {"version_id_col": version}
+
+
+class WrongbookDraft(Base):
+    __tablename__ = "wrongbook_drafts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
+    wrong_record_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("wrong_records.id"), nullable=False, index=True
+    )
+    ai_job_id: Mapped[str] = mapped_column(String(36), ForeignKey("ai_jobs.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    schema_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    structured_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    validation_errors_json: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    confirmed_once: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __mapper_args__ = {"version_id_col": version}

@@ -13,6 +13,7 @@ from app.files.storage import store_original_file
 from app.knowledge.service import create_knowledge_node
 from app.main import create_app
 from app.models.asset import Asset
+from app.models.audit import AuditEvent
 from app.models.knowledge import KnowledgeNode
 from app.models.wrongbook import QuestionAsset, WrongRecord, WrongVerification
 from app.settings import RuntimeSettings, get_settings
@@ -189,6 +190,105 @@ def test_wrongbook_result_shortcuts_submit_fixed_attempt_types(
     ]
 
 
+def test_wrongbook_ai_draft_requires_confirmation_before_record_mutation(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        wrong_id = _create_wrong_record(client, include_causes=False)
+        analyzed = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/analyze",
+            json={"provider_mode": "valid"},
+        )
+        before_confirm = client.get(f"/api/v1/wrongbook/{wrong_id}")
+        fetched_draft = client.get(f"/api/v1/wrongbook/{wrong_id}/draft")
+        patched = client.patch(
+            f"/api/v1/wrongbook/{wrong_id}/draft",
+            json={"structured_json": _wrongbook_draft_payload()},
+        )
+        confirmed = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/confirm",
+            headers={"X-Request-ID": "wrongbook-confirm"},
+        )
+        repeated = client.post(f"/api/v1/wrongbook/{wrong_id}/confirm")
+
+    assert analyzed.status_code == 200
+    analyzed_body = analyzed.json()["data"]
+    assert analyzed_body["draft"]["status"] == "draft"
+    assert analyzed_body["draft"]["validation_errors"] == []
+    assert analyzed_body["ai_job"]["job_type"] == "wrongbook_analysis"
+    assert analyzed_body["ai_job"]["status"] == "succeeded"
+    assert before_confirm.status_code == 200
+    before_record = before_confirm.json()["data"]["record"]
+    assert before_record["current_status"] == "pending_analysis"
+    assert before_record["surface_cause"] is None
+    assert before_record["deep_cause"] is None
+    assert before_record["prerequisite_gap"] is None
+    assert fetched_draft.status_code == 200
+    assert fetched_draft.json()["data"]["id"] == analyzed_body["draft"]["id"]
+    assert patched.status_code == 200
+    assert patched.json()["data"]["structured_json"]["surface_cause"] == "sign error"
+    assert confirmed.status_code == 200
+    confirmed_body = confirmed.json()["data"]
+    assert confirmed_body["created"] is True
+    assert confirmed_body["draft"]["status"] == "confirmed"
+    assert confirmed_body["draft"]["confirmed_once"] is True
+    assert confirmed_body["record"]["surface_cause"] == "sign error"
+    assert confirmed_body["record"]["deep_cause"] == "chain rule retrieval failed"
+    assert confirmed_body["record"]["prerequisite_gap"] == "derivative chain rule"
+    assert confirmed_body["record"]["current_status"] == "pending_no_hint_redo"
+    assert repeated.status_code == 200
+    assert repeated.json()["data"]["created"] is False
+
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        audit_events = list(
+            session.scalars(
+                select(AuditEvent).where(
+                    AuditEvent.event_type == "wrongbook.draft_confirmed",
+                    AuditEvent.object_id == wrong_id,
+                )
+            ).all()
+        )
+    assert len(audit_events) == 1
+    assert audit_events[0].request_id == "wrongbook-confirm"
+
+
+def test_invalid_wrongbook_ai_draft_cannot_confirm_or_mutate_record(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        wrong_id = _create_wrong_record(client, include_causes=False)
+        invalid = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/analyze",
+            json={"provider_mode": "invalid_schema"},
+        )
+        blocked = client.post(f"/api/v1/wrongbook/{wrong_id}/confirm")
+        after_blocked = client.get(f"/api/v1/wrongbook/{wrong_id}")
+        patched = client.patch(
+            f"/api/v1/wrongbook/{wrong_id}/draft",
+            json={"structured_json": _wrongbook_draft_payload()},
+        )
+        confirmed = client.post(f"/api/v1/wrongbook/{wrong_id}/confirm")
+
+    assert invalid.status_code == 200
+    invalid_body = invalid.json()["data"]
+    assert invalid_body["draft"]["status"] == "needs_correction"
+    assert invalid_body["draft"]["validation_errors"]
+    assert invalid_body["ai_job"]["status"] == "failed"
+    assert invalid_body["ai_job"]["error_code"] == "AI_OUTPUT_SCHEMA_INVALID"
+    assert blocked.status_code == 422
+    assert blocked.json()["error"]["code"] == "AI_DRAFT_NOT_CONFIRMED"
+    blocked_record = after_blocked.json()["data"]["record"]
+    assert blocked_record["current_status"] == "pending_analysis"
+    assert blocked_record["surface_cause"] is None
+    assert blocked_record["deep_cause"] is None
+    assert patched.status_code == 200
+    assert patched.json()["data"]["status"] == "draft"
+    assert patched.json()["data"]["validation_errors"] == []
+    assert confirmed.status_code == 200
+    assert confirmed.json()["data"]["record"]["surface_cause"] == "sign error"
+
+
 def test_failed_attempt_rolls_back_and_wrong_record_enters_planning_candidates(
     test_settings: RuntimeSettings,
 ) -> None:
@@ -256,7 +356,12 @@ def _create_asset(settings: RuntimeSettings, session: Session, tmp_path: Path) -
     )
 
 
-def _create_wrong_record(client: TestClient, knowledge_node_id: str | None = None) -> str:
+def _create_wrong_record(
+    client: TestClient,
+    knowledge_node_id: str | None = None,
+    *,
+    include_causes: bool = True,
+) -> str:
     question_payload: dict[str, Any] = {
         "standard_text": "Find the derivative of x^2 at x=3.",
         "knowledge_node_id": knowledge_node_id,
@@ -271,15 +376,16 @@ def _create_wrong_record(client: TestClient, knowledge_node_id: str | None = Non
     )
     assert question_response.status_code == 200
     question_id = question_response.json()["data"]["id"]
-    record_response = client.post(
-        "/api/v1/wrongbook/records",
-        json={
-            "question_id": question_id,
-            "surface_cause": "calculation slip",
-            "deep_cause": "derivative rule not automatic",
-            "prerequisite_gap": "power rule",
-        },
-    )
+    record_payload: dict[str, Any] = {"question_id": question_id}
+    if include_causes:
+        record_payload.update(
+            {
+                "surface_cause": "calculation slip",
+                "deep_cause": "derivative rule not automatic",
+                "prerequisite_gap": "power rule",
+            }
+        )
+    record_response = client.post("/api/v1/wrongbook/records", json=record_payload)
     assert record_response.status_code == 200
     return str(record_response.json()["data"]["record"]["id"])
 
@@ -300,3 +406,25 @@ def _submit_attempt(
     )
     assert response.status_code == 200
     return dict(response.json()["data"])
+
+
+def _wrongbook_draft_payload() -> dict[str, Any]:
+    return {
+        "surface_cause": "sign error",
+        "deep_cause": "chain rule retrieval failed",
+        "prerequisite_gap": "derivative chain rule",
+        "remediation_plan": [
+            {
+                "action": "redo_without_hints",
+                "reason": "confirm independent retrieval",
+                "priority": "high",
+            }
+        ],
+        "uncertain_fields": [
+            {
+                "field": "source_image",
+                "reason": "manual confirmation required",
+                "confidence": 0.4,
+            }
+        ],
+    }

@@ -234,6 +234,10 @@ Current implemented wrongbook endpoints are:
 POST /api/v1/wrongbook/questions
 POST /api/v1/wrongbook/records
 GET  /api/v1/wrongbook/{wrong_record_id}
+POST /api/v1/wrongbook/{wrong_record_id}/analyze
+GET  /api/v1/wrongbook/{wrong_record_id}/draft
+PATCH /api/v1/wrongbook/{wrong_record_id}/draft
+POST /api/v1/wrongbook/{wrong_record_id}/confirm
 POST /api/v1/wrongbook/{wrong_record_id}/assets
 POST /api/v1/wrongbook/{wrong_record_id}/attempts
 POST /api/v1/wrongbook/{wrong_record_id}/variant-results
@@ -243,6 +247,8 @@ GET  /api/v1/wrongbook/planning-candidates
 ```
 
 The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
+
+`POST /wrongbook/{wrong_id}/analyze` uses the Fake Provider and writes an `ai_jobs` row plus a `wrongbook_drafts` row. `GET /draft` returns the latest draft, `PATCH /draft` replaces its structured JSON and revalidates it, and `POST /confirm` copies only a valid draft into `wrong_records.surface_cause`, `deep_cause`, and `prerequisite_gap`. Wrong records created without cause fields start at `pending_analysis` and move to `pending_no_hint_redo` only after draft confirmation. Unconfirmed or invalid drafts must not mutate formal wrong-record fields.
 
 Wrongbook attempt types are `original_redo`, `no_hint_redo`, `variant`, `interval_test`, and `transfer_test`. `Idempotency-Key` prevents duplicate attempt effects. A correct original redo may move a record to `pending_variant`, but it never resolves the wrong record. Stable correction requires `no_hint_redo`, `variant`, and `interval_test` all passed. A failed attempt rolls the record back to `regressed` and increments `error_count`.
 
