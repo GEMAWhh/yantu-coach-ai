@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 103,
+  "file_count": 132,
   "files": [
     {
       "path": ".editorconfig",
@@ -45,8 +45,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "size": 1620,
-      "sha256": "ed44d26a41a56b7d4b9e98698909113d76414791f0e4d28d47754c1ec460fc19"
+      "size": 1780,
+      "sha256": "47bc3e3263ebd3fb44e4044d5221a554ad96c8961748d4da1ade21099ba6d24b"
     },
     {
       "path": ".github/workflows/governance.yml",
@@ -170,8 +170,68 @@
     },
     {
       "path": "apps/web/README.md",
-      "size": 358,
-      "sha256": "9db59c8de7a79a9f25a1502dafedb053ed0971b107300b3ea2ebda2ccdea848c"
+      "size": 951,
+      "sha256": "da0d7ff523155850f943a5226f9451b03f2de1c0cc488769c6f2b1001b06a971"
+    },
+    {
+      "path": "apps/web/e2e/README.md",
+      "size": 572,
+      "sha256": "cb52703d40edfc38137e08262975ceae13afa9b893570a52288fb621a1ee562a"
+    },
+    {
+      "path": "apps/web/e2e/app-shell.spec.ts",
+      "size": 2140,
+      "sha256": "4a4bfc6c38bc187a0e682e27d2a2eb8061ccdcb3137588d6a43e5e9a6c0817f1"
+    },
+    {
+      "path": "apps/web/e2e/baselines/learning-desktop-baseline.png",
+      "size": 180626,
+      "sha256": "253c4b4fab9717f7c54e30db3652be434a37a665f7d25d71d4a601ac67c7fce8"
+    },
+    {
+      "path": "apps/web/e2e/baselines/learning-mobile-360-baseline.png",
+      "size": 121667,
+      "sha256": "dfdb475655d88dbf0a4f85254695a1ca6bdcaa3f374641d848e07a8c89ef447f"
+    },
+    {
+      "path": "apps/web/e2e/baselines/planning-desktop-baseline.png",
+      "size": 189891,
+      "sha256": "8827e7224307022976db5cb66f75475a65392c293716cac78c8c2db9f7db95ea"
+    },
+    {
+      "path": "apps/web/e2e/baselines/planning-mobile-360-baseline.png",
+      "size": 133812,
+      "sha256": "8510369740dffd74b8fda1b94c918baeaf71b40c164ae05f95633f2059ae6647"
+    },
+    {
+      "path": "apps/web/e2e/baselines/progress-desktop-baseline.png",
+      "size": 180842,
+      "sha256": "fb4f8929752cade1222e0a65a0ebc3a14a10aa7a86301cf274fd4cdb6205700f"
+    },
+    {
+      "path": "apps/web/e2e/baselines/progress-mobile-360-baseline.png",
+      "size": 117274,
+      "sha256": "75eab0c45800167f754c9434f83b57a530b2f6535e240b8898d67de983dcd44e"
+    },
+    {
+      "path": "apps/web/e2e/baselines/settings-desktop-baseline.png",
+      "size": 167329,
+      "sha256": "50de79799c21b3a4113d0fc988a96649daae69420e503c43947f9f520975e067"
+    },
+    {
+      "path": "apps/web/e2e/baselines/settings-mobile-360-baseline.png",
+      "size": 107253,
+      "sha256": "e839088273b67c5c392cd851d4bf001d7594eb30c940f8f5933c00778b9df1ab"
+    },
+    {
+      "path": "apps/web/e2e/baselines/today-desktop-baseline.png",
+      "size": 230718,
+      "sha256": "4cd9bedb099700a583c020c726d4a56e7eb670ca309c3cc35632661549e13dc1"
+    },
+    {
+      "path": "apps/web/e2e/baselines/today-mobile-360-baseline.png",
+      "size": 165043,
+      "sha256": "cf011893040546299667427fec7ebf4e658c887486af698b3505880595623838"
     },
     {
       "path": "apps/web/eslint.config.js",
@@ -185,23 +245,28 @@
     },
     {
       "path": "apps/web/package-lock.json",
-      "size": 202788,
-      "sha256": "399de071d6ab2cea3298b043f28d569cfed498b7672c488d118faa7a939af60d"
+      "size": 207202,
+      "sha256": "4cb07f5d261fad89e6f2e9d292ccc62f01bf047275a4c8448f84131a15a8e44a"
     },
     {
       "path": "apps/web/package.json",
-      "size": 788,
-      "sha256": "afdc3baa083d4c067680f11128d45203a06066e07551b00b6e43d5002dd0583a"
+      "size": 910,
+      "sha256": "989424b68d0331c65498cf972b55eb63a9a8144a754167ca08619f889ba5d13e"
+    },
+    {
+      "path": "apps/web/playwright.config.ts",
+      "size": 573,
+      "sha256": "10fa4aef668091cd83867fe65fdf331c4f2aaedd98d18bf20fe279b65536a878"
     },
     {
       "path": "apps/web/src/App.test.ts",
-      "size": 492,
-      "sha256": "c60db964a717bbb4044fea05d14138f156d3734ccf61180e34ab6a3e43af9a36"
+      "size": 1256,
+      "sha256": "200ad2c8596a7c54a16eabccbbf6e403e15e81df6e674ecb046dca7aecba06aa"
     },
     {
       "path": "apps/web/src/App.vue",
-      "size": 1434,
-      "sha256": "edc31a573dcdbe40599ec308034da4000ce9351c2eb963e8175e6c67236cdf58"
+      "size": 124,
+      "sha256": "91a2248c40d380e646e4c8edec31cbae32ea09c8972a792613af1a6f35fba1c1"
     },
     {
       "path": "apps/web/src/api/client.test.ts",
@@ -219,19 +284,94 @@
       "sha256": "e4b8e0b62c815cd6d0af3fb9e2540dd98c1093f2d2be345f8edb54fc7cfbf32d"
     },
     {
+      "path": "apps/web/src/app/navigation.test.ts",
+      "size": 401,
+      "sha256": "4c58819a6762a29327d91935262fc476356a0316839801dabd4351028a445e80"
+    },
+    {
+      "path": "apps/web/src/app/navigation.ts",
+      "size": 1115,
+      "sha256": "13c2157585fb43227e2c3ae18be1ffc15fd68bbf91d297c1e83c047b38b35859"
+    },
+    {
+      "path": "apps/web/src/components/MetricCard.vue",
+      "size": 433,
+      "sha256": "b22c529f81540d4466c6d0d9eb1de0b9f60ce2d2733750f1945297a1b93670bd"
+    },
+    {
+      "path": "apps/web/src/components/PageHeader.vue",
+      "size": 523,
+      "sha256": "d55559eb7abffa1f2348ec74bf987f2a1fa3d1e609b87b491c38c1a013176325"
+    },
+    {
+      "path": "apps/web/src/components/StatusTag.vue",
+      "size": 288,
+      "sha256": "787e040d6fecf38aa366e9c686e68186d468370d755c367266bcef756832fcd5"
+    },
+    {
       "path": "apps/web/src/env.d.ts",
       "size": 38,
       "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
     },
     {
+      "path": "apps/web/src/layouts/AppLayout.vue",
+      "size": 2191,
+      "sha256": "9cfb3e5f5991550d8628121630c093f2e8a73642190a63baa411885afc023b4b"
+    },
+    {
       "path": "apps/web/src/main.ts",
-      "size": 117,
-      "sha256": "af7ef294573d7ae68a4db670e76238282743c3e7cf925f26c7df3c9d01ae88ed"
+      "size": 209,
+      "sha256": "050d7932422a07bcc68bc7c1b1437989c95d9476cba98cbebb0b436c3b82e685"
+    },
+    {
+      "path": "apps/web/src/pages/LearningPage.vue",
+      "size": 3470,
+      "sha256": "ffb07c128c5e4ababa2aae594589c4b149b2c3ccda69bc9659bcaa8c6024bebe"
+    },
+    {
+      "path": "apps/web/src/pages/PlanningPage.vue",
+      "size": 2361,
+      "sha256": "1845f03bd6e85d960248e686c7223381ea881e72d0f5c43f0b071ebce161c4f9"
+    },
+    {
+      "path": "apps/web/src/pages/ProgressPage.vue",
+      "size": 2819,
+      "sha256": "d5cb55caa0c85ebd14d8fc1ebe27e98c95d7f40eb57b98648bb1c22a6d5d16b4"
+    },
+    {
+      "path": "apps/web/src/pages/SettingsPage.vue",
+      "size": 2764,
+      "sha256": "f1480018fc340a7504c75453d9a10a0c9c8a4e12173bb5f8465ded8b4390bf8f"
+    },
+    {
+      "path": "apps/web/src/pages/TodayPage.vue",
+      "size": 3408,
+      "sha256": "54d536028c344ed50205560efc75cd850b22181ee3a7f7eddede848b263ba4f5"
+    },
+    {
+      "path": "apps/web/src/router/index.ts",
+      "size": 1280,
+      "sha256": "0e0abdc6bba680b62bb9f81b00b3ee00c251379efbe852b5f66225f7d8daad66"
+    },
+    {
+      "path": "apps/web/src/stores/index.ts",
+      "size": 74,
+      "sha256": "f06a03a23130c7619121ca74d41c968cbdc326024dbcb3b0f5e2d5960fbda157"
+    },
+    {
+      "path": "apps/web/src/stores/mockStudy.ts",
+      "size": 5665,
+      "sha256": "3068648af679443daef1514624f90dfc293422dea4e3dedc304e08e740747e03"
     },
     {
       "path": "apps/web/src/styles.css",
-      "size": 1561,
-      "sha256": "229d90c31b378267c38daab2424b3636659551057bea09174c25d91b696e51b3"
+      "size": 12580,
+      "sha256": "2da5d5370413fb1bd1ef1168225919f83f1f7d3528d254e3ead0fcbf9fb88a33"
+    },
+    {
+      "path": "apps/web/src/styles/tokens.css",
+      "size": 794,
+      "sha256": "155d5abc66a5a50af83732def3949c0a4e1ca161fee26182267bd4c4d8cb93f6"
     },
     {
       "path": "apps/web/tsconfig.json",
@@ -482,6 +622,11 @@
       "path": "references/README.md",
       "size": 276,
       "sha256": "8afae80fe5c876e529a41005cd55ebf5d1e2cc841e81836f9a89a5db2429faa6"
+    },
+    {
+      "path": "references/考研智能学习系统_V1.1_本地版.html",
+      "size": 103936,
+      "sha256": "4c8f6bbc7dfb380850f245f9b43d12a1f571f22f2d267e74e9ab50953e65d583"
     },
     {
       "path": "scripts/check_forbidden_patterns.py",
