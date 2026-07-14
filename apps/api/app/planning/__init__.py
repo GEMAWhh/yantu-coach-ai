@@ -1,3 +1,12 @@
+from app.planning.engine import (
+    PLANNING_RULE_VERSION,
+    CandidateScore,
+    PlannedTask,
+    PlanningCandidate,
+    RejectedTask,
+    TodayPlan,
+    generate_today_plan,
+)
 from app.planning.service import (
     GoalTreeNode,
     PlanningError,
@@ -17,11 +26,18 @@ from app.planning.service import (
 )
 
 __all__ = [
+    "PLANNING_RULE_VERSION",
+    "CandidateScore",
     "GoalTreeNode",
+    "PlannedTask",
+    "PlanningCandidate",
     "PlanningError",
+    "RejectedTask",
     "TaskResultSubmission",
+    "TodayPlan",
     "create_goal",
     "create_task",
+    "generate_today_plan",
     "get_goal",
     "get_goal_tree",
     "get_task",

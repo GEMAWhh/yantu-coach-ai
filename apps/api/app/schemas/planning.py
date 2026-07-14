@@ -6,12 +6,15 @@ from typing import Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.planning import Goal, Task, TaskResult
+from app.planning.engine import PlanningCandidate, TodayPlan
 from app.planning.service import GoalTreeNode
 
 GoalLevel = Literal["semester", "quarter", "month", "week", "day"]
 GoalStatus = Literal["draft", "active", "completed", "delayed", "archived", "cancelled"]
 TaskStatus = Literal["pending", "in_progress", "completed", "skipped", "withdrawn"]
 TaskResultType = Literal["completed", "partial", "wrong", "unknown"]
+EnergyLevel = Literal["low", "medium", "high"]
+CognitiveLoad = Literal["low", "medium", "high"]
 
 
 class GoalCreate(BaseModel):
@@ -248,6 +251,123 @@ class TodayResponse(BaseModel):
     tasks: list[TaskResponse]
     total_tasks: int
     estimated_minutes: int
+
+
+class PlanningCandidateInput(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=240)
+    subject_id: str = Field(min_length=1)
+    estimated_minutes: int = Field(ge=0)
+    cognitive_load: CognitiveLoad
+    prerequisite_status: str = "satisfied"
+    source_type: str = "manual"
+    source_id: str | None = None
+    task_type: str = "study"
+    fixed: bool = False
+    failure_streak: int = Field(default=0, ge=0)
+    overtime_count: int = Field(default=0, ge=0)
+    deadline_urgency: int = Field(default=0, ge=0, le=100)
+    review_due: int = Field(default=0, ge=0, le=100)
+    knowledge_importance: int = Field(default=0, ge=0, le=100)
+    weakness: int = Field(default=0, ge=0, le=100)
+    parent_goal_risk: int = Field(default=0, ge=0, le=100)
+    repeat_error: int = Field(default=0, ge=0, le=100)
+    energy_fit: int = Field(default=50, ge=0, le=100)
+
+    def to_candidate(self) -> PlanningCandidate:
+        return PlanningCandidate(**self.model_dump())
+
+
+class TodayGenerateRequest(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    available_minutes: int = Field(ge=0)
+    energy: EnergyLevel
+    subject_filter: str | None = None
+    candidates: list[PlanningCandidateInput]
+
+
+class CandidateScoreResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    total: float
+    breakdown: dict[str, float]
+
+
+class GeneratedTaskResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    title: str
+    subject_id: str
+    source_type: str
+    source_id: str | None
+    scheduled_minutes: int
+    score: CandidateScoreResponse
+    explanations: list[str]
+
+
+class RejectedTaskResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    title: str
+    subject_id: str
+    score: CandidateScoreResponse
+    reasons: list[str]
+
+
+class TodayGenerateResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    rule_version: Literal["planning-v1.0.0"]
+    available_minutes: int
+    schedulable_minutes: int
+    planned_minutes: int
+    buffer_minutes: int
+    selected: list[GeneratedTaskResponse]
+    rejected: list[RejectedTaskResponse]
+
+    @classmethod
+    def from_plan(cls, plan: TodayPlan) -> TodayGenerateResponse:
+        return cls(
+            rule_version="planning-v1.0.0",
+            available_minutes=plan.available_minutes,
+            schedulable_minutes=plan.schedulable_minutes,
+            planned_minutes=plan.planned_minutes,
+            buffer_minutes=plan.buffer_minutes,
+            selected=[
+                GeneratedTaskResponse(
+                    id=item.candidate.id,
+                    title=item.candidate.title,
+                    subject_id=item.candidate.subject_id,
+                    source_type=item.candidate.source_type,
+                    source_id=item.candidate.source_id,
+                    scheduled_minutes=item.scheduled_minutes,
+                    score=CandidateScoreResponse(
+                        total=item.score.total,
+                        breakdown=item.score.breakdown,
+                    ),
+                    explanations=item.explanations,
+                )
+                for item in plan.selected
+            ],
+            rejected=[
+                RejectedTaskResponse(
+                    id=item.candidate.id,
+                    title=item.candidate.title,
+                    subject_id=item.candidate.subject_id,
+                    score=CandidateScoreResponse(
+                        total=item.score.total,
+                        breakdown=item.score.breakdown,
+                    ),
+                    reasons=item.reasons,
+                )
+                for item in plan.rejected
+            ],
+        )
 
 
 class TaskResultCreate(BaseModel):
