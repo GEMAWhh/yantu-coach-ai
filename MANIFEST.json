@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 146,
+  "file_count": 153,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 1111,
-      "sha256": "54fd8be680997ce1b5b6db5b8767c36c7a6fbc248935ea68ff3802c0def6d563"
+      "size": 1899,
+      "sha256": "9887d1a53cb6167948a41bb53b3069196e8b44cbf6d31c9282dcffa2d2147014"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -116,7 +116,7 @@
     {
       "path": "apps/api/app/db/migrations.py",
       "size": 2073,
-      "sha256": "d059079ab71af313f51a6b619563ac32d81b96713a1bbc8d83989ea4a1be1899"
+      "sha256": "3ec43a73031e3ddb4a06545c791a908e1a3fa6d2ccd8600a9d3f43c96378d2c0"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -127,6 +127,26 @@
       "path": "apps/api/app/exception_handlers.py",
       "size": 2192,
       "sha256": "4dcd9e3fd9de1026ccf69bfda80fde136b6accd1aa84fa95b581b0c014097270"
+    },
+    {
+      "path": "apps/api/app/files/__init__.py",
+      "size": 46,
+      "sha256": "d76620cf7a249f7a3d67e1162d54a9e6bf2b7fc680cda7730789c6a81b858eab"
+    },
+    {
+      "path": "apps/api/app/files/backup.py",
+      "size": 6954,
+      "sha256": "3a4a770d915711c572734b12a7b89509ac21f5b1770a4ef08104b51a3ec6d557"
+    },
+    {
+      "path": "apps/api/app/files/exceptions.py",
+      "size": 268,
+      "sha256": "ae372e3af007a39cb355534a0244a18ac352e8a2bb75303b5e4cdd6baaa6cb67"
+    },
+    {
+      "path": "apps/api/app/files/storage.py",
+      "size": 4905,
+      "sha256": "b471696b2462fa7c6d56b29db36c5811644ece33f253a89d95ed98ae83bf018b"
     },
     {
       "path": "apps/api/app/main.py",
@@ -140,8 +160,13 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 107,
-      "sha256": "39abddd9c5549668f19ee978aaaab1d04fdc831cd9b1c0dcc0811c913cb1c666"
+      "size": 151,
+      "sha256": "ef89e0d2f8fbafe0f8d769a921bb40e408c5b7e09cfb5e5c05dcfb7263d8308e"
+    },
+    {
+      "path": "apps/api/app/models/asset.py",
+      "size": 1322,
+      "sha256": "7680c5bbf3fbe362755b985d84f921487b6f7260e6d54073b13f33baea4c944e"
     },
     {
       "path": "apps/api/app/models/audit.py",
@@ -219,6 +244,11 @@
       "sha256": "c261fe907a8928b5010749a1a9ec0fac0bc2906fd003fa14a71d17115b038561"
     },
     {
+      "path": "apps/api/migrations/versions/0002_file_storage_backup.py",
+      "size": 1658,
+      "sha256": "ac7b4d08a6fd2b83452e2309fa2b932f3485e76e8f90695edb7ed9c727d9a88f"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -232,6 +262,11 @@
       "path": "apps/api/tests/test_database_foundation.py",
       "size": 5111,
       "sha256": "bdedebc14167a98c218e63c04905ab0ae9e0e7347fd773e0f95e4db1d010e559"
+    },
+    {
+      "path": "apps/api/tests/test_file_storage_backup.py",
+      "size": 7051,
+      "sha256": "ee61de20076ac307085da7cb4b584e2551ac72cbe414e85410ac7dd80ecade7b"
     },
     {
       "path": "apps/api/tests/test_health.py",
