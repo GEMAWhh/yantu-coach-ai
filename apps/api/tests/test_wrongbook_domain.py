@@ -143,6 +143,52 @@ def test_original_redo_and_missing_verification_cannot_resolve_wrong_record(
     assert verification.interval_test_passed is True
 
 
+def test_wrongbook_result_shortcuts_submit_fixed_attempt_types(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        wrong_id = _create_wrong_record(client)
+        _submit_attempt(client, wrong_id, "no_hint_redo", True)
+        variant = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/variant-results",
+            json={"is_correct": True, "score": 96, "confidence": 80},
+            headers={"Idempotency-Key": "variant-shortcut"},
+        )
+        interval = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/interval-results",
+            json={"is_correct": True, "answer_text": "reviewed without hints"},
+            headers={"Idempotency-Key": "interval-shortcut", "X-Request-ID": "interval-result"},
+        )
+        duplicate_interval = client.post(
+            f"/api/v1/wrongbook/{wrong_id}/interval-results",
+            json={"is_correct": True, "answer_text": "reviewed without hints"},
+            headers={"Idempotency-Key": "interval-shortcut"},
+        )
+        history = client.get(f"/api/v1/wrongbook/{wrong_id}/history")
+
+    assert variant.status_code == 200
+    variant_body = variant.json()["data"]
+    assert variant_body["attempt"]["attempt_type"] == "variant"
+    assert variant_body["attempt"]["score"] == 96
+    assert variant_body["record"]["current_status"] == "pending_interval"
+    assert interval.status_code == 200
+    interval_body = interval.json()["data"]
+    assert interval_body["attempt"]["attempt_type"] == "interval_test"
+    assert interval_body["attempt"]["request_id"] == "interval-result"
+    assert interval_body["record"]["current_status"] == "stable_corrected"
+    assert duplicate_interval.status_code == 200
+    duplicate_body = duplicate_interval.json()["data"]
+    assert duplicate_body["created"] is False
+    assert duplicate_body["attempt"]["id"] == interval_body["attempt"]["id"]
+    history_body = history.json()["data"]
+    assert history_body["total_attempts"] == 3
+    assert [attempt["attempt_type"] for attempt in history_body["attempts"]] == [
+        "no_hint_redo",
+        "variant",
+        "interval_test",
+    ]
+
+
 def test_failed_attempt_rolls_back_and_wrong_record_enters_planning_candidates(
     test_settings: RuntimeSettings,
 ) -> None:

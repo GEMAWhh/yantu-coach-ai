@@ -104,6 +104,7 @@ def create_app() -> FastAPI:
             "fake-ai-provider",
             "wrongbook-domain",
             "wrongbook-history",
+            "wrongbook-result-shortcuts",
             "assets-resources-api",
             "graph-analytics-api",
             "data-management-backups",

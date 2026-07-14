@@ -223,6 +223,18 @@ class AttemptCreate(BaseModel):
     confidence: int | None = Field(default=None, ge=0, le=100)
 
 
+class AttemptResultCreate(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    is_correct: bool
+    attempted_at: datetime | None = None
+    answer_text: str | None = None
+    score: int | None = Field(default=None, ge=0, le=100)
+    duration_seconds: int | None = Field(default=None, ge=0)
+    hint_level: int | None = Field(default=None, ge=0)
+    confidence: int | None = Field(default=None, ge=0, le=100)
+
+
 class AttemptResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
