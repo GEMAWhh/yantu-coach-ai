@@ -134,3 +134,14 @@ tests/fixtures/ai/
 - `GET /analytics/overview` aggregates knowledge, goals, tasks, task results, wrong records, mastery snapshots, task status, and goal risk.
 - `GET /analytics/time` aggregates estimated and actual minutes by subject.
 - `GET /analytics/errors`, `/analytics/mastery`, and `/analytics/goal-risk` expose wrong-record distribution, mastery stage distribution, and risky goals.
+
+## 12. Backup and export API coverage
+
+`apps/api/tests/test_data_management_backup_api.py` covers the data-management API boundary:
+
+- `POST /backups` creates a verified ZIP backup and returns a filename backup id without absolute paths.
+- `GET /backups` lists available local backup archives.
+- `POST /backups/{backup_id}/verify` validates the manifest and archive entries.
+- `POST /backups/{backup_id}/restore` creates a pre-restore backup and restores both database state and file content visibility.
+- `GET /exports/full` creates an export archive through the same backup mechanism.
+- Invalid backup labels and missing backup ids return structured API errors.

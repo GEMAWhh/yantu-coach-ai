@@ -1,4 +1,5 @@
 from app.api.assets import router as assets_router
+from app.api.data_management import router as data_management_router
 from app.api.evidence import router as evidence_router
 from app.api.imports import router as imports_router
 from app.api.insights import router as insights_router
@@ -11,6 +12,7 @@ from app.api.wrongbook import router as wrongbook_router
 
 __all__ = [
     "assets_router",
+    "data_management_router",
     "evidence_router",
     "imports_router",
     "insights_router",

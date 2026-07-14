@@ -297,3 +297,23 @@ GET /api/v1/analytics/goal-risk
 `/graph/weak` returns knowledge nodes whose latest mastery snapshot is below stage 4. Items include latest stage, evidence count, repeat error rate, and blocking reasons.
 
 Analytics endpoints aggregate existing local data only; they do not create derived records. Current coverage includes overview counts, estimated/actual time by subject, wrong-record status and knowledge-node distribution, latest mastery stage distribution, and risky goal lists.
+
+## 18. Implemented backup and export API
+
+Current implemented data-management endpoints are:
+
+```http
+POST /api/v1/backups
+GET  /api/v1/backups
+POST /api/v1/backups/{backup_id}/verify
+POST /api/v1/backups/{backup_id}/restore
+GET  /api/v1/exports/full
+```
+
+`POST /backups` creates a local ZIP backup using the existing backup service. Responses use the ZIP filename as `backup_id` and never expose absolute local paths.
+
+`GET /backups` lists local backup ZIP files without eagerly verifying every archive. `/verify` validates manifest hash, database entry, file entries, entry sizes, entry hashes, and safe ZIP paths.
+
+`/restore` verifies the target backup first, creates a `pre-restore` backup of the current state, restores the database and files, and returns `pre_restore_backup_id`.
+
+`GET /exports/full` creates an export ZIP through the same verified backup mechanism with label `export`.
