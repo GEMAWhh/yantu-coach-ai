@@ -212,3 +212,14 @@ Migration `0011_goal_recalculation_history` adds `goal_history_events`:
 `goal_id, event_type, previous_progress, new_progress, previous_actual_minutes, new_actual_minutes, previous_risk_status, new_risk_status, previous_status, new_status, reason, source_type, source_id, request_id`
 
 These events are append-only audit evidence for deterministic goal recalculation. They do not replace `audit_events`; they are domain-level planning history optimized for the UI and reports.
+
+## 9. Implemented assets and resource index
+
+The current file API uses the existing `assets` table as both the physical-file registry and the lightweight resource index:
+
+- `inbox`: uploaded but not organized.
+- `organized`: visible through `GET /resources`.
+- `archived`: still visible through `GET /resources`.
+- `deleted`: hidden from normal metadata/content/resource reads.
+
+The resource index is a view over organized/archived assets. No standalone `resources` table has been added yet because catalog-specific fields are not defined in this data model.

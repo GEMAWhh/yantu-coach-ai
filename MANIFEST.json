@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 215,
+  "file_count": 220,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 10636,
-      "sha256": "236905885c26e2ceaca6cc9361a8f8c0b29e45caa125849d06a1aa2d80faced4"
+      "size": 11558,
+      "sha256": "f96a6845bd3f7e103328a5521ff4f6b921fc5bf8bb9424cddc1aa3b4fd56cb5f"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,13 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 660,
-      "sha256": "9fb6b4e38ba5a9c27fb966fb91fb662e37923c55994f84a9dba38dc32eb54208"
+      "size": 732,
+      "sha256": "40c295e2568eb3ca40f8cee08fd13f0a06270ceb802947417a7a66bf6caa7c47"
+    },
+    {
+      "path": "apps/api/app/api/assets.py",
+      "size": 4969,
+      "sha256": "611a0a931ef6f15ede535507669dd80c6d9714a6234c84d4a0cad85e56e937ab"
     },
     {
       "path": "apps/api/app/api/evidence.py",
@@ -147,6 +152,16 @@
       "path": "apps/api/app/api/wrongbook.py",
       "size": 5624,
       "sha256": "29f73e3786122ee0e0f6c2ceb0e47f33120763ad71497be8936d57d3c9414f8d"
+    },
+    {
+      "path": "apps/api/app/assets/__init__.py",
+      "size": 49,
+      "sha256": "53f6acaa07a56a8b3b006b845eebbe2de1c5831601088975466c1ec8970b86bb"
+    },
+    {
+      "path": "apps/api/app/assets/service.py",
+      "size": 5029,
+      "sha256": "35bfc968a08bb37fa67c593ecf627ab28addac22a1e1c0c701a158f6c74c17c1"
     },
     {
       "path": "apps/api/app/db/__init__.py",
@@ -225,8 +240,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4776,
-      "sha256": "e5b8e17a98f36e55be5b0bb5f2af0574709192fd966f15d281add26def285408"
+      "size": 4869,
+      "sha256": "18018b572c333b38628ae506c63d7b477b9e4055c24eba3fbeb003dc364b9860"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -316,7 +331,7 @@
     {
       "path": "apps/api/app/planning/service.py",
       "size": 24779,
-      "sha256": "c4485a6f1fce54a8a5f6cb5fed45922cd561b16ca499bd0f1f2fc1c3280d120b"
+      "sha256": "772f20be9b1cd75e1fb3bb8bdcd94375637055a8fe26328e30071ac10a9b11ec"
     },
     {
       "path": "apps/api/app/request_context.py",
@@ -342,6 +357,11 @@
       "path": "apps/api/app/schemas/__init__.py",
       "size": 28,
       "sha256": "468e6d6aef1be9a69aa4e6c04cb8454bd9cf125f6af59bc4b63cc2972d273a87"
+    },
+    {
+      "path": "apps/api/app/schemas/assets.py",
+      "size": 2174,
+      "sha256": "2e2d9faf7ef984c4e157b1d40623ccdf82d8ab5ee398e7c79da7e642b3afa3e7"
     },
     {
       "path": "apps/api/app/schemas/common.py",
@@ -507,6 +527,11 @@
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
+    },
+    {
+      "path": "apps/api/tests/test_assets_resources_api.py",
+      "size": 4339,
+      "sha256": "5277e9544e41093e46118c28255d28dbc7d79b659dc332a4eab3469948ffefdc"
     },
     {
       "path": "apps/api/tests/test_contract_errors.py",
@@ -840,8 +865,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 8504,
-      "sha256": "259bb73335ff2c73e256228b399fa493329d6b04df68422b7876f9c3c08fee5c"
+      "size": 9867,
+      "sha256": "2ea8509f7910035a9cb259d1532bbf183f73b31f582c754c53aaa38dba2263af"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -850,8 +875,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 9579,
-      "sha256": "e657f084f78decc2cfdd27c53e1a02d529681235d9ac78432b9448aa0b258f1c"
+      "size": 10139,
+      "sha256": "97d752fb17eeb361bb998086f92ea8e12fd08a15b0e6915c9bcd1a89a9d6330e"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -905,8 +930,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 4942,
-      "sha256": "514ad8dda572ddf0d2742e6aba5ce13d662b0e6ff906196fbbe5603bc87b9ef9"
+      "size": 5625,
+      "sha256": "5cb09979c4a818506a28b297a9c1fe99a9412a8a01ed441133beb46047caece1"
     },
     {
       "path": "docs/UI_STANDARD.md",

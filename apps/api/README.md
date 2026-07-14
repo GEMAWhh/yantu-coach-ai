@@ -197,3 +197,15 @@ Stage 4 adds deterministic five-layer planning rollup:
 - Overdue unfinished goals become `risk_status=high`; overdue unfinished tasks make the direct goal `at_risk`.
 
 History events preserve `request_id`, `source_type`, `source_id`, and a human reason so later UI can explain why a goal changed.
+
+## Assets and resources
+
+Stage 7 starts the file/resource API boundary on top of the existing local file store:
+
+- `POST /api/v1/assets`: stores supported image/PDF content from JSON base64, validates filename/MIME/signature, and deduplicates by SHA-256.
+- `GET /api/v1/assets/{asset_id}/metadata`: returns metadata with relative storage paths only.
+- `GET /api/v1/assets/{asset_id}/content`: returns the original content as base64 in the response envelope.
+- `DELETE /api/v1/assets/{asset_id}` and `POST /api/v1/assets/{asset_id}/restore`: soft-delete and restore asset visibility without removing referenced files.
+- `POST /api/v1/resources` and `GET /api/v1/resources`: promote an asset to `organized` and list organized/archived assets as lightweight resource entries.
+
+The resource index intentionally reuses `assets.state`; a separate `resources` table is deferred until the product model defines catalog metadata.

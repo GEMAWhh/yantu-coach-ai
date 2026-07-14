@@ -255,3 +255,25 @@ GET  /api/v1/goals/{goal_id}/history
 `/recalculate` accepts optional `as_of_date` and `reason`. It recalculates the requested goal subtree bottom-up from direct task results and child goals. The response includes the recalculated root goal plus emitted `goal.recalculated` history events.
 
 Task result submission automatically recalculates the root ancestor goal using `source_type=task_result`. Goal history events include previous/new progress, actual minutes, risk status, status, request id, source, and reason.
+
+## 16. Implemented assets and resource index
+
+Current implemented file endpoints are JSON based:
+
+```http
+POST   /api/v1/assets
+GET    /api/v1/assets/{asset_id}/metadata
+GET    /api/v1/assets/{asset_id}/content
+DELETE /api/v1/assets/{asset_id}
+POST   /api/v1/assets/{asset_id}/restore
+POST   /api/v1/resources
+GET    /api/v1/resources
+```
+
+`POST /assets` accepts `original_name`, `mime_type`, `content_base64`, and optional `state`. Supported MIME types are `image/png`, `image/jpeg`, and `application/pdf`. The storage service validates filename safety, extension, declared MIME type, and file signature before writing to the local file store.
+
+Assets are deduplicated by SHA-256. API responses expose only relative `storage_path` values and never expose local absolute paths. `GET /content` returns base64 content in the response envelope.
+
+`DELETE /assets/{asset_id}` is a soft delete that hides metadata/content from normal reads while preserving the stored file and reference count. `/restore` moves a deleted asset back to `inbox`.
+
+`POST /resources` promotes an existing non-deleted asset from `inbox` to `organized`. `GET /resources` returns the organized/archived asset index as `resource_type=asset` entries. A separate resource table is intentionally deferred until the product model defines catalog fields such as tags, folders, or study-unit links.

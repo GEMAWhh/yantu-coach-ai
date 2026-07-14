@@ -111,3 +111,15 @@ tests/fixtures/ai/
 - `goal.recalculated` history events preserve request id and task-result source.
 - Manual recalculate marks overdue unfinished goals high risk and delayed.
 - Goal history API returns the emitted recalculation evidence.
+
+## 10. Assets and resource index coverage
+
+`apps/api/tests/test_assets_resources_api.py` covers the implemented file API boundary:
+
+- `POST /assets` stores supported files, deduplicates by SHA-256, and increments reference count.
+- Metadata responses expose relative storage paths only.
+- `GET /assets/{asset_id}/content` returns the original content as base64.
+- `DELETE /assets/{asset_id}` soft-deletes the asset and hides normal metadata reads.
+- `POST /assets/{asset_id}/restore` restores deleted assets to `inbox`.
+- `POST /resources` promotes an asset to the organized resource index.
+- MIME masquerade and path traversal uploads are rejected with asset-specific error codes.
