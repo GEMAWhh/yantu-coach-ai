@@ -8,7 +8,7 @@
 
 1. 新建私有 GitHub 仓库。
 2. 将本目录全部提交为仓库首个版本。
-3. 在 GitHub 中启用 `main` 和 `develop` 分支保护。
+3. 在 GitHub 中启用 `main` 和 `develop` 分支保护；若当前 GitHub 套餐不支持私有仓库强制分支保护，则必须记录为已知限制，并用 PR、CI 和人工确认流程替代。
 4. 根据 `initial_issues/` 依次创建首批 Issue。
 5. 把 `prompts/` 中对应角色提示词交给不同 AI 智能体。
 6. 每项任务必须执行：Issue → 独立分支 → PR → CI → 测试 AI → 审查 AI → 合并。
@@ -77,3 +77,14 @@ python scripts/check_forbidden_patterns.py .
 ```
 
 CI 会自动执行同类检查。任何失败均不得绕过。
+
+## 8. 当前仓库门禁限制
+
+当前仓库位于个人账号的私有仓库中，未升级 GitHub Pro/Team。GitHub Rulesets 和私有仓库分支保护不会被强制执行。
+
+在升级前，本项目采用以下替代约束：
+
+1. 所有开发任务仍按 Issue → 独立分支 → PR → CI → 审查 → 合并执行。
+2. 不把 Ruleset 或 Protected Branch 标记为“已强制生效”。
+3. `main` 和 `develop` 的直接推送属于流程违规，即使 GitHub 当前无法技术性阻止。
+4. 每次合并前必须确认 `backend`、`frontend`、`e2e`、`validate` 检查通过。

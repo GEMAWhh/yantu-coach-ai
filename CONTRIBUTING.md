@@ -19,6 +19,17 @@
 7. CI 全绿且所有严重意见解决后合并。
 8. 阶段完成后从 `develop` 创建 `release/*`，预发布验收后合并到 `main`。
 
+## 当前仓库约束
+
+当前仓库是个人账号下的私有仓库，未升级 GitHub Pro/Team。GitHub Rulesets 和私有仓库分支保护不会被强制执行。
+
+因此，`main` 和 `develop` 的保护在升级前依赖流程纪律执行：
+
+- 禁止直接向 `main` 或 `develop` 推送业务变更。
+- 所有变更必须走 Issue、独立分支、PR 和 CI。
+- 合并前必须确认 `backend`、`frontend`、`e2e`、`validate` 通过。
+- 任何文档不得声称当前 Ruleset 或 Protected Branch 已经强制生效。
+
 ## 提交信息
 
 ```text
