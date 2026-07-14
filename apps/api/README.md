@@ -130,3 +130,13 @@ mypy apps/api/app apps/api/tests
 
 任务状态与任务结果严格分离：结果提交不会自动改任务状态，任务完成也不会直接创建
 `mastery_snapshots`。目标进度当前按该目标下任务结果的 `completion_ratio` 汇总。
+
+## 今日计划引擎 V1
+
+阶段 3 提供 `planning-v1.0.0` 的确定性计划生成边界：
+
+- `POST /api/v1/today/generate`：根据候选任务、可用时间、精力和可选单科过滤生成今日计划。
+- 默认保留 18% 机动时间，单个可拆分任务最多安排 60 分钟。
+- 低精力会拒绝高认知负荷任务，单科过滤会严格拒绝其他科目。
+- 前置未满足任务返回 `PREREQUISITE_NOT_MET`，连续 3 天未完成返回诊断原因。
+- 每个入选任务返回 `score.breakdown` 与 `explanations`；每个拒绝任务返回 `reasons`。

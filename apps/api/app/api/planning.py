@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.database import get_session_factory
 from app.errors import ApiError
+from app.planning.engine import generate_today_plan
 from app.planning.service import (
     PlanningError,
     create_goal,
@@ -37,6 +38,8 @@ from app.schemas.planning import (
     TaskResultSubmitResponse,
     TaskStatus,
     TaskUpdate,
+    TodayGenerateRequest,
+    TodayGenerateResponse,
     TodayResponse,
 )
 from app.settings import get_settings
@@ -64,6 +67,20 @@ def today(
         ),
         request,
     )
+
+
+@router.post("/today/generate", response_model=ApiResponse[TodayGenerateResponse])
+def generate_today(
+    request: Request,
+    payload: TodayGenerateRequest,
+) -> ApiResponse[TodayGenerateResponse]:
+    plan = generate_today_plan(
+        [candidate.to_candidate() for candidate in payload.candidates],
+        available_minutes=payload.available_minutes,
+        energy=payload.energy,
+        subject_filter=payload.subject_filter,
+    )
+    return api_response(TodayGenerateResponse.from_plan(plan), request)
 
 
 @router.post("/goals", response_model=ApiResponse[GoalResponse])

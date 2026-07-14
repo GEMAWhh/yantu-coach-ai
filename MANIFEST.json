@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 182,
+  "file_count": 184,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 5877,
-      "sha256": "beb5297e73084066b325e6cd17f6ea2bb67dfa8834c367f56eba7d87912d6afb"
+      "size": 6462,
+      "sha256": "14b57ecafa5ad8adf73ff45dc496328b924e8b0be670629d457de3fd7655cdae"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -125,8 +125,8 @@
     },
     {
       "path": "apps/api/app/api/planning.py",
-      "size": 9516,
-      "sha256": "037cb39386157e9b32585537976051f5ee84f582ab36bb1fc7a193aead2a38d1"
+      "size": 10137,
+      "sha256": "3d0056f20263b3d5cbc7c7d5f8ffaa281ac370288e27754ef528920b74d3ebc7"
     },
     {
       "path": "apps/api/app/db/__init__.py",
@@ -255,8 +255,13 @@
     },
     {
       "path": "apps/api/app/planning/__init__.py",
-      "size": 636,
-      "sha256": "0a92e8c302c6db505d13cff9c35f0343cc15171f03b061f56090b92e67388f1c"
+      "size": 976,
+      "sha256": "118250c551eef003b1a439381e8f07b5205791ebe48cc8f307dca7bf4f9c59be"
+    },
+    {
+      "path": "apps/api/app/planning/engine.py",
+      "size": 6182,
+      "sha256": "d5f39d4828733e7b8930f5cc8cdb9febe764f5a951665ddff931bdede483828b"
     },
     {
       "path": "apps/api/app/planning/service.py",
@@ -310,8 +315,8 @@
     },
     {
       "path": "apps/api/app/schemas/planning.py",
-      "size": 10459,
-      "sha256": "d6178f4714a90ea1c2f5dd05f7332898c3f87ff0ac9691bd0d58a14167c4c5a8"
+      "size": 14373,
+      "sha256": "0fa767bdbab9bfe5756ab62b8756842bd84e66f106ddef67ff95cd54c07d3be0"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -417,6 +422,11 @@
       "path": "apps/api/tests/test_mastery_state_machine.py",
       "size": 19236,
       "sha256": "5a92b5e34d45adff8a5a782b44dbd6bcf1134dd2c4f928d40316e2e63dd909d2"
+    },
+    {
+      "path": "apps/api/tests/test_planning_engine.py",
+      "size": 6236,
+      "sha256": "04158f8c5c1d201d45d129ae64e72accfbd47c63a90a9e15ba16f5077aec70aa"
     },
     {
       "path": "apps/web/README.md",
@@ -675,8 +685,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 4359,
-      "sha256": "96df9f09c146995f6da792480248ebd1079bed4ef94c756a32636d6257aae6d7"
+      "size": 4744,
+      "sha256": "e3e4479c14fb57015e83ba1038919bbf65146adc1effe5d7d799f93f6b5db839"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -720,8 +730,8 @@
     },
     {
       "path": "docs/PRODUCT_SPEC.md",
-      "size": 4835,
-      "sha256": "90fbbef6a0513a5f6ffc2f4bd37727eb7739e411f5375d6afa33e7c5442ea2f2"
+      "size": 5069,
+      "sha256": "d7c9a160b134b769ed8207e2ee7a2b52059cce90978870477c7b7a8ebbb63c08"
     },
     {
       "path": "docs/RELEASE_PROCESS.md",
@@ -740,8 +750,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 1926,
-      "sha256": "4afb751f5bb2422ee7399cc13b3d6fb77b2f39e57849740a856687e87786ec13"
+      "size": 2226,
+      "sha256": "b5dd3da74c3cdc69846b9016de873363f7aad29baafe66253184ad77b76dde4a"
     },
     {
       "path": "docs/UI_STANDARD.md",
