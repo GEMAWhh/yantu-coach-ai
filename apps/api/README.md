@@ -98,3 +98,18 @@ mypy apps/api/app apps/api/tests
 `satisfied/mastered/completed` 视为满足，其他状态返回
 `PREREQUISITE_NOT_MET`。后续掌握状态机落地后，该判断应切换为正式
 `mastery_snapshots`。
+
+## 掌握证据与状态机
+
+阶段 3 提供 `mastery-v1.0.0` 的最小可执行状态机：
+
+- `POST /api/v1/knowledge/nodes/{node_id}/evidence`：记录已确认掌握证据。
+- `GET /api/v1/knowledge/nodes/{node_id}/evidence`：查询节点证据。
+- `POST /api/v1/knowledge/nodes/{node_id}/evaluate`：按规则逐级推进并返回阻塞原因。
+- `POST /api/v1/knowledge/nodes/{node_id}/rollback`：基于证据创建回退快照。
+- `GET /api/v1/knowledge/nodes/{node_id}/history`：查询状态快照历史。
+
+当前自动化覆盖验收矩阵 `MAST-001` 至 `MAST-009`：
+阅读最多到已接触、可回忆必须有闭卷回忆、基础/变式/综合迁移必须满足样本与正确率、
+稳定掌握必须多时间点达标、稳定后失败会进入掌握衰退、重复深层错因会回退并提高补救优先级。
+每次状态变化都会保存 `rule_version` 与证据 ID。

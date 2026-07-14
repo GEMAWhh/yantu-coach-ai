@@ -89,3 +89,11 @@ previous_stage, new_stage, evidence_ids, rule_version,
 computed_metrics, blocking_reasons, transition_reason,
 created_at, actor_type
 ```
+
+## 9. 当前实现边界
+
+- 状态机按 `mastery-v1.0.0` 逐级推进，不允许跳级。
+- 证据与快照分别落库到 `mastery_evidence`、`mastery_snapshots`。
+- 阻塞不会创建新快照；状态变化、回退和衰退会创建快照。
+- 稳定掌握后的间隔测试失败进入 `掌握衰退`。
+- 重复深层错因会回退到 `基础应用` 并返回高优先级补救信息。
