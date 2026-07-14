@@ -75,8 +75,8 @@
     },
     {
       "path": "CONTRIBUTING.md",
-      "size": 1104,
-      "sha256": "53e8525945d0d7605727029ba888c37dd561734f91e806f87e90db85582afb77"
+      "size": 1636,
+      "sha256": "d7ec4a91016e8e9ad21486a015f31d65e0b4f1b9bb3102d2294d52a904d5434d"
     },
     {
       "path": "Makefile",
@@ -85,8 +85,8 @@
     },
     {
       "path": "README.md",
-      "size": 3137,
-      "sha256": "10df06a0fd79be45ac4a5ff7ea47716585b7117c060808a45569a5d1e1ccd5a3"
+      "size": 3879,
+      "sha256": "5bb751d81bd62d303f163b7d24ee6fe0c0dfaf7f37224aa7eb420069ca799a05"
     },
     {
       "path": "apps/api/README.md",
@@ -175,8 +175,8 @@
     },
     {
       "path": "docs/OPERATING_MODEL.md",
-      "size": 1483,
-      "sha256": "79aeedbbc084bf936668596cc68062946ed5a2f314cd136b19dfc89158595660"
+      "size": 2035,
+      "sha256": "430053c04fc02b16a511090906d576d3dccf2e4afce5c9f10e1230de3c8eb0fb"
     },
     {
       "path": "docs/PRODUCT_SPEC.md",
