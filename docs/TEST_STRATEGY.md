@@ -178,6 +178,7 @@ tests/fixtures/ai/
 `apps/api/tests/test_wrongbook_domain.py` covers the wrongbook AI draft governance boundary:
 
 - `POST /wrongbook/{wrong_id}/analyze` creates a fake-provider `ai_jobs` row and a `wrongbook_drafts` row.
+- `POST /wrongbook/drafts` creates a manual draft for an existing wrong record behind the same confirmation gate.
 - Unconfirmed drafts do not mutate formal wrong-record cause fields.
 - Invalid drafts return `AI_DRAFT_NOT_CONFIRMED` on confirmation and keep the wrong record unchanged.
 - `PATCH /wrongbook/{wrong_id}/draft` revalidates structured JSON and can repair a failed draft.

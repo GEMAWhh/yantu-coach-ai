@@ -399,6 +399,13 @@ class WrongbookAnalyzeRequest(BaseModel):
     provider_mode: ProviderMode = "valid"
 
 
+class WrongbookDraftCreate(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    wrong_record_id: str
+    structured_json: dict[str, object]
+
+
 class WrongbookAnalyzeResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 

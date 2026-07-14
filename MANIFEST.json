@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 14582,
-      "sha256": "f4c64251748177918ebadd4db74fad3ba4a5cee59cf5a560d52d36d746b02430"
+      "size": 14718,
+      "sha256": "6cee6928d1437e7a971fb0f9036b87af9e1b1af8d8a4923ced8ebe4a8b1a7825"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -165,8 +165,8 @@
     },
     {
       "path": "apps/api/app/api/wrongbook.py",
-      "size": 12041,
-      "sha256": "1c35b375dc83e934fb6606f6dad983568461465e4bfb4e2738e07fd3af5f93d0"
+      "size": 13256,
+      "sha256": "8d1207b120aaa35d8cc6dbc4a22d715cfed1b3e7c575cbc2e2e6e0f6fb723aad"
     },
     {
       "path": "apps/api/app/assets/__init__.py",
@@ -275,8 +275,8 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 5334,
-      "sha256": "2d7474f6e503f61080c34864c9293b0f253ed17bd2e7a08216509c917684b601"
+      "size": 5373,
+      "sha256": "5432b418ffcecc2301b77b6604827d76086b95e4e732ae27cc38143fa72df032"
     },
     {
       "path": "apps/api/app/mastery/__init__.py",
@@ -465,8 +465,8 @@
     },
     {
       "path": "apps/api/app/schemas/wrongbook.py",
-      "size": 14105,
-      "sha256": "564602f65e12f39eb38508fd6376c59aaa4495f15c6b8a37876fceebb19b7468"
+      "size": 14254,
+      "sha256": "2d6e3b381e01d8280589365b9b13f35640a76eb41268320c775958896b62a9da"
     },
     {
       "path": "apps/api/app/services/__init__.py",
@@ -505,13 +505,13 @@
     },
     {
       "path": "apps/api/app/wrongbook/__init__.py",
-      "size": 1205,
-      "sha256": "7661b8e08e2fdcbffd7a99cd7e0d8023bf4c8d3b168008fcef14b71f6a379cf9"
+      "size": 1263,
+      "sha256": "2a831ed9098f1e703e7c67d5fbbe449fa395af3da59f03c17a3b795c6c02f67a"
     },
     {
       "path": "apps/api/app/wrongbook/service.py",
-      "size": 26077,
-      "sha256": "cd1db6fa1c4ef1db38ead330120854a9ec34b3aca24d1b043c2b35486b14688a"
+      "size": 27570,
+      "sha256": "1d63e293a8d7a1735a8815102cba8a13d25dcfc95a3316cb2fce25f9f2eef9d2"
     },
     {
       "path": "apps/api/migrations/README.md",
@@ -685,8 +685,8 @@
     },
     {
       "path": "apps/api/tests/test_wrongbook_domain.py",
-      "size": 17322,
-      "sha256": "c9af1ef0f359a66f7eced702775e62c2b9c7bdf317b416340a16c4724a7cc897"
+      "size": 18547,
+      "sha256": "54591f0b23bdc1fe40159b1035b194911b676c6cde997f820cab9bdb915bc312"
     },
     {
       "path": "apps/web/README.md",
@@ -945,8 +945,8 @@
     },
     {
       "path": "docs/API_CONTRACT.md",
-      "size": 14564,
-      "sha256": "f86f49a3c1881895ba74ac7d3ac48a12f56d89373b3115c3fa5652fdc2eb39b5"
+      "size": 14683,
+      "sha256": "adec412630a9cbbfe5c56de5330c935707725139d5984698ceb3fee8b1e29ff9"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -1010,8 +1010,8 @@
     },
     {
       "path": "docs/TEST_STRATEGY.md",
-      "size": 9265,
-      "sha256": "a08eeaeb6ae96e7340e4fb5cb6130f50810e085590c7f948cb95d464008dd76b"
+      "size": 9379,
+      "sha256": "62acf303cee090bfda51e774ea2c94fdb4f38df934c516569f97be8ce4700c7c"
     },
     {
       "path": "docs/UI_STANDARD.md",

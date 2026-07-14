@@ -26,6 +26,9 @@ WRONGBOOK_SCHEMA_VERSION = "wrongbook-analysis-v1"
 FAKE_PROVIDER = "fake"
 FAKE_MODEL_NAME = "fake-wrongbook-provider"
 FAKE_PROMPT_VERSION = "wrongbook-draft-fake-v1"
+MANUAL_PROVIDER = "manual"
+MANUAL_MODEL_NAME = "manual-wrongbook-draft"
+MANUAL_PROMPT_VERSION = "wrongbook-manual-draft-v1"
 
 AssetRole = Literal[
     "statement",
@@ -281,6 +284,47 @@ def analyze_wrong_record(
         status="draft" if not validation_errors else "needs_correction",
         schema_version=WRONGBOOK_SCHEMA_VERSION,
         structured_json=output,
+        validation_errors_json=validation_errors,
+    )
+    session.add(draft)
+    session.flush()
+    return draft
+
+
+def create_wrongbook_draft(
+    session: Session,
+    wrong_record_id: str,
+    *,
+    structured_json: dict[str, Any],
+) -> WrongbookDraft:
+    wrong = get_wrong_record(session, wrong_record_id)
+    validation_errors = validate_wrongbook_payload(structured_json)
+    job_status = "succeeded" if not validation_errors else "failed"
+    now = utc_now()
+    job = AIJob(
+        id=str(uuid4()),
+        job_type="wrongbook_manual_draft",
+        provider=MANUAL_PROVIDER,
+        model_name=MANUAL_MODEL_NAME,
+        prompt_version=MANUAL_PROMPT_VERSION,
+        status=job_status,
+        attempts=1,
+        input_json={"wrong_record_id": wrong.id, "source": "manual"},
+        output_json=structured_json,
+        error_code=None if not validation_errors else "AI_OUTPUT_SCHEMA_INVALID",
+        error_message=None if not validation_errors else "; ".join(validation_errors),
+        started_at=now,
+        completed_at=now,
+    )
+    session.add(job)
+    session.flush()
+    draft = WrongbookDraft(
+        id=str(uuid4()),
+        wrong_record_id=wrong.id,
+        ai_job_id=job.id,
+        status="draft" if not validation_errors else "needs_correction",
+        schema_version=WRONGBOOK_SCHEMA_VERSION,
+        structured_json=structured_json,
         validation_errors_json=validation_errors,
     )
     session.add(draft)
