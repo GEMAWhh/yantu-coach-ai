@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 153,
+  "file_count": 161,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 1899,
-      "sha256": "9887d1a53cb6167948a41bb53b3069196e8b44cbf6d31c9282dcffa2d2147014"
+      "size": 2916,
+      "sha256": "d51f28feebce874cbf9a4ad1c0faa15a85c1c55f69bc63eafba409b846e48f2d"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -102,6 +102,16 @@
       "path": "apps/api/app/__init__.py",
       "size": 31,
       "sha256": "2fcffae1a5e035dc1061ca5b6cad7c8329c2cbb7f4ae4c5fde59d219f57aa95d"
+    },
+    {
+      "path": "apps/api/app/api/__init__.py",
+      "size": 83,
+      "sha256": "99ce7cc9b0d819a2877e2406110f6c82a9ba1031ae2d2ca30b27db040cc5946e"
+    },
+    {
+      "path": "apps/api/app/api/imports.py",
+      "size": 2233,
+      "sha256": "d082c42ce39befc05620bd7e4975d7512bab9be37cab31054d319fd3d8145cdf"
     },
     {
       "path": "apps/api/app/db/__init__.py",
@@ -116,7 +126,7 @@
     {
       "path": "apps/api/app/db/migrations.py",
       "size": 2073,
-      "sha256": "3ec43a73031e3ddb4a06545c791a908e1a3fa6d2ccd8600a9d3f43c96378d2c0"
+      "sha256": "e3e4c358f6f6e4daf5da4bc14849c1292df824d6181715138bee4221abd5670b"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -149,9 +159,19 @@
       "sha256": "b471696b2462fa7c6d56b29db36c5811644ece33f253a89d95ed98ae83bf018b"
     },
     {
+      "path": "apps/api/app/imports/__init__.py",
+      "size": 456,
+      "sha256": "dd60f89f83ca8947b1576b542f734b9d9788d617a19cc320492202726a1e3517"
+    },
+    {
+      "path": "apps/api/app/imports/localstorage.py",
+      "size": 13330,
+      "sha256": "667045c131d1c2005e707b445b493771b01f312583b124599d6926055ddbeb2f"
+    },
+    {
       "path": "apps/api/app/main.py",
-      "size": 3731,
-      "sha256": "cfd08108f1cd29ae69c88bcab7188673cb022099d19b5ca5a7374f502dc70ef5"
+      "size": 3891,
+      "sha256": "0f50fd40dbb153dfc756878bd03eed5506aed47c10ea8eea2d985bba237ab852"
     },
     {
       "path": "apps/api/app/middleware.py",
@@ -160,8 +180,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 151,
-      "sha256": "ef89e0d2f8fbafe0f8d769a921bb40e408c5b7e09cfb5e5c05dcfb7263d8308e"
+      "size": 214,
+      "sha256": "2489aa238ee6bc02d27dc0098f77bc7ed1cba87faed9de98053e86e0de20d69d"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -177,6 +197,11 @@
       "path": "apps/api/app/models/base.py",
       "size": 177,
       "sha256": "c09957332dd24fa4a70134022c6162bab3bad3d98cf40500664a1744d6765d76"
+    },
+    {
+      "path": "apps/api/app/models/import_batch.py",
+      "size": 1757,
+      "sha256": "2182e89df0f6f7532237f05c35a99f618554ecab1d2cccc11bc016741773ba40"
     },
     {
       "path": "apps/api/app/request_context.py",
@@ -202,6 +227,11 @@
       "path": "apps/api/app/schemas/health.py",
       "size": 283,
       "sha256": "d01cec7dee3e7798f47bf4bdacfc39205d69e9b70d2c691afb36a746aa1bd541"
+    },
+    {
+      "path": "apps/api/app/schemas/imports.py",
+      "size": 2051,
+      "sha256": "f6bf494e1de8a99ebea3c132e56b4661acf59fde1d4286d84243d25531bc78bd"
     },
     {
       "path": "apps/api/app/schemas/meta.py",
@@ -249,6 +279,11 @@
       "sha256": "ac7b4d08a6fd2b83452e2309fa2b932f3485e76e8f90695edb7ed9c727d9a88f"
     },
     {
+      "path": "apps/api/migrations/versions/0003_localstorage_import.py",
+      "size": 1995,
+      "sha256": "54438a70b14c51ee8501a51e72f97ac145f581377fe87153956ffb10b374d06d"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -272,6 +307,11 @@
       "path": "apps/api/tests/test_health.py",
       "size": 1447,
       "sha256": "9ab8da9756e4f3a27d12c2c8ce2a9f0a39609f91a040686fb398e4e33fbdfd71"
+    },
+    {
+      "path": "apps/api/tests/test_localstorage_import.py",
+      "size": 8034,
+      "sha256": "7618ec71bbe2a12163efb81b9e306acae7eaf4bde23ebc142adba69f5525614c"
     },
     {
       "path": "apps/web/README.md",
@@ -565,8 +605,8 @@
     },
     {
       "path": "docs/MIGRATION_PLAN.md",
-      "size": 1310,
-      "sha256": "9938e15f2b28b5be57ae9800f83abbb1ac42a1f3b59017b0b40de5e0b4d715ff"
+      "size": 1953,
+      "sha256": "e033c3ab12a57e63eb04f68f4d3c68d297a8eb664365701a9c48ecf95f308efc"
     },
     {
       "path": "docs/OPERATING_MODEL.md",

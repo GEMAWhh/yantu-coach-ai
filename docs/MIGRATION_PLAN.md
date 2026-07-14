@@ -43,3 +43,14 @@
 - 未识别字段进入报告；
 - 导入失败不产生部分正式数据；
 - 用户可选择放弃导入并从空库开始。
+
+## 5. 当前后端落地
+
+- 已确认旧 localStorage key 为 `postgradCoachV11`。
+- 后端提供 `POST /api/v1/imports/localstorage/preview` 生成可重复预览。
+- 后端提供 `POST /api/v1/imports/localstorage/commit` 写入 `import_batches`
+  导入批次；同一 `source_key + source_sha256` 重复提交保持幂等。
+- 可识别字段：
+  `version/settings/today/tasks/knowledge/wrongs/resources/inbox/goals/records/adjustments`。
+- 未识别顶层字段和二级字段会写入 `unknown_fields`，同时进入迁移报告。
+- 历史掌握数据统一标记为 `imported_unverified`，不得直接作为稳定掌握证据。

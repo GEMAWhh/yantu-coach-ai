@@ -8,7 +8,7 @@ from sqlalchemy import text
 from app.db.database import get_engine
 from app.settings import RuntimeSettings
 
-DATABASE_HEAD_REVISION = "0002_file_storage_backup"
+DATABASE_HEAD_REVISION = "0003_localstorage_import"
 
 
 class DatabasePragmas(TypedDict):
