@@ -69,9 +69,15 @@ AIJob ── AIDraft ── ConfirmationAudit
 
 `knowledge_node_id, evidence_type, source_type, source_id, score, sample_count, hint_level, occurred_at, confirmed`
 
+当前证据类型：reading / self_explanation / closed_book_recall / basic_question /
+variant_question / integrated_question / interval_test / repeat_deep_cause。
+
 ### mastery_snapshots
 
 `knowledge_node_id, stage, recall_score, basic_score, variant_score, transfer_score, retention_score, repeat_error_rate, confidence_calibration, missing_link, evaluated_at, rule_version, transition_reason`
+
+当前快照额外保存 `previous_stage`、`evidence_ids_json`、`computed_metrics_json`、
+`blocking_reasons_json` 和 `remediation_json`，用于审计 MAST-001 至 MAST-009。
 
 ### review_schedules
 

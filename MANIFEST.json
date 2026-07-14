@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 168,
+  "file_count": 175,
   "files": [
     {
       "path": ".editorconfig",
@@ -90,8 +90,8 @@
     },
     {
       "path": "apps/api/README.md",
-      "size": 3998,
-      "sha256": "3c5ddcdeddb3957fa919de108d6cb6c041d73074281be0058a3b209ccd1ff95b"
+      "size": 4900,
+      "sha256": "a40408dd34bd363c7425d5d798e69eeb11fc67e1fbaa01ce1d4ca5296f3410f1"
     },
     {
       "path": "apps/api/alembic.ini",
@@ -105,8 +105,8 @@
     },
     {
       "path": "apps/api/app/api/__init__.py",
-      "size": 160,
-      "sha256": "14bca23c4ac314eea60aebdb0491d63b78c5620d3af5994aedd7a8630f431682"
+      "size": 231,
+      "sha256": "b98be98099ee36f207c6c461c73d862e9d52c7cf2e28a2e8e889eaf44e162308"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -117,6 +117,11 @@
       "path": "apps/api/app/api/knowledge.py",
       "size": 5859,
       "sha256": "532e509bab2c46eea67b484c885fc4eecb97a3aa4a290c857cc319eec42770bd"
+    },
+    {
+      "path": "apps/api/app/api/mastery.py",
+      "size": 4653,
+      "sha256": "a01bb6dcd773f1a345ba87c5b036e5b15d97181bc1e8d5d1c705b297e3851a4d"
     },
     {
       "path": "apps/api/app/db/__init__.py",
@@ -130,8 +135,8 @@
     },
     {
       "path": "apps/api/app/db/migrations.py",
-      "size": 2069,
-      "sha256": "dff47ea8503c6b7feb38fa3c3d42ae4cb4aff366b5fcd0cfce182674883f579b"
+      "size": 2075,
+      "sha256": "8edf552af7a8f121d7b54a49cf0f4037a480e87cd812d681686c34d5050af5a6"
     },
     {
       "path": "apps/api/app/errors.py",
@@ -185,8 +190,18 @@
     },
     {
       "path": "apps/api/app/main.py",
-      "size": 4020,
-      "sha256": "4b9b16ce29103a4075fe1ff6595f317eee12da9e5b5a61fc9af081214ab0d4d3"
+      "size": 4144,
+      "sha256": "e023eb8d8382530fbed93e5567131385de03fb0082447aa964d11df44c0a1498"
+    },
+    {
+      "path": "apps/api/app/mastery/__init__.py",
+      "size": 501,
+      "sha256": "361fec80cb4637fb67317123282d2aeb5d6e2515b573cbfec304910ebfd6503f"
+    },
+    {
+      "path": "apps/api/app/mastery/service.py",
+      "size": 22648,
+      "sha256": "15df4f4942b5c7da5e6784d4daef534ecf3f23af5f0c0d52cdc6e8932bab3ed6"
     },
     {
       "path": "apps/api/app/middleware.py",
@@ -195,8 +210,8 @@
     },
     {
       "path": "apps/api/app/models/__init__.py",
-      "size": 310,
-      "sha256": "e03f8b36cb20cb23c1149e1843cf88f4f87e968b147dbd7f42c7ee866eb9c6e3"
+      "size": 447,
+      "sha256": "831a92339739beb197a1cd9586b65d30ae52587ae2f8080da1b39ed8b815e494"
     },
     {
       "path": "apps/api/app/models/asset.py",
@@ -222,6 +237,11 @@
       "path": "apps/api/app/models/knowledge.py",
       "size": 3558,
       "sha256": "6aeaa1f1b1b6f05a3c0278190d8f345166b8bc507af135fbeffdd82df7be2004"
+    },
+    {
+      "path": "apps/api/app/models/mastery.py",
+      "size": 4391,
+      "sha256": "83e0942cdc06698cc53f16c5310893e062e1507dc6c57091c4d40c3f1ba60d41"
     },
     {
       "path": "apps/api/app/request_context.py",
@@ -257,6 +277,11 @@
       "path": "apps/api/app/schemas/knowledge.py",
       "size": 6112,
       "sha256": "ed34e4f673b3bfb19f185a579c7ffe3602c48294092dfa6aecfe0a06c934e09c"
+    },
+    {
+      "path": "apps/api/app/schemas/mastery.py",
+      "size": 5127,
+      "sha256": "821665453a34189041ce7da956d7803661d8199e719b7e3df3f4dd3c6ce8dca7"
     },
     {
       "path": "apps/api/app/schemas/meta.py",
@@ -314,6 +339,11 @@
       "sha256": "87150db3318db7ed7e24416cceaa22070f2ac1134b24e926639a4c1c427fa13b"
     },
     {
+      "path": "apps/api/migrations/versions/0005_mastery_state_machine.py",
+      "size": 6180,
+      "sha256": "db31d877311abc8a2b960e92e0d5029971892d510c10422345910537049b459b"
+    },
+    {
       "path": "apps/api/pyproject.toml",
       "size": 755,
       "sha256": "4a990df25b3a5131931b2f4349293bb574b42dd0f6559768a751ad0faf1ff961"
@@ -347,6 +377,11 @@
       "path": "apps/api/tests/test_localstorage_import.py",
       "size": 8034,
       "sha256": "7618ec71bbe2a12163efb81b9e306acae7eaf4bde23ebc142adba69f5525614c"
+    },
+    {
+      "path": "apps/api/tests/test_mastery_state_machine.py",
+      "size": 19236,
+      "sha256": "5a92b5e34d45adff8a5a782b44dbd6bcf1134dd2c4f928d40316e2e63dd909d2"
     },
     {
       "path": "apps/web/README.md",
@@ -615,8 +650,8 @@
     },
     {
       "path": "docs/DATA_MODEL.md",
-      "size": 4913,
-      "sha256": "eecdd916835e7f0c685836fce2e9f06eefa3a4e2a6f4e8d2f1689d18e117f249"
+      "size": 5261,
+      "sha256": "6fa2095635de343210f5c805d3a150d75b7698df41b167d4594a11036d34ffb5"
     },
     {
       "path": "docs/DECISIONS/ADR-0001-local-first-modular-monolith.md",
@@ -635,8 +670,8 @@
     },
     {
       "path": "docs/MASTERY_RULES.md",
-      "size": 3330,
-      "sha256": "0eac93adeeb42e22cc5819aae25572b372513fccdd22c99c4cc5a149c292921c"
+      "size": 3729,
+      "sha256": "37b2e05ed5f64940035cb3a5aa21868e3e225546a9f5d7e863dbdc49d9badfac"
     },
     {
       "path": "docs/MIGRATION_PLAN.md",
