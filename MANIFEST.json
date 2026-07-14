@@ -780,8 +780,8 @@
     },
     {
       "path": "apps/web/src/App.test.ts",
-      "size": 1256,
-      "sha256": "200ad2c8596a7c54a16eabccbbf6e403e15e81df6e674ecb046dca7aecba06aa"
+      "size": 2955,
+      "sha256": "1e4d7ec381ae9c6433d15507c727e06d6582ed135cfa63effe114f60713ec7d9"
     },
     {
       "path": "apps/web/src/App.vue",
@@ -790,18 +790,18 @@
     },
     {
       "path": "apps/web/src/api/client.test.ts",
-      "size": 2882,
-      "sha256": "e069f1f408e892995d03606911e97a4be3066342fd7bc1450cab2f865a6eb073"
+      "size": 3698,
+      "sha256": "90125e7c0479a8788ba68e72c6a65508352d6bc6c5841a2645e7c555be78a5c9"
     },
     {
       "path": "apps/web/src/api/client.ts",
-      "size": 1619,
-      "sha256": "e0a2335860f85302a4f0f31c8e5010660b6af2bfa72c2c4cacae883391798f46"
+      "size": 1953,
+      "sha256": "1532146d089d979395944503dc4d9670da5e2867c01a3c15ce2e1d029b070d90"
     },
     {
       "path": "apps/web/src/api/contracts.ts",
-      "size": 2030,
-      "sha256": "447384a160c8e850cd7446c9ed61c920aa7aafd5cca126da8bc07fa7a566d180"
+      "size": 2501,
+      "sha256": "ac29edb31366b8f9247615f09f32bddfbe92602305638de00a5d1a2f06570875"
     },
     {
       "path": "apps/web/src/app/navigation.test.ts",
@@ -860,8 +860,8 @@
     },
     {
       "path": "apps/web/src/pages/SettingsPage.vue",
-      "size": 2764,
-      "sha256": "f1480018fc340a7504c75453d9a10a0c9c8a4e12173bb5f8465ded8b4390bf8f"
+      "size": 4559,
+      "sha256": "40a1300e1881460db2884ae20524d9249b9350f21fcb968d5ec0dad911787e97"
     },
     {
       "path": "apps/web/src/pages/TodayPage.vue",

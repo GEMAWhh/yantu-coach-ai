@@ -1,9 +1,69 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+
+import { ApiClient } from "../api/client";
+import type { SettingsProfilePayload, SettingsRulePayload } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
-import { useMockStudyStore } from "../stores/mockStudy";
+import { useMockStudyStore, type RuleItem, type Tone } from "../stores/mockStudy";
 
 const study = useMockStudyStore();
+const apiProfile = ref<SettingsProfilePayload | null>(null);
+const apiRules = ref<SettingsRulePayload[] | null>(null);
+const settingsSourceLabel = computed(() => (apiProfile.value ? "正式数据" : "原型数据"));
+const settingsSourceTone = computed<Tone>(() => (apiProfile.value ? "green" : "yellow"));
+const ruleSourceLabel = computed(() => (apiRules.value ? "正式规则" : "展示态"));
+const ruleSourceTone = computed<Tone>(() => (apiRules.value ? "green" : "cyan"));
+
+const profileRows = computed(() => [
+  {
+    label: "目标院校",
+    value: apiProfile.value?.target_school ?? "大连理工大学",
+  },
+  {
+    label: "方向",
+    value: apiProfile.value?.target_major ?? "控制科学与工程学硕",
+  },
+  {
+    label: "阶段",
+    value: apiProfile.value?.current_phase ?? "需要用户确认",
+  },
+  {
+    label: "考试日期",
+    value: apiProfile.value?.exam_date ?? "未设置",
+  },
+  {
+    label: "教练风格",
+    value: apiProfile.value?.coach_style ?? "balanced",
+  },
+]);
+
+const governanceRules = computed<RuleItem[]>(() => {
+  if (!apiRules.value) {
+    return study.governanceRules;
+  }
+  return apiRules.value.map((rule) => ({
+    title: rule.key,
+    description: `${rule.path} · ${rule.sha256.slice(0, 12)}`,
+    status: rule.version ?? "unversioned",
+    tone: "green",
+  }));
+});
+
+onMounted(async () => {
+  const client = new ApiClient();
+  try {
+    const [profileResponse, rulesResponse] = await Promise.all([
+      client.settingsProfile(),
+      client.settingsRules(),
+    ]);
+    apiProfile.value = profileResponse.data;
+    apiRules.value = rulesResponse.data.items;
+  } catch {
+    apiProfile.value = null;
+    apiRules.value = null;
+  }
+});
 </script>
 
 <template>
@@ -28,22 +88,17 @@ const study = useMockStudyStore();
             <h2>当前画像</h2>
           </div>
           <StatusTag
-            label="需用户确认"
-            tone="yellow"
+            :label="settingsSourceLabel"
+            :tone="settingsSourceTone"
           />
         </div>
         <dl class="settings-list">
-          <div>
-            <dt>目标院校</dt>
-            <dd>大连理工大学</dd>
-          </div>
-          <div>
-            <dt>方向</dt>
-            <dd>控制科学与工程学硕</dd>
-          </div>
-          <div>
-            <dt>科目</dt>
-            <dd>数学一、专业课 841</dd>
+          <div
+            v-for="row in profileRows"
+            :key="row.label"
+          >
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
           </div>
         </dl>
       </section>
@@ -63,7 +118,7 @@ const study = useMockStudyStore();
         </div>
         <div class="backup-card">
           <strong>备份与恢复</strong>
-          <p>正式数据迁移前必须创建并校验备份；当前页面不连接真实数据目录。</p>
+          <p>正式数据迁移前必须创建并校验备份；恢复前会自动生成 pre-restore 备份。</p>
         </div>
         <div class="backup-card">
           <strong>密钥边界</strong>
@@ -81,13 +136,13 @@ const study = useMockStudyStore();
           <h2>不可破坏的业务边界</h2>
         </div>
         <StatusTag
-          label="展示壳"
-          tone="cyan"
+          :label="ruleSourceLabel"
+          :tone="ruleSourceTone"
         />
       </div>
       <div class="rule-grid">
         <article
-          v-for="rule in study.governanceRules"
+          v-for="rule in governanceRules"
           :key="rule.title"
           class="rule-card"
         >
