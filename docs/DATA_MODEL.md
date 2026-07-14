@@ -53,7 +53,8 @@ AIJob ── AIDraft ── ConfirmationAudit
 `task_id, result_type, completion_ratio, actual_minutes, question_count, correct_count, accuracy, confidence, hint_level, focus_level, difficulty_rating, problem_description, confirmed_at`
 
 当前实现额外保存 `idempotency_key` 和 `request_id`。提交结果用于更新目标进度，
-但不会直接创建或修改掌握快照。
+但不会直接创建或修改掌握快照。首次提交的任务结果会进入个人用时系数校准；
+重复幂等提交不会重复调整系数。
 
 ### knowledge_nodes
 
@@ -94,6 +95,19 @@ variant_question / integrated_question / interval_test / repeat_deep_cause。
 
 当前实现额外保存 `idempotency_key`。独立复习结果会创建 `interval_test` 掌握证据；
 失败结果会触发掌握回退并缩短下一次间隔，同日即时重做不计入独立时间点。
+
+### time_coefficients
+
+`subject_id, task_type, difficulty, coefficient, sample_count, overtime_streak, last_ratio, last_estimated_minutes, last_actual_minutes, last_task_result_id, rule_version, rationale_json`
+
+当前实现使用 `time-calibration-v1.0.0`，系数按科目、任务类型和难度隔离，范围限制为
+`0.6–1.8`。
+
+### time_adjustments
+
+`coefficient_id, task_id, task_result_id, subject_id, task_type, difficulty, estimated_minutes, actual_minutes, raw_ratio, applied_ratio, previous_coefficient, new_coefficient, ignored, ignore_reason, overtime, suggested_split, rule_version, occurred_at, request_id`
+
+调整记录用于向用户展示系数来源。零用时和异常极值会记录为 ignored，但不更新当前系数。
 
 ### assets
 
