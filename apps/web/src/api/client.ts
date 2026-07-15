@@ -8,10 +8,13 @@ import type {
   AnalyticsMasteryPayload,
   AnalyticsOverviewPayload,
   AnalyticsTimePayload,
+  DueReviewListPayload,
   GoalTreeListPayload,
   HealthPayload,
   KnowledgeNodeListPayload,
   ResourceListPayload,
+  ReviewResultCreatePayload,
+  ReviewResultSubmitPayload,
   SettingsProfilePayload,
   SettingsRulesPayload,
   TaskPayload,
@@ -98,6 +101,24 @@ export class ApiClient {
 
   wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
+  }
+
+  dueReviews(date: string): Promise<ApiResponse<DueReviewListPayload>> {
+    return this.get<DueReviewListPayload>(`/api/v1/reviews/due?date=${encodeURIComponent(date)}`);
+  }
+
+  submitReviewResult(
+    scheduleId: string,
+    payload: ReviewResultCreatePayload,
+    idempotencyKey: string,
+  ): Promise<ApiResponse<ReviewResultSubmitPayload>> {
+    return this.post<ReviewResultSubmitPayload>(
+      `/api/v1/reviews/${encodeURIComponent(scheduleId)}/results`,
+      payload,
+      {
+        "Idempotency-Key": idempotencyKey,
+      },
+    );
   }
 
   startTask(taskId: string, version: number): Promise<ApiResponse<TaskPayload>> {

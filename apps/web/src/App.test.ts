@@ -555,6 +555,54 @@ describe("App", () => {
             ],
           },
         };
+        if (path.startsWith("/api/v1/reviews/due?date=")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                date: "2026-07-15",
+                total: 1,
+                items: [
+                  {
+                    knowledge_node_name: "导数应用",
+                    schedule: {
+                      id: "review-1",
+                      version: 1,
+                      created_at: "2026-07-14T00:00:00Z",
+                      updated_at: "2026-07-14T00:00:00Z",
+                      knowledge_node_id: "node-1",
+                      subject_id: "math",
+                      current_stage: 3,
+                      status: "active",
+                      due_at: "2026-07-15T00:00:00Z",
+                      interval_days: 3,
+                      pass_streak: 0,
+                      fail_streak: 0,
+                      last_reviewed_at: null,
+                      last_result_id: null,
+                      source_snapshot_id: "snapshot-1",
+                      rule_version: "review-v1.0.0",
+                      next_reason: "base_interval:closed_book_recall",
+                    },
+                    candidate: {
+                      id: "review:review-1",
+                      title: "复习：导数应用",
+                      subject_id: "math",
+                      estimated_minutes: 20,
+                      cognitive_load: "medium",
+                      source_type: "review_schedule",
+                      source_id: "review-1",
+                      task_type: "review",
+                      review_due: 100,
+                      knowledge_importance: 90,
+                    },
+                  },
+                ],
+              },
+              meta: { request_id: `learning-${path}` },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
         return new Response(
           JSON.stringify({
             data: dataByPath[path],
@@ -569,5 +617,143 @@ describe("App", () => {
     expect(wrapper.text()).toContain("lecture.pdf");
     expect(wrapper.text()).toContain("导数应用");
     expect(wrapper.text()).toContain("导数错题无提示重做");
+    expect(wrapper.text()).toContain("复习：导数应用");
+  });
+
+  it("submits a due review result from the learning page", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        const emptyList = { total: 0, items: [] };
+        if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
+          return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (path === "/api/v1/wrongbook/planning-candidates") {
+          return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (path.startsWith("/api/v1/reviews/due?date=")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                date: "2026-07-15",
+                total: 1,
+                items: [
+                  {
+                    knowledge_node_name: "导数应用",
+                    schedule: {
+                      id: "review-1",
+                      version: 1,
+                      created_at: "2026-07-14T00:00:00Z",
+                      updated_at: "2026-07-14T00:00:00Z",
+                      knowledge_node_id: "node-1",
+                      subject_id: "math",
+                      current_stage: 3,
+                      status: "active",
+                      due_at: "2026-07-15T00:00:00Z",
+                      interval_days: 3,
+                      pass_streak: 0,
+                      fail_streak: 0,
+                      last_reviewed_at: null,
+                      last_result_id: null,
+                      source_snapshot_id: "snapshot-1",
+                      rule_version: "review-v1.0.0",
+                      next_reason: "base_interval:closed_book_recall",
+                    },
+                    candidate: {
+                      id: "review:review-1",
+                      title: "复习：导数应用",
+                      subject_id: "math",
+                      estimated_minutes: 20,
+                      cognitive_load: "medium",
+                      source_type: "review_schedule",
+                      source_id: "review-1",
+                      task_type: "review",
+                      review_due: 100,
+                      knowledge_importance: 90,
+                    },
+                  },
+                ],
+              },
+              meta: { request_id: "due-reviews" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: {
+              created: true,
+              evaluation_new_stage: 3,
+              evaluation_reason: "review_passed",
+              rule_version: "review-v1.0.0",
+              result: {
+                id: "result-1",
+                version: 1,
+                created_at: "2026-07-15T10:00:00Z",
+                updated_at: "2026-07-15T10:00:00Z",
+                schedule_id: "review-1",
+                knowledge_node_id: "node-1",
+                result_type: "pass",
+                score: 90,
+                sample_count: 0,
+                correct_count: null,
+                accuracy: null,
+                occurred_at: "2026-07-15T10:00:00Z",
+                independent_timepoint: true,
+                evidence_id: "evidence-1",
+                snapshot_id: "snapshot-2",
+              },
+              schedule: {
+                id: "review-1",
+                version: 2,
+                created_at: "2026-07-14T00:00:00Z",
+                updated_at: "2026-07-15T10:00:00Z",
+                knowledge_node_id: "node-1",
+                subject_id: "math",
+                current_stage: 3,
+                status: "active",
+                due_at: "2026-07-21T10:00:00Z",
+                interval_days: 6,
+                pass_streak: 1,
+                fail_streak: 0,
+                last_reviewed_at: "2026-07-15T10:00:00Z",
+                last_result_id: "result-1",
+                source_snapshot_id: "snapshot-1",
+                rule_version: "review-v1.0.0",
+                next_reason: "passed_independent_review:1",
+              },
+            },
+            meta: { request_id: "review-result" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/learning");
+    const passButton = wrapper.findAll("button").find((button) => button.text() === "通过");
+
+    await passButton?.trigger("click");
+    await flushPromises();
+
+    const resultCall = calls.find((call) => call.path === "/api/v1/reviews/review-1/results");
+    expect(resultCall).toBeDefined();
+    expect(resultCall?.init?.headers).toMatchObject({
+      "Idempotency-Key": "review-1:pass:1",
+    });
+    expect(JSON.parse(String(resultCall?.init?.body))).toMatchObject({
+      result_type: "pass",
+      score: 90,
+    });
+    expect(wrapper.text()).toContain("已通过");
+    expect(wrapper.text()).toContain("下次间隔 6 天");
   });
 });

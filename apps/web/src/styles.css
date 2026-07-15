@@ -321,6 +321,7 @@ h3 {
 .panel,
 .metric-card,
 .task-card,
+.review-card,
 .notice-card,
 .resource-row,
 .risk-item,
@@ -347,6 +348,7 @@ h3 {
 .compact-panel p,
 .notice-card p,
 .task-card p,
+.review-card p,
 .resource-row p,
 .risk-item p,
 .rule-card p,
@@ -397,13 +399,15 @@ h3 {
 }
 
 .task-list,
+.review-list,
 .resource-list,
 .mastery-list {
   display: grid;
   gap: var(--space-3);
 }
 
-.task-card {
+.task-card,
+.review-card {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
