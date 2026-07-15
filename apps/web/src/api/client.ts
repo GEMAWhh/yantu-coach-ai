@@ -52,9 +52,25 @@ export class ApiClientError extends Error {
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+function configuredApiBaseUrl(): string {
+  const rawBaseUrl = String(import.meta.env.VITE_YANTU_API_BASE_URL ?? "").trim();
+  if (!rawBaseUrl) {
+    return "";
+  }
+
+  const parsed = new URL(rawBaseUrl);
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new Error("VITE_YANTU_API_BASE_URL must be an HTTP(S) URL without credentials");
+  }
+  if (parsed.pathname !== "/" || parsed.search || parsed.hash) {
+    throw new Error("VITE_YANTU_API_BASE_URL must not include a path, query, or fragment");
+  }
+  return parsed.origin;
+}
+
 export class ApiClient {
   constructor(
-    private readonly baseUrl = "",
+    private readonly baseUrl = configuredApiBaseUrl(),
     private readonly fetcher: FetchLike = fetch,
   ) {}
 

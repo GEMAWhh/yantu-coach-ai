@@ -59,6 +59,37 @@ describe("ApiClient", () => {
     expect(calls).toEqual(["http://127.0.0.1:8000/health"]);
   });
 
+  it("uses the configured cloud API origin by default", async () => {
+    vi.stubEnv("VITE_YANTU_API_BASE_URL", "https://api.yantu.example/");
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return jsonResponse({
+        data: {
+          status: "ok",
+          service: "yantu-coach-api",
+          environment: "prod",
+          data_root: "data/prod",
+        },
+        meta: { request_id: "cloud-health" },
+      });
+    });
+
+    await new ApiClient().health();
+
+    expect(calls).toEqual(["https://api.yantu.example/health"]);
+  });
+
+  it.each([
+    "ftp://api.yantu.example",
+    "https://user:secret@api.yantu.example",
+    "https://api.yantu.example/v1",
+  ])("rejects unsafe cloud API base URL %s", (baseUrl) => {
+    vi.stubEnv("VITE_YANTU_API_BASE_URL", baseUrl);
+
+    expect(() => new ApiClient()).toThrow("VITE_YANTU_API_BASE_URL");
+  });
+
   it("raises typed errors from the unified error envelope", async () => {
     const client = new ApiClient("", async () =>
       jsonResponse(

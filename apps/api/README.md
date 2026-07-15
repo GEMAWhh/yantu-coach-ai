@@ -2,6 +2,16 @@
 
 FastAPI 本地后端骨架。当前阶段提供系统端点、统一 API 契约、SQLite 初始化、Alembic 迁移、审计事件、本地文件存储和备份恢复基础，用于验证服务、环境隔离、错误结构、事务和 CI。
 
+## Web 连接配置
+
+本地开发默认允许 `http://127.0.0.1:5173` 和 `http://localhost:5173`。云端部署必须显式配置逗号分隔的前端 Origin：
+
+```powershell
+$env:YANTU_CORS_ALLOWED_ORIGINS = "https://your-web.example.com"
+```
+
+只接受不含路径、查询参数或凭据的 HTTP(S) Origin，通配符 `*` 会在启动时被拒绝。CORS 只限制浏览器跨域访问，不替代身份认证；认证完成前不得公开部署正式写接口。
+
 ## 契约端点
 
 - `GET /health`

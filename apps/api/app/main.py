@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from fastapi import FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import (
@@ -48,6 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
     app = FastAPI(
         title="研途教练 API",
         version="0.1.0",
@@ -57,6 +59,22 @@ def create_app() -> FastAPI:
         responses=ERROR_RESPONSES,
         lifespan=lifespan,
     )
+    if settings.cors_allowed_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(settings.cors_allowed_origins),
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+            allow_headers=[
+                "Accept",
+                "Authorization",
+                "Content-Type",
+                "Idempotency-Key",
+                "If-Match",
+                "X-Request-ID",
+            ],
+            expose_headers=["X-Request-ID"],
+        )
     app.middleware("http")(request_id_middleware)
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
