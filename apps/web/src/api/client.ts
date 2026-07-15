@@ -32,7 +32,11 @@ import type {
   WeakGraphPayload,
   WrongbookAttemptResultCreatePayload,
   WrongbookAttemptSubmitPayload,
+  WrongbookAnalyzeCreatePayload,
+  WrongbookAnalyzePayload,
   WrongbookCandidateListPayload,
+  WrongbookConfirmPayload,
+  WrongbookDraftHistoryPayload,
 } from "./contracts";
 
 export class ApiClientError extends Error {
@@ -111,6 +115,26 @@ export class ApiClient {
 
   wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
+  }
+
+  wrongbookDraftHistory(limit = 20): Promise<ApiResponse<WrongbookDraftHistoryPayload>> {
+    return this.get<WrongbookDraftHistoryPayload>(`/api/v1/wrongbook/history?limit=${limit}`);
+  }
+
+  analyzeWrongbookRecord(
+    wrongRecordId: string,
+    payload: WrongbookAnalyzeCreatePayload = {},
+  ): Promise<ApiResponse<WrongbookAnalyzePayload>> {
+    return this.post<WrongbookAnalyzePayload>(
+      `/api/v1/wrongbook/${encodeURIComponent(wrongRecordId)}/analyze`,
+      payload,
+    );
+  }
+
+  confirmWrongbookDraft(wrongRecordId: string): Promise<ApiResponse<WrongbookConfirmPayload>> {
+    return this.post<WrongbookConfirmPayload>(
+      `/api/v1/wrongbook/${encodeURIComponent(wrongRecordId)}/confirm`,
+    );
   }
 
   submitWrongbookVariantResult(

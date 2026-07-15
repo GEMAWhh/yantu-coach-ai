@@ -10,6 +10,10 @@ import type {
   ReviewResultType,
   WrongbookAttemptSubmitPayload,
   WrongbookCandidatePayload,
+  WrongbookDraftHistoryItemPayload,
+  WrongbookDraftPayload,
+  WrongbookRecordPayload,
+  WrongbookVerificationPayload,
 } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
@@ -26,6 +30,11 @@ const reviewSubmissions = ref<Record<string, ReviewResultSubmitPayload>>({});
 const wrongbookActionInFlight = ref<string | null>(null);
 const wrongbookActionError = ref<string | null>(null);
 const wrongbookSubmissions = ref<Record<string, WrongbookAttemptSubmitPayload>>({});
+const wrongbookDraftHistory = ref<WrongbookDraftHistoryItemPayload[] | null>(null);
+const wrongbookDraftHistoryError = ref<string | null>(null);
+const selectedWrongbookRecord = ref<WrongbookRecordPayload | null>(null);
+const selectedWrongbookVerification = ref<WrongbookVerificationPayload | null>(null);
+const selectedWrongbookDraft = ref<WrongbookDraftPayload | null>(null);
 
 type KnowledgeChip = {
   label: string;
@@ -70,6 +79,16 @@ const wrongbookSourceLabel = computed(() =>
 );
 const wrongbookSourceTone = computed<Tone>(() =>
   apiWrongbookCandidates.value ? "green" : "blue",
+);
+const wrongbookDraftSourceTone = computed<Tone>(() =>
+  wrongbookDraftHistory.value ? "green" : "yellow",
+);
+const pendingWrongbookDraftCount = computed(() =>
+  wrongbookDraftHistory.value
+    ? wrongbookDraftHistory.value.filter((item) => item.draft?.status === "draft").length
+    : selectedWrongbookDraft.value?.status === "draft"
+      ? 1
+      : 0,
 );
 const reviewSourceLabel = computed(() => (apiDueReviews.value ? "正式复习" : "原型复习"));
 const reviewSourceTone = computed<Tone>(() => (apiDueReviews.value ? "green" : "yellow"));
@@ -421,6 +440,74 @@ async function submitWrongbookResult(
   }
 }
 
+async function loadWrongbookDraftHistory(selectRecordId?: string): Promise<void> {
+  try {
+    const history = await new ApiClient().wrongbookDraftHistory(10);
+    wrongbookDraftHistory.value = history.data.items;
+    wrongbookDraftHistoryError.value = null;
+    const selected = selectRecordId
+      ? history.data.items.find((item) => item.record.id === selectRecordId)
+      : history.data.items.find((item) => item.draft !== null);
+    if (selected && (!selectedWrongbookDraft.value || selectRecordId)) {
+      selectWrongbookDraftHistory(selected);
+    }
+  } catch {
+    wrongbookDraftHistory.value = null;
+    wrongbookDraftHistoryError.value = "错题草稿历史加载失败，请稍后重试。";
+  }
+}
+
+function selectWrongbookDraftHistory(item: WrongbookDraftHistoryItemPayload): void {
+  selectedWrongbookRecord.value = item.record;
+  selectedWrongbookVerification.value = item.verification;
+  selectedWrongbookDraft.value = item.draft;
+  wrongbookActionError.value = null;
+}
+
+async function analyzeWrongbookDraft(card: WrongbookCard): Promise<void> {
+  if (!card.apiBacked || !card.sourceId) {
+    return;
+  }
+  const actionKey = wrongbookDraftActionKey("analyze", card.sourceId);
+  wrongbookActionInFlight.value = actionKey;
+  wrongbookActionError.value = null;
+  try {
+    const analyzed = await new ApiClient().analyzeWrongbookRecord(card.sourceId, {
+      provider_mode: "valid",
+    });
+    selectedWrongbookDraft.value = analyzed.data.draft;
+    await loadWrongbookDraftHistory(analyzed.data.draft.wrong_record_id);
+  } catch {
+    wrongbookActionError.value = "错题草稿生成失败，请刷新后重试。";
+  } finally {
+    if (wrongbookActionInFlight.value === actionKey) {
+      wrongbookActionInFlight.value = null;
+    }
+  }
+}
+
+async function confirmSelectedWrongbookDraft(): Promise<void> {
+  if (!selectedWrongbookDraft.value) {
+    return;
+  }
+  const wrongRecordId = selectedWrongbookDraft.value.wrong_record_id;
+  const actionKey = wrongbookDraftActionKey("confirm", wrongRecordId);
+  wrongbookActionInFlight.value = actionKey;
+  wrongbookActionError.value = null;
+  try {
+    const confirmed = await new ApiClient().confirmWrongbookDraft(wrongRecordId);
+    selectedWrongbookRecord.value = confirmed.data.record;
+    selectedWrongbookDraft.value = confirmed.data.draft;
+    await loadWrongbookDraftHistory(wrongRecordId);
+  } catch {
+    wrongbookActionError.value = "错题草稿确认失败，请刷新后重试。";
+  } finally {
+    if (wrongbookActionInFlight.value === actionKey) {
+      wrongbookActionInFlight.value = null;
+    }
+  }
+}
+
 function wrongbookActionKey(
   card: WrongbookCard,
   resultKind: "variant" | "interval",
@@ -439,6 +526,20 @@ function wrongbookIdempotencyKey(
   );
 }
 
+function wrongbookDraftActionKey(kind: "analyze" | "confirm", wrongRecordId: string): string {
+  return ["wrongbook-draft", kind, wrongRecordId].join(":");
+}
+
+function isWrongbookDraftActionRunning(
+  kind: "analyze" | "confirm",
+  wrongRecordId: string | null,
+): boolean {
+  return (
+    wrongRecordId !== null &&
+    wrongbookActionInFlight.value === wrongbookDraftActionKey(kind, wrongRecordId)
+  );
+}
+
 function wrongbookStatusLabel(status: WrongbookAttemptSubmitPayload["record"]["current_status"]): string {
   const labels: Record<WrongbookAttemptSubmitPayload["record"]["current_status"], string> = {
     pending_analysis: "待分析",
@@ -449,6 +550,58 @@ function wrongbookStatusLabel(status: WrongbookAttemptSubmitPayload["record"]["c
     regressed: "已回退",
   };
   return labels[status];
+}
+
+function wrongbookDraftStatusLabel(draft: WrongbookDraftPayload | null): string {
+  if (!draft) {
+    return "未分析";
+  }
+  const labels: Record<WrongbookDraftPayload["status"], string> = {
+    draft: "待确认",
+    needs_correction: "需修正",
+    confirmed: "已确认",
+  };
+  return labels[draft.status];
+}
+
+function wrongbookDraftTone(draft: WrongbookDraftPayload | null): Tone {
+  if (!draft) {
+    return "neutral";
+  }
+  if (draft.status === "confirmed") {
+    return "green";
+  }
+  if (draft.status === "needs_correction") {
+    return "yellow";
+  }
+  return "blue";
+}
+
+function wrongbookDraftTitle(draft: WrongbookDraftPayload | null): string {
+  if (!draft) {
+    return "暂无可处理错题草稿";
+  }
+  if (draft.status === "confirmed") {
+    return "错题草稿已确认";
+  }
+  if (draft.status === "needs_correction") {
+    return "错题草稿需修正";
+  }
+  return "待确认错题草稿";
+}
+
+function wrongbookDraftSummary(draft: WrongbookDraftPayload): string {
+  if (draft.validation_errors.length > 0) {
+    return `草稿存在 ${draft.validation_errors.length} 个结构问题，需要人工修正后才能确认。`;
+  }
+  const remediationPlan = draft.structured_json.remediation_plan;
+  const actionCount = Array.isArray(remediationPlan) ? remediationPlan.length : 0;
+  return `草稿已生成错因诊断和 ${actionCount} 条补救动作；确认前不写入正式错题记录。`;
+}
+
+function wrongbookDraftField(draft: WrongbookDraftPayload, field: string): string {
+  const value = draft.structured_json[field];
+  return typeof value === "string" && value.trim() ? value : "待确认";
 }
 
 function toneForWrongbookStatus(
@@ -483,6 +636,7 @@ function todayString(): string {
 
 onMounted(async () => {
   const client = new ApiClient();
+  void loadWrongbookDraftHistory();
   try {
     const [resources, knowledgeNodes, wrongbookCandidates, dueReviews] = await Promise.all([
       client.resources(),
@@ -671,6 +825,112 @@ onMounted(async () => {
       >
         {{ wrongbookActionError }}
       </p>
+      <div class="draft-workspace">
+        <article class="draft-panel">
+          <div class="task-card-header">
+            <strong>{{ wrongbookDraftTitle(selectedWrongbookDraft) }}</strong>
+            <StatusTag
+              :label="wrongbookDraftStatusLabel(selectedWrongbookDraft)"
+              :tone="wrongbookDraftTone(selectedWrongbookDraft)"
+            />
+          </div>
+          <template v-if="selectedWrongbookDraft">
+            <p>{{ wrongbookDraftSummary(selectedWrongbookDraft) }}</p>
+            <dl class="detail-list">
+              <div>
+                <dt>表层错因</dt>
+                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "surface_cause") }}</dd>
+              </div>
+              <div>
+                <dt>深层错因</dt>
+                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "deep_cause") }}</dd>
+              </div>
+              <div>
+                <dt>前置缺口</dt>
+                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "prerequisite_gap") }}</dd>
+              </div>
+              <div v-if="selectedWrongbookRecord">
+                <dt>正式记录</dt>
+                <dd>
+                  {{ wrongbookStatusLabel(selectedWrongbookRecord.current_status) }} · 错误
+                  {{ selectedWrongbookRecord.error_count }} 次
+                </dd>
+              </div>
+              <div v-if="selectedWrongbookVerification">
+                <dt>验证状态</dt>
+                <dd>
+                  变式 {{ selectedWrongbookVerification.variant_passed ? "已过" : "未过" }} ·
+                  间隔 {{ selectedWrongbookVerification.interval_test_passed ? "已过" : "未过" }}
+                </dd>
+              </div>
+            </dl>
+            <div class="task-actions">
+              <button
+                type="button"
+                class="task-action-button"
+                :disabled="
+                  selectedWrongbookDraft.status !== 'draft' ||
+                    isWrongbookDraftActionRunning('confirm', selectedWrongbookDraft.wrong_record_id)
+                "
+                @click="confirmSelectedWrongbookDraft"
+              >
+                确认草稿
+              </button>
+            </div>
+          </template>
+          <p v-else>
+            暂无可处理错题草稿。
+          </p>
+        </article>
+
+        <article class="draft-panel">
+          <div class="task-card-header">
+            <strong>错题草稿历史</strong>
+            <StatusTag
+              :label="`${pendingWrongbookDraftCount} 份待确认`"
+              :tone="wrongbookDraftSourceTone"
+            />
+          </div>
+          <p
+            v-if="wrongbookDraftHistoryError"
+            class="task-action-error"
+            role="status"
+          >
+            {{ wrongbookDraftHistoryError }}
+          </p>
+          <div
+            v-if="wrongbookDraftHistory && wrongbookDraftHistory.length > 0"
+            class="draft-history-list"
+          >
+            <button
+              v-for="item in wrongbookDraftHistory"
+              :key="item.record.id"
+              type="button"
+              class="draft-history-item"
+              @click="selectWrongbookDraftHistory(item)"
+            >
+              <span>
+                <strong>{{ formatDate(item.record.updated_at) }}</strong>
+                <small>
+                  {{ item.record.knowledge_node_id ?? "未关联知识点" }} ·
+                  {{ wrongbookStatusLabel(item.record.current_status) }}
+                </small>
+              </span>
+              <StatusTag
+                :label="wrongbookDraftStatusLabel(item.draft)"
+                :tone="wrongbookDraftTone(item.draft)"
+              />
+            </button>
+          </div>
+          <p v-else-if="wrongbookDraftHistory && wrongbookDraftHistory.length === 0">
+            暂无错题草稿历史。
+          </p>
+          <p v-else-if="!wrongbookDraftHistoryError">
+            正在加载错题草稿历史。
+          </p>
+        </article>
+      </div>
+
       <div class="step-grid">
         <article
           v-for="card in wrongbookCards"
@@ -692,6 +952,14 @@ onMounted(async () => {
             class="task-actions"
             aria-label="错题验证操作"
           >
+            <button
+              type="button"
+              class="task-action-button secondary"
+              :disabled="isWrongbookDraftActionRunning('analyze', card.sourceId)"
+              @click="analyzeWrongbookDraft(card)"
+            >
+              生成草稿
+            </button>
             <button
               type="button"
               class="task-action-button"
