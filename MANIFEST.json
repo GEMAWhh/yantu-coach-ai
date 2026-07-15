@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 239,
+  "file_count": 240,
   "files": [
     {
       "path": ".editorconfig",
@@ -1167,6 +1167,11 @@
       "path": "scripts/check_forbidden_patterns.py",
       "size": 1330,
       "sha256": "e43da4cdd8702cf90889f16f5bde69b8d0f3387bedea25123eca90f72f112a87"
+    },
+    {
+      "path": "scripts/build_sites_demo_archive.mjs",
+      "size": 3186,
+      "sha256": "a16952fcf59a8a2b21e9dbb9d1f8a4322a5e0df12b823c58aa3ad3378df899fe"
     },
     {
       "path": "scripts/validate_governance.py",
