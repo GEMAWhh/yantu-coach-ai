@@ -3,6 +3,7 @@ import type {
   ApiErrorResponse,
   ApiMetaPayload,
   ApiResponse,
+  AuthStatusPayload,
   AnalyticsErrorsPayload,
   AnalyticsGoalRiskPayload,
   AnalyticsMasteryPayload,
@@ -39,6 +40,7 @@ import type {
   WrongbookDraftHistoryPayload,
 } from "./contracts";
 import { demoApiRequest, isDemoApiEnabled } from "./demoClient";
+import { getPersonalAccessKey } from "./auth";
 
 export class ApiClientError extends Error {
   constructor(
@@ -80,6 +82,10 @@ export class ApiClient {
 
   meta(): Promise<ApiResponse<ApiMetaPayload>> {
     return this.get<ApiMetaPayload>("/api/v1/meta");
+  }
+
+  authStatus(): Promise<ApiResponse<AuthStatusPayload>> {
+    return this.get<AuthStatusPayload>("/api/v1/auth/status");
   }
 
   today(date: string): Promise<ApiResponse<TodayPayload>> {
@@ -289,6 +295,7 @@ export class ApiClient {
     const response = await this.fetcher(this.url(path), {
       headers: {
         Accept: "application/json",
+        ...this.authHeaders(),
       },
     });
     const body = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
@@ -311,6 +318,7 @@ export class ApiClient {
     }
     const requestHeaders: Record<string, string> = {
       Accept: "application/json",
+      ...this.authHeaders(),
       ...headers,
     };
     const init: RequestInit = {
@@ -354,6 +362,7 @@ export class ApiClient {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...this.authHeaders(),
         ...headers,
       },
       body: JSON.stringify(body),
@@ -374,5 +383,10 @@ export class ApiClient {
 
   private shouldUseDemoApi(): boolean {
     return this.baseUrl === "" && this.fetcher === fetch && isDemoApiEnabled();
+  }
+
+  private authHeaders(): Record<string, string> {
+    const accessKey = getPersonalAccessKey();
+    return accessKey ? { Authorization: `Bearer ${accessKey}` } : {};
   }
 }

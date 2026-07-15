@@ -96,6 +96,7 @@ def test_unsafe_cors_origins_are_rejected(
 ) -> None:
     monkeypatch.setenv("YANTU_APP_ENV", "prod")
     monkeypatch.setenv("YANTU_CORS_ALLOWED_ORIGINS", configured_origins)
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
 
     with pytest.raises(ValueError, match="YANTU_CORS_ALLOWED_ORIGINS"):
         get_settings()

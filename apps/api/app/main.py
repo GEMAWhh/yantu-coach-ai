@@ -31,9 +31,11 @@ from app.exception_handlers import (
 )
 from app.middleware import request_id_middleware
 from app.responses import ERROR_RESPONSES, api_response
+from app.schemas.auth import AuthStatusResponse
 from app.schemas.common import ApiResponse
 from app.schemas.health import HealthResponse
 from app.schemas.meta import ApiMetaResponse, VersionCheckResponse
+from app.security import personal_token_auth_middleware
 from app.settings import get_settings
 
 CONTRACT_VERSION: Literal["contract-v1"] = "contract-v1"
@@ -59,6 +61,8 @@ def create_app() -> FastAPI:
         responses=ERROR_RESPONSES,
         lifespan=lifespan,
     )
+    app.middleware("http")(personal_token_auth_middleware)
+    app.middleware("http")(request_id_middleware)
     if settings.cors_allowed_origins:
         app.add_middleware(
             CORSMiddleware,
@@ -75,7 +79,6 @@ def create_app() -> FastAPI:
             ],
             expose_headers=["X-Request-ID"],
         )
-    app.middleware("http")(request_id_middleware)
     app.add_exception_handler(ApiError, api_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -130,6 +133,7 @@ def create_app() -> FastAPI:
             "graph-analytics-api",
             "data-management-backups",
             "settings-profile-rules",
+            "personal-token-auth",
         ]
         return api_response(
             ApiMetaResponse(
@@ -141,6 +145,14 @@ def create_app() -> FastAPI:
             ),
             request,
         )
+
+    @app.get(
+        "/api/v1/auth/status",
+        response_model=ApiResponse[AuthStatusResponse],
+        tags=["auth"],
+    )
+    def auth_status(request: Request) -> ApiResponse[AuthStatusResponse]:
+        return api_response(AuthStatusResponse(), request)
 
     @app.post(
         "/api/v1/meta/version-check",
