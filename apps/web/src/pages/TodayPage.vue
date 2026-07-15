@@ -5,6 +5,7 @@ import { ApiClient } from "../api/client";
 import type {
   EvidenceDraftPayload,
   EvidenceFileUploadPayload,
+  EvidenceHistoryItemPayload,
   EvidenceRecordPayload,
   TaskPayload,
   TaskResultCreatePayload,
@@ -26,8 +27,10 @@ const evidenceDraft = ref<EvidenceDraftPayload | null>(null);
 const evidenceFileInput = ref<HTMLInputElement | null>(null);
 const selectedEvidenceFiles = ref<File[]>([]);
 const evidenceSubjectId = ref("math");
+const evidenceHistory = ref<EvidenceHistoryItemPayload[] | null>(null);
 const evidenceActionInFlight = ref<"upload" | "confirm" | "reject" | null>(null);
 const evidenceActionError = ref<string | null>(null);
+const evidenceHistoryError = ref<string | null>(null);
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
 const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
 const todayTasks = computed<TodayTaskView[]>(() =>
@@ -54,7 +57,7 @@ const todayMetrics = computed(() => [
   },
   {
     label: "待确认草稿",
-    value: evidenceDraft.value?.status === "draft" ? "1 份" : "0 份",
+    value: `${pendingEvidenceDraftCount.value} 份`,
     detail: evidenceRecord.value
       ? `证据记录 ${evidenceRecordStatusLabel(evidenceRecord.value.status)}`
       : "确认前不写正式记录",
@@ -63,6 +66,13 @@ const todayMetrics = computed(() => [
 ]);
 const evidenceSourceLabel = computed(() => (evidenceRecord.value ? "正式草稿" : "原型草稿"));
 const evidenceSourceTone = computed<Tone>(() => (evidenceRecord.value ? "green" : "yellow"));
+const pendingEvidenceDraftCount = computed(() =>
+  evidenceHistory.value
+    ? evidenceHistory.value.filter((item) => item.draft?.status === "draft").length
+    : evidenceDraft.value?.status === "draft"
+      ? 1
+      : 0,
+);
 const evidenceCardTitle = computed(() =>
   evidenceDraft.value ? evidenceDraftTitle(evidenceDraft.value) : "昨日复盘草稿",
 );
@@ -316,6 +326,8 @@ async function createEvidenceDraft(): Promise<void> {
     });
     evidenceRecord.value = upload.data.record;
     evidenceDraft.value = analyzed.data.draft;
+    selectedEvidenceFiles.value = [];
+    await loadEvidenceHistory();
   } catch {
     evidenceActionError.value = "证据草稿生成失败，请刷新后重试。";
   } finally {
@@ -336,6 +348,7 @@ async function confirmEvidenceDraft(): Promise<void> {
     const confirmed = await client.confirmEvidenceDraft(evidenceDraft.value.evidence_record_id);
     evidenceRecord.value = confirmed.data.record;
     evidenceDraft.value = confirmed.data.draft;
+    await loadEvidenceHistory();
   } catch {
     evidenceActionError.value = "证据草稿确认失败，请刷新后重试。";
   } finally {
@@ -364,6 +377,7 @@ async function rejectEvidenceDraft(): Promise<void> {
         rejected_at: rejected.data.rejected_at,
       };
     }
+    await loadEvidenceHistory();
   } catch {
     evidenceActionError.value = "证据草稿驳回失败，请刷新后重试。";
   } finally {
@@ -414,6 +428,53 @@ function evidenceDraftSummary(draft: EvidenceDraftPayload): string {
   return `草稿已关联 ${assetCount} 个证据附件，生成 ${actionCount} 条建议动作；确认前不写入正式学习记录。`;
 }
 
+async function loadEvidenceHistory(): Promise<void> {
+  try {
+    const history = await new ApiClient().evidenceHistory(10);
+    evidenceHistory.value = history.data.items;
+    evidenceHistoryError.value = null;
+  } catch {
+    evidenceHistory.value = null;
+    evidenceHistoryError.value = "证据历史加载失败，请稍后重试。";
+  }
+}
+
+function selectEvidenceHistory(item: EvidenceHistoryItemPayload): void {
+  evidenceRecord.value = item.record;
+  evidenceDraft.value = item.draft;
+  evidenceActionError.value = null;
+}
+
+function evidenceDraftStatusLabel(draft: EvidenceDraftPayload | null): string {
+  if (!draft) {
+    return "未分析";
+  }
+  const labels: Record<EvidenceDraftPayload["status"], string> = {
+    draft: "待确认",
+    needs_correction: "需修正",
+    confirmed: "已确认",
+    rejected: "已驳回",
+  };
+  return labels[draft.status];
+}
+
+function evidenceHistoryTone(item: EvidenceHistoryItemPayload): Tone {
+  if (item.draft?.status === "confirmed" || item.record.status === "confirmed") {
+    return "green";
+  }
+  if (item.draft?.status === "rejected" || item.record.status === "rejected") {
+    return "red";
+  }
+  if (item.draft?.status === "needs_correction") {
+    return "yellow";
+  }
+  return "blue";
+}
+
+function formatEvidenceHistoryDate(value: string): string {
+  return value.slice(0, 10);
+}
+
 async function evidenceFilePayload(file: File): Promise<EvidenceFileUploadPayload> {
   if (!isEvidenceMime(file.type)) {
     throw new Error("unsupported evidence file type");
@@ -447,6 +508,7 @@ function todayString(): string {
 }
 
 onMounted(async () => {
+  void loadEvidenceHistory();
   try {
     const response = await new ApiClient().today(todayString());
     apiToday.value = response.data;
@@ -755,6 +817,50 @@ onMounted(async () => {
               驳回
             </button>
           </div>
+        </section>
+
+        <section class="notice-card">
+          <StatusTag
+            label="历史入口"
+            tone="blue"
+          />
+          <h2>证据草稿历史</h2>
+          <p
+            v-if="evidenceHistoryError"
+            class="task-action-error"
+            role="status"
+          >
+            {{ evidenceHistoryError }}
+          </p>
+          <div
+            v-if="evidenceHistory && evidenceHistory.length > 0"
+            class="evidence-history-list"
+          >
+            <button
+              v-for="item in evidenceHistory"
+              :key="item.record.id"
+              type="button"
+              class="evidence-history-item"
+              @click="selectEvidenceHistory(item)"
+            >
+              <span>
+                <strong>{{ formatEvidenceHistoryDate(item.record.study_date) }}</strong>
+                <small>
+                  {{ item.record.subject_id ?? "未分科" }} · {{ item.record.asset_count }} 个附件
+                </small>
+              </span>
+              <StatusTag
+                :label="evidenceDraftStatusLabel(item.draft)"
+                :tone="evidenceHistoryTone(item)"
+              />
+            </button>
+          </div>
+          <p v-else-if="evidenceHistory && evidenceHistory.length === 0">
+            还没有历史证据草稿；上传并分析后会出现在这里。
+          </p>
+          <p v-else-if="!evidenceHistoryError">
+            正在加载证据历史。
+          </p>
         </section>
 
         <section class="notice-card risk">

@@ -22,6 +22,50 @@ async function mountApp(path = "/today") {
   return wrapper;
 }
 
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function emptyEvidenceHistoryResponse(): Response {
+  return jsonResponse({
+    data: { total: 0, items: [] },
+    meta: { request_id: "evidence-history" },
+  });
+}
+
+function evidenceHistoryWithDraftResponse(): Response {
+  return jsonResponse({
+    data: {
+      total: 1,
+      items: [
+        {
+          record: {
+            id: "history-evidence-1",
+            study_date: "2026-07-14",
+            subject_id: "english",
+            status: "pending",
+            asset_count: 2,
+          },
+          draft: {
+            id: "history-draft-1",
+            evidence_record_id: "history-evidence-1",
+            status: "draft",
+            structured_json: {
+              confirmed_facts: { asset_count: 2 },
+              suggested_actions: [{ type: "confirm_or_reject" }],
+            },
+            validation_errors: [],
+          },
+        },
+      ],
+    },
+    meta: { request_id: "evidence-history" },
+  });
+}
+
 describe("App", () => {
   beforeEach(() => {
     window.scrollTo = vi.fn();
@@ -51,6 +95,9 @@ describe("App", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const path = String(input);
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return evidenceHistoryWithDraftResponse();
+        }
         expect(path).toMatch(/^\/api\/v1\/today\?date=/);
         return new Response(
           JSON.stringify({
@@ -92,6 +139,14 @@ describe("App", () => {
     expect(wrapper.text()).toContain("API 今日任务");
     expect(wrapper.text()).toContain("1 项");
     expect(wrapper.text()).toContain("预计 45 分钟");
+    expect(wrapper.text()).toContain("证据草稿历史");
+    expect(wrapper.text()).toContain("2026-07-14");
+    expect(wrapper.text()).toContain("english · 2 个附件");
+
+    await wrapper.get(".evidence-history-item").trigger("click");
+
+    expect(wrapper.text()).toContain("待确认证据草稿");
+    expect(wrapper.text()).toContain("草稿已关联 2 个证据附件");
   });
 
   it("starts a today task through the guarded task action API", async () => {
@@ -101,6 +156,9 @@ describe("App", () => {
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
         calls.push({ path, init });
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return emptyEvidenceHistoryResponse();
+        }
         if (path.startsWith("/api/v1/today")) {
           return new Response(
             JSON.stringify({
@@ -171,10 +229,11 @@ describe("App", () => {
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
+      "/api/v1/evidence/history?limit=10",
       expect.stringMatching(/^\/api\/v1\/today\?date=/),
       "/api/v1/tasks/task-api-1/start",
     ]);
-    expect(calls[1].init?.headers).toMatchObject({ "If-Match": "1" });
+    expect(calls[2].init?.headers).toMatchObject({ "If-Match": "1" });
     expect(wrapper.text()).toContain("in_progress");
   });
 
@@ -185,6 +244,9 @@ describe("App", () => {
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
         calls.push({ path, init });
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return emptyEvidenceHistoryResponse();
+        }
         if (path.startsWith("/api/v1/today")) {
           return new Response(
             JSON.stringify({
@@ -293,14 +355,15 @@ describe("App", () => {
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
+      "/api/v1/evidence/history?limit=10",
       expect.stringMatching(/^\/api\/v1\/today\?date=/),
       "/api/v1/tasks/task-api-1/results",
       "/api/v1/tasks/task-api-1",
     ]);
-    expect(calls[1].init?.headers).toMatchObject({
+    expect(calls[2].init?.headers).toMatchObject({
       "Idempotency-Key": "task-api-1:complete:1:80:40:5:4",
     });
-    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+    expect(JSON.parse(String(calls[2].init?.body))).toMatchObject({
       result_type: "partial",
       completion_ratio: 80,
       actual_minutes: 40,
@@ -310,8 +373,8 @@ describe("App", () => {
       confidence: 70,
       problem_description: "漏看条件",
     });
-    expect(calls[2].init?.method).toBe("PATCH");
-    expect(calls[2].init?.headers).toMatchObject({ "If-Match": "1" });
+    expect(calls[3].init?.method).toBe("PATCH");
+    expect(calls[3].init?.headers).toMatchObject({ "If-Match": "1" });
     expect(wrapper.text()).toContain("completed");
   });
 
@@ -322,6 +385,9 @@ describe("App", () => {
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
         calls.push({ path, init });
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return emptyEvidenceHistoryResponse();
+        }
         if (path.startsWith("/api/v1/today")) {
           return new Response(
             JSON.stringify({
@@ -492,11 +558,13 @@ describe("App", () => {
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
+      "/api/v1/evidence/history?limit=10",
       expect.stringMatching(/^\/api\/v1\/today\?date=/),
       "/api/v1/evidence/uploads",
       "/api/v1/evidence/evidence-1/analyze",
+      "/api/v1/evidence/history?limit=10",
     ]);
-    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+    expect(JSON.parse(String(calls[2].init?.body))).toMatchObject({
       study_date: expect.any(String),
       subject_id: "math",
       files: [
@@ -507,15 +575,16 @@ describe("App", () => {
         },
       ],
     });
-    expect(JSON.parse(String(calls[2].init?.body))).toEqual({ provider_mode: "valid" });
+    expect(JSON.parse(String(calls[3].init?.body))).toEqual({ provider_mode: "valid" });
     expect(wrapper.text()).toContain("待确认证据草稿");
 
     const confirmButton = wrapper.findAll("button").find((button) => button.text() === "确认");
     await confirmButton?.trigger("click");
     await flushPromises();
 
-    expect(calls[3].path).toBe("/api/v1/evidence/evidence-1/confirm");
-    expect(calls[3].init?.body).toBeUndefined();
+    expect(calls[5].path).toBe("/api/v1/evidence/evidence-1/confirm");
+    expect(calls[5].init?.body).toBeUndefined();
+    expect(calls[6].path).toBe("/api/v1/evidence/history?limit=10");
     expect(wrapper.text()).toContain("证据草稿已确认");
     expect(wrapper.text()).toContain("证据记录 已确认");
   });

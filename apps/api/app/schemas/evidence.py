@@ -5,6 +5,7 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.evidence.service import EvidenceHistoryItem
 from app.models.asset import Asset
 from app.models.evidence import AIJob, EvidenceDraft, EvidenceRecord
 
@@ -109,6 +110,29 @@ class EvidenceUploadResponse(BaseModel):
 
     record: EvidenceRecordResponse
     assets: list[EvidenceAssetResponse]
+
+
+class EvidenceHistoryItemResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    record: EvidenceRecordResponse
+    draft: EvidenceDraftResponse | None
+
+    @classmethod
+    def from_item(cls, item: EvidenceHistoryItem) -> EvidenceHistoryItemResponse:
+        return cls(
+            record=EvidenceRecordResponse.from_model(item.record),
+            draft=(
+                EvidenceDraftResponse.from_model(item.draft) if item.draft is not None else None
+            ),
+        )
+
+
+class EvidenceHistoryResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: list[EvidenceHistoryItemResponse]
+    total: int
 
 
 class AIJobResponse(BaseModel):

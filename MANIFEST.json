@@ -120,8 +120,8 @@
     },
     {
       "path": "apps/api/app/api/evidence.py",
-      "size": 6796,
-      "sha256": "0afe296865cab0a571d51096dace126bc6051da7817e1cb6989aecafd6e6f049"
+      "size": 7462,
+      "sha256": "fc978e6b56e4c025b7d3b525007da9783ad6019b427216cd35ac36e001bb97e6"
     },
     {
       "path": "apps/api/app/api/imports.py",
@@ -210,13 +210,13 @@
     },
     {
       "path": "apps/api/app/evidence/__init__.py",
-      "size": 722,
-      "sha256": "14cde5d28905c3351bc8c479b77f769c1587c59e4f84a8914fabcb3c6188a532"
+      "size": 830,
+      "sha256": "429e3a16ee936cf9e90b73a541906ab3efd378f5d550f1757493f62fbcdcba49"
     },
     {
       "path": "apps/api/app/evidence/service.py",
-      "size": 13921,
-      "sha256": "8525248accb97cbc4d5f9eca3fbbd089c13ca95df44625d59843eab43a9429b4"
+      "size": 14755,
+      "sha256": "f0ec6c54d8a7a0576f3b1e458c2cc423b59c3804cc02c52fe749d4acbf7320a0"
     },
     {
       "path": "apps/api/app/exception_handlers.py",
@@ -410,8 +410,8 @@
     },
     {
       "path": "apps/api/app/schemas/evidence.py",
-      "size": 6642,
-      "sha256": "a009db25f1348b760f11df5fe32513e61f95fb36511ca3383b3ba315e7764eac"
+      "size": 7339,
+      "sha256": "79271acc9cae9a6d99c15d24a9f2d4dc90be60e6f5d9a2b9b4927b724509777d"
     },
     {
       "path": "apps/api/app/schemas/health.py",
@@ -620,8 +620,8 @@
     },
     {
       "path": "apps/api/tests/test_evidence_draft_pipeline.py",
-      "size": 7980,
-      "sha256": "d30246b9c6b5553e0f36fddc76dc90934aec604d53cf9d65c6c86bf15da1be66"
+      "size": 9152,
+      "sha256": "741f61d2cfed5363596fdfa5684c8c965240b9f8f491a387ec9646235c92bccd"
     },
     {
       "path": "apps/api/tests/test_file_storage_backup.py",
@@ -780,8 +780,8 @@
     },
     {
       "path": "apps/web/src/App.test.ts",
-      "size": 39576,
-      "sha256": "457e9681df77ec9275b9096c3b39d6eba1615fbcc76eb39e5f9bc3e85176a58b"
+      "size": 41794,
+      "sha256": "907c1a2cdb14a80238d911f1bbc6eac38003929162544164360a1f669ac3df29"
     },
     {
       "path": "apps/web/src/App.vue",
@@ -790,18 +790,18 @@
     },
     {
       "path": "apps/web/src/api/client.test.ts",
-      "size": 25719,
-      "sha256": "31efa81594802d191e9bdea50c2805294f405b4ff0ac09908b183ce11d804101"
+      "size": 27573,
+      "sha256": "0838c46a64990dd3f5590f98173fa2fa589c0e96c00a2abdacd93871319461f4"
     },
     {
       "path": "apps/web/src/api/client.ts",
-      "size": 9454,
-      "sha256": "532075325844240cfe0a7f9212fb46b637920d3a5c4b4a6447cc1df64371a2e7"
+      "size": 9651,
+      "sha256": "6c4e50232807a9a5cd1b44f975e3707e15f8f76575fe5966313c99b55b33285d"
     },
     {
       "path": "apps/web/src/api/contracts.ts",
-      "size": 13658,
-      "sha256": "42b3afbe4cbb5e3d6bc4ee4196b0557321e04a6ee4740ecaf46cc626f226e093"
+      "size": 13875,
+      "sha256": "6747f12c18a8ca5a3c92f896d0df7900ea387f914e9e080229eca06784aa4a57"
     },
     {
       "path": "apps/web/src/app/navigation.test.ts",
@@ -865,8 +865,8 @@
     },
     {
       "path": "apps/web/src/pages/TodayPage.vue",
-      "size": 24874,
-      "sha256": "df566bdaa7f0fed1223319bdfb9af08ad30e7d8e2ae099eb6c890db6ba0862bd"
+      "size": 28246,
+      "sha256": "caa1dd009f2917d8f8827f03f63a4fe3e645551377b84ab5207ccdca048cb0a2"
     },
     {
       "path": "apps/web/src/router/index.ts",
@@ -885,8 +885,8 @@
     },
     {
       "path": "apps/web/src/styles.css",
-      "size": 14835,
-      "sha256": "19263ee6023063c5782653bcbc6520d8e34b8c94e057a5b9e8798c74152f8ebf"
+      "size": 15469,
+      "sha256": "0138bb8ce0f5cfcfcfa3e8745de099b5c9a280cc2160f18bb5b286f4c5eecde2"
     },
     {
       "path": "apps/web/src/styles/tokens.css",

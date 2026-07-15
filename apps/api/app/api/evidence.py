@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Request
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.database import get_session_factory
@@ -9,6 +11,7 @@ from app.evidence.service import (
     analyze_evidence_record,
     confirm_evidence_draft,
     get_evidence_draft,
+    list_evidence_history,
     reject_evidence_draft,
     update_evidence_draft,
     upload_evidence_files,
@@ -26,6 +29,8 @@ from app.schemas.evidence import (
     EvidenceConfirmResponse,
     EvidenceDraftResponse,
     EvidenceDraftUpdate,
+    EvidenceHistoryItemResponse,
+    EvidenceHistoryResponse,
     EvidenceRecordResponse,
     EvidenceRejectRequest,
     EvidenceUploadRequest,
@@ -71,6 +76,20 @@ def upload_evidence(
     except (FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError) as exc:
         raise _api_file_error(exc) from exc
     return api_response(response, request)
+
+
+@router.get("/history", response_model=ApiResponse[EvidenceHistoryResponse])
+def evidence_history(
+    request: Request,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> ApiResponse[EvidenceHistoryResponse]:
+    session_factory = _session_factory()
+    with session_factory() as session:
+        items = [
+            EvidenceHistoryItemResponse.from_item(item)
+            for item in list_evidence_history(session, limit=limit)
+        ]
+    return api_response(EvidenceHistoryResponse(items=items, total=len(items)), request)
 
 
 @router.post("/{record_id}/analyze", response_model=ApiResponse[EvidenceAnalyzeResponse])
