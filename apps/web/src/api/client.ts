@@ -14,6 +14,9 @@ import type {
   ResourceListPayload,
   SettingsProfilePayload,
   SettingsRulesPayload,
+  TaskPayload,
+  TaskResultCreatePayload,
+  TaskResultSubmitPayload,
   TodayPayload,
   WeakGraphPayload,
   WrongbookCandidateListPayload,
@@ -97,6 +100,52 @@ export class ApiClient {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
   }
 
+  startTask(taskId: string, version: number): Promise<ApiResponse<TaskPayload>> {
+    return this.post<TaskPayload>(`/api/v1/tasks/${encodeURIComponent(taskId)}/start`, undefined, {
+      "If-Match": String(version),
+    });
+  }
+
+  skipTask(taskId: string, version: number): Promise<ApiResponse<TaskPayload>> {
+    return this.post<TaskPayload>(`/api/v1/tasks/${encodeURIComponent(taskId)}/skip`, undefined, {
+      "If-Match": String(version),
+    });
+  }
+
+  withdrawTask(taskId: string, version: number): Promise<ApiResponse<TaskPayload>> {
+    return this.post<TaskPayload>(
+      `/api/v1/tasks/${encodeURIComponent(taskId)}/withdraw`,
+      undefined,
+      {
+        "If-Match": String(version),
+      },
+    );
+  }
+
+  completeTask(taskId: string, version: number): Promise<ApiResponse<TaskPayload>> {
+    return this.patch<TaskPayload, { status: TaskPayload["status"] }>(
+      `/api/v1/tasks/${encodeURIComponent(taskId)}`,
+      { status: "completed" },
+      {
+        "If-Match": String(version),
+      },
+    );
+  }
+
+  submitTaskResult(
+    taskId: string,
+    payload: TaskResultCreatePayload,
+    idempotencyKey: string,
+  ): Promise<ApiResponse<TaskResultSubmitPayload>> {
+    return this.post<TaskResultSubmitPayload>(
+      `/api/v1/tasks/${encodeURIComponent(taskId)}/results`,
+      payload,
+      {
+        "Idempotency-Key": idempotencyKey,
+      },
+    );
+  }
+
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {
     const response = await this.fetcher(this.url(path), {
       headers: {
@@ -111,6 +160,67 @@ export class ApiClient {
     }
 
     return body as ApiResponse<TData>;
+  }
+
+  private async post<TData, TBody = unknown>(
+    path: string,
+    body?: TBody,
+    headers: Record<string, string> = {},
+  ): Promise<ApiResponse<TData>> {
+    const requestHeaders: Record<string, string> = {
+      Accept: "application/json",
+      ...headers,
+    };
+    const init: RequestInit = {
+      method: "POST",
+      headers: requestHeaders,
+    };
+    if (body !== undefined) {
+      requestHeaders["Content-Type"] = "application/json";
+      init.body = JSON.stringify(body);
+    }
+    const response = await this.fetcher(this.url(path), init);
+    const responseBody = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
+
+    if (!response.ok) {
+      const errorBody = responseBody as ApiErrorResponse;
+      throw new ApiClientError(response.status, errorBody.error);
+    }
+
+    return responseBody as ApiResponse<TData>;
+  }
+
+  private async patch<TData, TBody>(
+    path: string,
+    body: TBody,
+    headers: Record<string, string> = {},
+  ): Promise<ApiResponse<TData>> {
+    return this.sendJson<TData, TBody>("PATCH", path, body, headers);
+  }
+
+  private async sendJson<TData, TBody>(
+    method: "PATCH",
+    path: string,
+    body: TBody,
+    headers: Record<string, string>,
+  ): Promise<ApiResponse<TData>> {
+    const response = await this.fetcher(this.url(path), {
+      method,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    });
+    const responseBody = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
+
+    if (!response.ok) {
+      const errorBody = responseBody as ApiErrorResponse;
+      throw new ApiClientError(response.status, errorBody.error);
+    }
+
+    return responseBody as ApiResponse<TData>;
   }
 
   private url(path: string): string {

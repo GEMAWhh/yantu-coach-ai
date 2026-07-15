@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 
 import { ApiClient } from "../api/client";
-import type { TaskPayload, TodayPayload } from "../api/contracts";
+import type { TaskPayload, TaskResultCreatePayload, TodayPayload } from "../api/contracts";
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
@@ -10,9 +10,19 @@ import { useMockStudyStore, type TodayTask, type Tone } from "../stores/mockStud
 
 const study = useMockStudyStore();
 const apiToday = ref<TodayPayload | null>(null);
+const actionInFlight = ref<string | null>(null);
+const actionError = ref<string | null>(null);
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
 const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
-const todayTasks = computed(() => apiToday.value?.tasks.map(mapTask) ?? study.todayTasks);
+const todayTasks = computed<TodayTaskView[]>(() =>
+  apiToday.value
+    ? apiToday.value.tasks.map(mapTask)
+    : study.todayTasks.map((task) => ({
+        ...task,
+        version: null,
+        apiBacked: false,
+      })),
+);
 const todayMetrics = computed(() => [
   {
     label: "今日任务",
@@ -34,6 +44,11 @@ const todayMetrics = computed(() => [
   },
 ]);
 
+type TodayTaskView = TodayTask & {
+  version: number | null;
+  apiBacked: boolean;
+};
+
 function toneForStatus(status: TaskPayload["status"]): Tone {
   if (status === "completed") {
     return "green";
@@ -47,9 +62,11 @@ function toneForStatus(status: TaskPayload["status"]): Tone {
   return "neutral";
 }
 
-function mapTask(task: TaskPayload): TodayTask {
+function mapTask(task: TaskPayload): TodayTaskView {
   return {
     id: task.id,
+    version: task.version,
+    apiBacked: true,
     subject: task.subject_id ?? task.task_type,
     title: task.title,
     source: `${task.source_type}${task.source_id ? ` / ${task.source_id}` : ""}`,
@@ -58,6 +75,80 @@ function mapTask(task: TaskPayload): TodayTask {
     status: task.status,
     tone: toneForStatus(task.status),
   };
+}
+
+function isActionRunning(task: TodayTaskView, action: string): boolean {
+  return actionInFlight.value === `${task.id}:${action}`;
+}
+
+function canStart(task: TodayTaskView): boolean {
+  return task.apiBacked && task.status === "pending";
+}
+
+function canSkip(task: TodayTaskView): boolean {
+  return task.apiBacked && (task.status === "pending" || task.status === "in_progress");
+}
+
+function canWithdraw(task: TodayTaskView): boolean {
+  return task.apiBacked && task.status !== "completed" && task.status !== "withdrawn";
+}
+
+function canComplete(task: TodayTaskView): boolean {
+  return task.apiBacked && (task.status === "pending" || task.status === "in_progress");
+}
+
+function updateTask(updatedTask: TaskPayload): void {
+  if (!apiToday.value) {
+    return;
+  }
+  apiToday.value = {
+    ...apiToday.value,
+    tasks: apiToday.value.tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task)),
+  };
+}
+
+async function runTaskAction(
+  task: TodayTaskView,
+  action: "start" | "skip" | "withdraw" | "complete",
+): Promise<void> {
+  if (!task.apiBacked || task.version === null) {
+    return;
+  }
+  const actionKey = `${task.id}:${action}`;
+  const client = new ApiClient();
+  actionInFlight.value = actionKey;
+  actionError.value = null;
+  try {
+    if (action === "start") {
+      updateTask((await client.startTask(task.id, task.version)).data);
+    } else if (action === "skip") {
+      updateTask((await client.skipTask(task.id, task.version)).data);
+    } else if (action === "withdraw") {
+      updateTask((await client.withdrawTask(task.id, task.version)).data);
+    } else {
+      await client.submitTaskResult(task.id, defaultTaskResult(task), resultIdempotencyKey(task));
+      updateTask((await client.completeTask(task.id, task.version)).data);
+    }
+  } catch {
+    actionError.value = "任务状态更新失败，请刷新后重试。";
+  } finally {
+    if (actionInFlight.value === actionKey) {
+      actionInFlight.value = null;
+    }
+  }
+}
+
+function defaultTaskResult(task: TodayTaskView): TaskResultCreatePayload {
+  return {
+    result_type: "completed",
+    completion_ratio: 100,
+    actual_minutes: task.estimateMinutes,
+    confirmed_at: new Date().toISOString(),
+  };
+}
+
+function resultIdempotencyKey(task: TodayTaskView): string {
+  return `${task.id}:complete:${task.version ?? "mock"}`;
 }
 
 onMounted(async () => {
@@ -108,6 +199,13 @@ onMounted(async () => {
             :tone="taskSourceTone"
           />
         </div>
+        <p
+          v-if="actionError"
+          class="task-action-error"
+          role="status"
+        >
+          {{ actionError }}
+        </p>
 
         <div class="task-list">
           <article
@@ -134,6 +232,44 @@ onMounted(async () => {
                 <dd>{{ task.estimateMinutes }} 分钟</dd>
               </div>
             </dl>
+            <div
+              v-if="task.apiBacked"
+              class="task-actions"
+              aria-label="任务操作"
+            >
+              <button
+                type="button"
+                class="task-action-button"
+                :disabled="!canStart(task) || isActionRunning(task, 'start')"
+                @click="runTaskAction(task, 'start')"
+              >
+                开始
+              </button>
+              <button
+                type="button"
+                class="task-action-button"
+                :disabled="!canComplete(task) || isActionRunning(task, 'complete')"
+                @click="runTaskAction(task, 'complete')"
+              >
+                完成
+              </button>
+              <button
+                type="button"
+                class="task-action-button secondary"
+                :disabled="!canSkip(task) || isActionRunning(task, 'skip')"
+                @click="runTaskAction(task, 'skip')"
+              >
+                跳过
+              </button>
+              <button
+                type="button"
+                class="task-action-button danger"
+                :disabled="!canWithdraw(task) || isActionRunning(task, 'withdraw')"
+                @click="runTaskAction(task, 'withdraw')"
+              >
+                撤回
+              </button>
+            </div>
           </article>
         </div>
       </section>

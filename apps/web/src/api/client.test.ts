@@ -8,6 +8,8 @@ import type {
   KnowledgeNodeListPayload,
   ResourceListPayload,
   SettingsRulesPayload,
+  TaskPayload,
+  TaskResultSubmitPayload,
   TodayPayload,
   WeakGraphPayload,
   WrongbookCandidateListPayload,
@@ -263,5 +265,146 @@ describe("ApiClient", () => {
       "/api/v1/knowledge/nodes",
       "/api/v1/wrongbook/planning-candidates",
     ]);
+  });
+
+  it("submits task status actions with version protection", async () => {
+    const payload: ApiResponse<TaskPayload> = {
+      data: {
+        id: "task-1",
+        version: 2,
+        goal_id: "goal-1",
+        subject_id: "math",
+        knowledge_node_id: null,
+        title: "Closed-book recall",
+        task_type: "study",
+        priority: "must",
+        source_type: "goal",
+        source_id: "goal-1",
+        planned_date: "2026-07-14",
+        estimated_minutes: 45,
+        current_stage: 2,
+        target_stage: 3,
+        reason: "Traceable weekly goal",
+        completion_standard: "Recall without hints",
+        prerequisite_status: "satisfied",
+        status: "in_progress",
+      },
+      meta: { request_id: "client-task-start" },
+    };
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payload);
+    });
+
+    await expect(client.startTask("task-1", 1)).resolves.toEqual(payload);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].input).toBe("/api/v1/tasks/task-1/start");
+    expect(calls[0].init?.method).toBe("POST");
+    expect(calls[0].init?.headers).toMatchObject({
+      Accept: "application/json",
+      "If-Match": "1",
+    });
+    expect(calls[0].init?.body).toBeUndefined();
+  });
+
+  it("submits task results with an idempotency key", async () => {
+    const payload: ApiResponse<TaskResultSubmitPayload> = {
+      data: {
+        created: true,
+        result: {
+          id: "result-1",
+          version: 1,
+          created_at: "2026-07-14T10:00:00Z",
+          updated_at: "2026-07-14T10:00:00Z",
+          task_id: "task-1",
+          result_type: "completed",
+          completion_ratio: 100,
+          actual_minutes: 45,
+          question_count: null,
+          correct_count: null,
+          accuracy: null,
+          confidence: null,
+          hint_level: null,
+          focus_level: null,
+          difficulty_rating: null,
+          problem_description: null,
+          confirmed_at: "2026-07-14T10:00:00Z",
+        },
+      },
+      meta: { request_id: "client-task-result" },
+    };
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payload);
+    });
+
+    await expect(
+      client.submitTaskResult(
+        "task-1",
+        {
+          result_type: "completed",
+          completion_ratio: 100,
+          actual_minutes: 45,
+          confirmed_at: "2026-07-14T10:00:00.000Z",
+        },
+        "task-1-completed-100-45",
+      ),
+    ).resolves.toEqual(payload);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].input).toBe("/api/v1/tasks/task-1/results");
+    expect(calls[0].init?.headers).toMatchObject({
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "Idempotency-Key": "task-1-completed-100-45",
+    });
+    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+      result_type: "completed",
+      completion_ratio: 100,
+      actual_minutes: 45,
+    });
+  });
+
+  it("marks tasks completed through the guarded task update API", async () => {
+    const payload: ApiResponse<TaskPayload> = {
+      data: {
+        id: "task-1",
+        version: 3,
+        goal_id: "goal-1",
+        subject_id: "math",
+        knowledge_node_id: null,
+        title: "Closed-book recall",
+        task_type: "study",
+        priority: "must",
+        source_type: "goal",
+        source_id: "goal-1",
+        planned_date: "2026-07-14",
+        estimated_minutes: 45,
+        current_stage: 2,
+        target_stage: 3,
+        reason: "Traceable weekly goal",
+        completion_standard: "Recall without hints",
+        prerequisite_status: "satisfied",
+        status: "completed",
+      },
+      meta: { request_id: "client-task-complete" },
+    };
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payload);
+    });
+
+    await expect(client.completeTask("task-1", 2)).resolves.toEqual(payload);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].input).toBe("/api/v1/tasks/task-1");
+    expect(calls[0].init?.method).toBe("PATCH");
+    expect(calls[0].init?.headers).toMatchObject({
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "If-Match": "2",
+    });
+    expect(JSON.parse(String(calls[0].init?.body))).toEqual({ status: "completed" });
   });
 });

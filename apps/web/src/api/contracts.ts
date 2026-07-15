@@ -61,6 +61,48 @@ export type TodayPayload = {
   estimated_minutes: number;
 };
 
+export type TaskResultType = "completed" | "partial" | "wrong" | "unknown";
+
+export type TaskResultCreatePayload = {
+  result_type: TaskResultType;
+  completion_ratio: number;
+  actual_minutes: number;
+  question_count?: number | null;
+  correct_count?: number | null;
+  accuracy?: number | null;
+  confidence?: number | null;
+  hint_level?: number | null;
+  focus_level?: number | null;
+  difficulty_rating?: number | null;
+  problem_description?: string | null;
+  confirmed_at?: string | null;
+};
+
+export type TaskResultPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  task_id: string;
+  result_type: TaskResultType;
+  completion_ratio: number;
+  actual_minutes: number;
+  question_count: number | null;
+  correct_count: number | null;
+  accuracy: number | null;
+  confidence: number | null;
+  hint_level: number | null;
+  focus_level: number | null;
+  difficulty_rating: number | null;
+  problem_description: string | null;
+  confirmed_at: string;
+};
+
+export type TaskResultSubmitPayload = {
+  result: TaskResultPayload;
+  created: boolean;
+};
+
 export type GoalPayload = {
   id: string;
   version: number;
