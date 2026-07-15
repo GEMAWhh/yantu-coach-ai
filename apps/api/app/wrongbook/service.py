@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import literal_column, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.asset import Asset
@@ -111,6 +111,13 @@ class WrongbookConfirmation:
     wrong_record: WrongRecord
     draft: WrongbookDraft
     created: bool
+
+
+@dataclass(frozen=True)
+class WrongbookDraftHistoryItem:
+    wrong_record: WrongRecord
+    verification: WrongVerification
+    draft: WrongbookDraft | None
 
 
 def create_question(
@@ -337,7 +344,8 @@ def get_wrongbook_draft(session: Session, wrong_record_id: str) -> WrongbookDraf
     draft = session.scalar(
         select(WrongbookDraft)
         .where(WrongbookDraft.wrong_record_id == wrong_record_id)
-        .order_by(literal_column("rowid").desc())
+        .order_by(WrongbookDraft.created_at.desc(), WrongbookDraft.updated_at.desc())
+        .limit(1)
     )
     if draft is None:
         raise WrongbookError(
@@ -347,6 +355,33 @@ def get_wrongbook_draft(session: Session, wrong_record_id: str) -> WrongbookDraf
             details={"wrong_record_id": wrong_record_id},
         )
     return draft
+
+
+def list_wrongbook_draft_history(
+    session: Session, *, limit: int = 20
+) -> list[WrongbookDraftHistoryItem]:
+    records = session.scalars(
+        select(WrongRecord)
+        .order_by(WrongRecord.updated_at.desc(), WrongRecord.created_at.desc())
+        .limit(limit)
+    ).all()
+    items: list[WrongbookDraftHistoryItem] = []
+    for record in records:
+        verification = get_wrong_verification(session, record.id)
+        draft = session.scalar(
+            select(WrongbookDraft)
+            .where(WrongbookDraft.wrong_record_id == record.id)
+            .order_by(WrongbookDraft.created_at.desc(), WrongbookDraft.updated_at.desc())
+            .limit(1)
+        )
+        items.append(
+            WrongbookDraftHistoryItem(
+                wrong_record=record,
+                verification=verification,
+                draft=draft,
+            )
+        )
+    return items
 
 
 def update_wrongbook_draft(

@@ -20,7 +20,10 @@ import type {
   TodayPayload,
   WeakGraphPayload,
   WrongbookAttemptSubmitPayload,
+  WrongbookAnalyzePayload,
   WrongbookCandidateListPayload,
+  WrongbookConfirmPayload,
+  WrongbookDraftHistoryPayload,
 } from "./contracts";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -511,6 +514,129 @@ describe("ApiClient", () => {
       is_correct: false,
       score: 30,
     });
+  });
+
+  it("loads, analyzes, and confirms wrongbook drafts", async () => {
+    const record = {
+      id: "wrong-1",
+      version: 1,
+      created_at: "2026-07-15T09:00:00Z",
+      updated_at: "2026-07-15T09:00:00Z",
+      created_by: "user",
+      question_id: "question-1",
+      knowledge_node_id: "node-1",
+      surface_cause: null,
+      deep_cause: null,
+      prerequisite_gap: null,
+      error_count: 1,
+      redo_count: 0,
+      current_status: "pending_analysis" as const,
+      next_review_at: null,
+      resolved_at: null,
+    };
+    const verification = {
+      id: "verification-1",
+      version: 1,
+      created_at: "2026-07-15T09:00:00Z",
+      updated_at: "2026-07-15T09:00:00Z",
+      wrong_record_id: "wrong-1",
+      original_redo_passed: false,
+      no_hint_redo_passed: false,
+      variant_passed: false,
+      interval_test_passed: false,
+      transfer_test_passed: false,
+      last_attempt_id: null,
+    };
+    const draft = {
+      id: "wrong-draft-1",
+      version: 1,
+      created_at: "2026-07-15T09:01:00Z",
+      updated_at: "2026-07-15T09:01:00Z",
+      wrong_record_id: "wrong-1",
+      ai_job_id: "job-1",
+      status: "draft" as const,
+      schema_version: "wrongbook-analysis-v1" as const,
+      structured_json: {
+        surface_cause: "sign error",
+        deep_cause: "chain rule retrieval failed",
+        prerequisite_gap: "derivative chain rule",
+        remediation_plan: [{ action: "redo_without_hints" }],
+        uncertain_fields: [],
+      },
+      validation_errors: [],
+      confirmed_at: null,
+      confirmed_once: false,
+    };
+    const history: ApiResponse<WrongbookDraftHistoryPayload> = {
+      data: {
+        total: 1,
+        items: [{ record, verification, draft }],
+      },
+      meta: { request_id: "client-wrongbook-history" },
+    };
+    const analyze: ApiResponse<WrongbookAnalyzePayload> = {
+      data: {
+        draft,
+        ai_job: {
+          id: "job-1",
+          version: 1,
+          created_at: "2026-07-15T09:01:00Z",
+          updated_at: "2026-07-15T09:01:00Z",
+          job_type: "wrongbook_analysis",
+          provider: "fake",
+          model_name: "fake",
+          prompt_version: "wrongbook-draft-fake-v1",
+          status: "succeeded",
+          attempts: 1,
+          input_json: { wrong_record_id: "wrong-1" },
+          output_json: draft.structured_json,
+          error_code: null,
+          error_message: null,
+          started_at: "2026-07-15T09:01:00Z",
+          completed_at: "2026-07-15T09:01:01Z",
+        },
+      },
+      meta: { request_id: "client-wrongbook-analyze" },
+    };
+    const confirm: ApiResponse<WrongbookConfirmPayload> = {
+      data: {
+        record: {
+          ...record,
+          version: 2,
+          surface_cause: "sign error",
+          deep_cause: "chain rule retrieval failed",
+          prerequisite_gap: "derivative chain rule",
+          current_status: "pending_no_hint_redo",
+        },
+        draft: {
+          ...draft,
+          version: 2,
+          status: "confirmed",
+          confirmed_at: "2026-07-15T09:02:00Z",
+          confirmed_once: true,
+        },
+        created: true,
+      },
+      meta: { request_id: "client-wrongbook-confirm" },
+    };
+    const payloads = [history, analyze, confirm];
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payloads[calls.length - 1]);
+    });
+
+    await expect(client.wrongbookDraftHistory(5)).resolves.toEqual(history);
+    await expect(
+      client.analyzeWrongbookRecord("wrong-1", { provider_mode: "valid" }),
+    ).resolves.toEqual(analyze);
+    await expect(client.confirmWrongbookDraft("wrong-1")).resolves.toEqual(confirm);
+
+    expect(calls[0].input).toBe("/api/v1/wrongbook/history?limit=5");
+    expect(calls[1].input).toBe("/api/v1/wrongbook/wrong-1/analyze");
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ provider_mode: "valid" });
+    expect(calls[2].input).toBe("/api/v1/wrongbook/wrong-1/confirm");
+    expect(calls[2].init?.body).toBeUndefined();
   });
 
   it("uploads, analyzes, confirms, and rejects evidence drafts", async () => {

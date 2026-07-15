@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Header, Query, Request
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.database import get_session_factory
@@ -26,6 +26,8 @@ from app.schemas.wrongbook import (
     WrongbookCandidateResponse,
     WrongbookConfirmResponse,
     WrongbookDraftCreate,
+    WrongbookDraftHistoryItemResponse,
+    WrongbookDraftHistoryResponse,
     WrongbookDraftResponse,
     WrongbookDraftUpdate,
     WrongbookHistoryResponse,
@@ -47,6 +49,7 @@ from app.wrongbook.service import (
     get_wrongbook_draft,
     link_question_asset,
     list_wrong_attempts,
+    list_wrongbook_draft_history,
     list_wrongbook_planning_candidates,
     submit_attempt,
     update_wrongbook_draft,
@@ -129,6 +132,20 @@ def create_wrongbook_manual_draft(
     except WrongbookError as exc:
         raise _api_wrongbook_error(exc) from exc
     return api_response(response, request)
+
+
+@router.get("/history", response_model=ApiResponse[WrongbookDraftHistoryResponse])
+def wrongbook_draft_history(
+    request: Request,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> ApiResponse[WrongbookDraftHistoryResponse]:
+    session_factory = _session_factory()
+    with session_factory() as session:
+        items = [
+            WrongbookDraftHistoryItemResponse.from_item(item)
+            for item in list_wrongbook_draft_history(session, limit=limit)
+        ]
+    return api_response(WrongbookDraftHistoryResponse(items=items, total=len(items)), request)
 
 
 @router.get("/{wrong_record_id}", response_model=ApiResponse[WrongRecordDetailResponse])

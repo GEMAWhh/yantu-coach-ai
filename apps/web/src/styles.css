@@ -529,12 +529,37 @@ h3 {
   font-weight: 650;
 }
 
-.evidence-history-list {
+.draft-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.draft-panel {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: var(--space-3);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  padding: var(--space-4);
+  background: var(--gray-50);
+}
+
+.draft-panel p {
+  color: var(--gray-700);
+  line-height: 1.65;
+}
+
+.evidence-history-list,
+.draft-history-list {
   display: grid;
   gap: var(--space-2);
 }
 
-.evidence-history-item {
+.evidence-history-item,
+.draft-history-item {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -550,12 +575,16 @@ h3 {
 
 .evidence-history-item span,
 .evidence-history-item strong,
-.evidence-history-item small {
+.evidence-history-item small,
+.draft-history-item span,
+.draft-history-item strong,
+.draft-history-item small {
   display: block;
   min-width: 0;
 }
 
-.evidence-history-item small {
+.evidence-history-item small,
+.draft-history-item small {
   margin-top: 2px;
   color: var(--gray-600);
   font-size: 12px;
@@ -794,6 +823,7 @@ dd {
 
   .two-columns,
   .three-columns,
+  .draft-workspace,
   .step-grid,
   .risk-grid,
   .rule-grid {

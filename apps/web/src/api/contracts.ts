@@ -437,6 +437,9 @@ export type WrongbookStatus =
   | "stable_corrected"
   | "regressed";
 
+export type WrongbookDraftStatus = "draft" | "needs_correction" | "confirmed";
+export type WrongbookProviderMode = "valid" | "invalid_schema";
+
 export type WrongbookAttemptResultCreatePayload = {
   is_correct: boolean;
   attempted_at?: string | null;
@@ -504,6 +507,66 @@ export type WrongbookAttemptSubmitPayload = {
   record: WrongbookRecordPayload;
   verification: WrongbookVerificationPayload;
   created: boolean;
+};
+
+export type WrongbookAIJobPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  job_type: string;
+  provider: string;
+  model_name: string;
+  prompt_version: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  attempts: number;
+  input_json: Record<string, unknown>;
+  output_json: Record<string, unknown> | null;
+  error_code: string | null;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
+export type WrongbookDraftPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  wrong_record_id: string;
+  ai_job_id: string;
+  status: WrongbookDraftStatus;
+  schema_version: "wrongbook-analysis-v1";
+  structured_json: Record<string, unknown>;
+  validation_errors: string[];
+  confirmed_at: string | null;
+  confirmed_once: boolean;
+};
+
+export type WrongbookAnalyzeCreatePayload = {
+  provider_mode?: WrongbookProviderMode;
+};
+
+export type WrongbookAnalyzePayload = {
+  draft: WrongbookDraftPayload;
+  ai_job: WrongbookAIJobPayload;
+};
+
+export type WrongbookConfirmPayload = {
+  record: WrongbookRecordPayload;
+  draft: WrongbookDraftPayload;
+  created: boolean;
+};
+
+export type WrongbookDraftHistoryItemPayload = {
+  record: WrongbookRecordPayload;
+  verification: WrongbookVerificationPayload;
+  draft: WrongbookDraftPayload | null;
+};
+
+export type WrongbookDraftHistoryPayload = {
+  items: WrongbookDraftHistoryItemPayload[];
+  total: number;
 };
 
 export type ReviewResultType = "pass" | "fail";

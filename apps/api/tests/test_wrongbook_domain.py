@@ -317,6 +317,38 @@ def test_manual_wrongbook_draft_endpoint_uses_confirmation_gate(
     assert confirmed.json()["data"]["record"]["surface_cause"] == "sign error"
 
 
+def test_wrongbook_draft_history_lists_records_with_latest_drafts(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        first_id = _create_wrong_record(client, include_causes=False)
+        client.post(
+            f"/api/v1/wrongbook/{first_id}/analyze",
+            json={"provider_mode": "valid"},
+        )
+        second_id = _create_wrong_record(client, include_causes=False)
+        client.post(
+            f"/api/v1/wrongbook/{second_id}/analyze",
+            json={"provider_mode": "invalid_schema"},
+        )
+        history = client.get(
+            "/api/v1/wrongbook/history?limit=1",
+            headers={"X-Request-ID": "wrongbook-history"},
+        )
+
+    body = history.json()
+    assert history.status_code == 200
+    assert body["meta"] == {"request_id": "wrongbook-history"}
+    assert body["data"]["total"] == 1
+    item = body["data"]["items"][0]
+    assert item["record"]["id"] == second_id
+    assert item["record"]["current_status"] == "pending_analysis"
+    assert item["verification"]["wrong_record_id"] == second_id
+    assert item["draft"]["wrong_record_id"] == second_id
+    assert item["draft"]["status"] == "needs_correction"
+    assert item["draft"]["validation_errors"]
+
+
 def test_failed_attempt_rolls_back_and_wrong_record_enters_planning_candidates(
     test_settings: RuntimeSettings,
 ) -> None:

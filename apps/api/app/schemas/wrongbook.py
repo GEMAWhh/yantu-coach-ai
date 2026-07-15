@@ -15,7 +15,11 @@ from app.models.wrongbook import (
     WrongVerification,
 )
 from app.planning.engine import PlanningCandidate
-from app.wrongbook.service import AttemptSubmission, WrongbookConfirmation
+from app.wrongbook.service import (
+    AttemptSubmission,
+    WrongbookConfirmation,
+    WrongbookDraftHistoryItem,
+)
 
 AssetRole = Literal[
     "statement",
@@ -391,6 +395,29 @@ class WrongbookDraftResponse(BaseModel):
             confirmed_at=draft.confirmed_at,
             confirmed_once=draft.confirmed_once,
         )
+
+
+class WrongbookDraftHistoryItemResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    record: WrongRecordResponse
+    verification: WrongVerificationResponse
+    draft: WrongbookDraftResponse | None
+
+    @classmethod
+    def from_item(cls, item: WrongbookDraftHistoryItem) -> WrongbookDraftHistoryItemResponse:
+        return cls(
+            record=WrongRecordResponse.from_model(item.wrong_record),
+            verification=WrongVerificationResponse.from_model(item.verification),
+            draft=WrongbookDraftResponse.from_model(item.draft) if item.draft is not None else None,
+        )
+
+
+class WrongbookDraftHistoryResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: list[WrongbookDraftHistoryItemResponse]
+    total: int
 
 
 class WrongbookAnalyzeRequest(BaseModel):

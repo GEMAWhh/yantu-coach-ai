@@ -66,6 +66,50 @@ function evidenceHistoryWithDraftResponse(): Response {
   });
 }
 
+function emptyWrongbookDraftHistoryResponse(): Response {
+  return jsonResponse({
+    data: { total: 0, items: [] },
+    meta: { request_id: "wrongbook-history" },
+  });
+}
+
+function wrongbookDraftHistoryWithDraftResponse(status: "draft" | "confirmed" = "draft"): Response {
+  return jsonResponse({
+    data: {
+      total: 1,
+      items: [
+        {
+          record: {
+            id: "wrong-history-1",
+            updated_at: "2026-07-14T10:00:00Z",
+            knowledge_node_id: "node-1",
+            current_status: status === "confirmed" ? "pending_no_hint_redo" : "pending_analysis",
+            error_count: 1,
+          },
+          verification: {
+            wrong_record_id: "wrong-history-1",
+            variant_passed: false,
+            interval_test_passed: false,
+          },
+          draft: {
+            id: "wrong-draft-1",
+            wrong_record_id: "wrong-history-1",
+            status,
+            structured_json: {
+              surface_cause: "sign error",
+              deep_cause: "chain rule retrieval failed",
+              prerequisite_gap: "derivative chain rule",
+              remediation_plan: [{ action: "redo_without_hints" }],
+            },
+            validation_errors: [],
+          },
+        },
+      ],
+    },
+    meta: { request_id: "wrongbook-history" },
+  });
+}
+
 describe("App", () => {
   beforeEach(() => {
     window.scrollTo = vi.fn();
@@ -762,6 +806,9 @@ describe("App", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const path = String(input);
+        if (path === "/api/v1/wrongbook/history?limit=10") {
+          return wrongbookDraftHistoryWithDraftResponse();
+        }
         const dataByPath: Record<string, unknown> = {
           "/api/v1/resources": {
             total: 1,
@@ -892,6 +939,96 @@ describe("App", () => {
     expect(wrapper.text()).toContain("导数应用");
     expect(wrapper.text()).toContain("导数错题无提示重做");
     expect(wrapper.text()).toContain("复习：导数应用");
+    expect(wrapper.text()).toContain("错题草稿历史");
+    expect(wrapper.text()).toContain("待确认错题草稿");
+    expect(wrapper.text()).toContain("sign error");
+  });
+
+  it("confirms a wrongbook draft from the learning page history entry", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    let historyCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        const emptyList = { total: 0, items: [] };
+        if (path === "/api/v1/wrongbook/history?limit=10") {
+          historyCalls += 1;
+          return wrongbookDraftHistoryWithDraftResponse(
+            historyCalls > 1 ? "confirmed" : "draft",
+          );
+        }
+        if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
+          return jsonResponse({ data: emptyList, meta: { request_id: path } });
+        }
+        if (path === "/api/v1/wrongbook/planning-candidates") {
+          return jsonResponse({ data: emptyList, meta: { request_id: path } });
+        }
+        if (path.startsWith("/api/v1/reviews/due?date=")) {
+          return jsonResponse({
+            data: { date: "2026-07-15", ...emptyList },
+            meta: { request_id: path },
+          });
+        }
+        return jsonResponse({
+          data: {
+            created: true,
+            record: {
+              id: "wrong-history-1",
+              version: 2,
+              created_at: "2026-07-14T10:00:00Z",
+              updated_at: "2026-07-15T10:00:00Z",
+              created_by: "user",
+              question_id: "question-1",
+              knowledge_node_id: "node-1",
+              surface_cause: "sign error",
+              deep_cause: "chain rule retrieval failed",
+              prerequisite_gap: "derivative chain rule",
+              error_count: 1,
+              redo_count: 0,
+              current_status: "pending_no_hint_redo",
+              next_review_at: null,
+              resolved_at: null,
+            },
+            draft: {
+              id: "wrong-draft-1",
+              version: 2,
+              created_at: "2026-07-14T10:00:00Z",
+              updated_at: "2026-07-15T10:00:00Z",
+              wrong_record_id: "wrong-history-1",
+              ai_job_id: "job-1",
+              status: "confirmed",
+              schema_version: "wrongbook-analysis-v1",
+              structured_json: {
+                surface_cause: "sign error",
+                deep_cause: "chain rule retrieval failed",
+                prerequisite_gap: "derivative chain rule",
+                remediation_plan: [{ action: "redo_without_hints" }],
+              },
+              validation_errors: [],
+              confirmed_at: "2026-07-15T10:00:00Z",
+              confirmed_once: true,
+            },
+          },
+          meta: { request_id: "wrongbook-confirm" },
+        });
+      }),
+    );
+    const wrapper = await mountApp("/learning");
+    const confirmButton = wrapper.findAll("button").find((button) => button.text() === "确认草稿");
+
+    await confirmButton?.trigger("click");
+    await flushPromises();
+
+    expect(calls.some((call) => call.path === "/api/v1/wrongbook/history?limit=10")).toBe(true);
+    const confirmCall = calls.find(
+      (call) => call.path === "/api/v1/wrongbook/wrong-history-1/confirm",
+    );
+    expect(confirmCall).toBeDefined();
+    expect(confirmCall?.init?.body).toBeUndefined();
+    expect(wrapper.text()).toContain("错题草稿已确认");
+    expect(wrapper.text()).toContain("待无提示重做");
   });
 
   it("submits a due review result from the learning page", async () => {
@@ -902,6 +1039,9 @@ describe("App", () => {
         const path = String(input);
         calls.push({ path, init });
         const emptyList = { total: 0, items: [] };
+        if (path === "/api/v1/wrongbook/history?limit=10") {
+          return emptyWrongbookDraftHistoryResponse();
+        }
         if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
           return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
             status: 200,
@@ -1039,6 +1179,9 @@ describe("App", () => {
         const path = String(input);
         calls.push({ path, init });
         const emptyList = { total: 0, items: [] };
+        if (path === "/api/v1/wrongbook/history?limit=10") {
+          return emptyWrongbookDraftHistoryResponse();
+        }
         if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
           return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
             status: 200,
