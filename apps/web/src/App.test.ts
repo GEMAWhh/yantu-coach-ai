@@ -94,6 +94,214 @@ describe("App", () => {
     expect(wrapper.text()).toContain("预计 45 分钟");
   });
 
+  it("starts a today task through the guarded task action API", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        if (path.startsWith("/api/v1/today")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                date: "2026-07-15",
+                total_tasks: 1,
+                estimated_minutes: 45,
+                tasks: [
+                  {
+                    id: "task-api-1",
+                    version: 1,
+                    goal_id: "goal-week",
+                    subject_id: "math",
+                    knowledge_node_id: "node-1",
+                    title: "API 今日任务",
+                    task_type: "practice",
+                    priority: "high",
+                    source_type: "goal",
+                    source_id: "goal-week",
+                    planned_date: "2026-07-15",
+                    estimated_minutes: 45,
+                    current_stage: 2,
+                    target_stage: 3,
+                    reason: "后端计划生成",
+                    completion_standard: "提交练习结果",
+                    prerequisite_status: "satisfied",
+                    status: "pending",
+                  },
+                ],
+              },
+              meta: { request_id: "today" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: {
+              id: "task-api-1",
+              version: 2,
+              goal_id: "goal-week",
+              subject_id: "math",
+              knowledge_node_id: "node-1",
+              title: "API 今日任务",
+              task_type: "practice",
+              priority: "high",
+              source_type: "goal",
+              source_id: "goal-week",
+              planned_date: "2026-07-15",
+              estimated_minutes: 45,
+              current_stage: 2,
+              target_stage: 3,
+              reason: "后端计划生成",
+              completion_standard: "提交练习结果",
+              prerequisite_status: "satisfied",
+              status: "in_progress",
+            },
+            meta: { request_id: "task-start" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/today");
+    const startButton = wrapper.findAll("button").find((button) => button.text() === "开始");
+
+    await startButton?.trigger("click");
+    await flushPromises();
+
+    expect(calls.map((call) => call.path)).toEqual([
+      expect.stringMatching(/^\/api\/v1\/today\?date=/),
+      "/api/v1/tasks/task-api-1/start",
+    ]);
+    expect(calls[1].init?.headers).toMatchObject({ "If-Match": "1" });
+    expect(wrapper.text()).toContain("in_progress");
+  });
+
+  it("submits a default result and marks a today task completed", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        if (path.startsWith("/api/v1/today")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                date: "2026-07-15",
+                total_tasks: 1,
+                estimated_minutes: 45,
+                tasks: [
+                  {
+                    id: "task-api-1",
+                    version: 1,
+                    goal_id: "goal-week",
+                    subject_id: "math",
+                    knowledge_node_id: "node-1",
+                    title: "API 今日任务",
+                    task_type: "practice",
+                    priority: "high",
+                    source_type: "goal",
+                    source_id: "goal-week",
+                    planned_date: "2026-07-15",
+                    estimated_minutes: 45,
+                    current_stage: 2,
+                    target_stage: 3,
+                    reason: "后端计划生成",
+                    completion_standard: "提交练习结果",
+                    prerequisite_status: "satisfied",
+                    status: "pending",
+                  },
+                ],
+              },
+              meta: { request_id: "today" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (path === "/api/v1/tasks/task-api-1/results") {
+          return new Response(
+            JSON.stringify({
+              data: {
+                created: true,
+                result: {
+                  id: "result-1",
+                  version: 1,
+                  created_at: "2026-07-15T00:00:00Z",
+                  updated_at: "2026-07-15T00:00:00Z",
+                  task_id: "task-api-1",
+                  result_type: "completed",
+                  completion_ratio: 100,
+                  actual_minutes: 45,
+                  question_count: null,
+                  correct_count: null,
+                  accuracy: null,
+                  confidence: null,
+                  hint_level: null,
+                  focus_level: null,
+                  difficulty_rating: null,
+                  problem_description: null,
+                  confirmed_at: "2026-07-15T00:00:00Z",
+                },
+              },
+              meta: { request_id: "task-result" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: {
+              id: "task-api-1",
+              version: 2,
+              goal_id: "goal-week",
+              subject_id: "math",
+              knowledge_node_id: "node-1",
+              title: "API 今日任务",
+              task_type: "practice",
+              priority: "high",
+              source_type: "goal",
+              source_id: "goal-week",
+              planned_date: "2026-07-15",
+              estimated_minutes: 45,
+              current_stage: 2,
+              target_stage: 3,
+              reason: "后端计划生成",
+              completion_standard: "提交练习结果",
+              prerequisite_status: "satisfied",
+              status: "completed",
+            },
+            meta: { request_id: "task-complete" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/today");
+    const completeButton = wrapper.findAll("button").find((button) => button.text() === "完成");
+
+    await completeButton?.trigger("click");
+    await flushPromises();
+
+    expect(calls.map((call) => call.path)).toEqual([
+      expect.stringMatching(/^\/api\/v1\/today\?date=/),
+      "/api/v1/tasks/task-api-1/results",
+      "/api/v1/tasks/task-api-1",
+    ]);
+    expect(calls[1].init?.headers).toMatchObject({
+      "Idempotency-Key": "task-api-1:complete:1",
+    });
+    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+      result_type: "completed",
+      completion_ratio: 100,
+      actual_minutes: 45,
+    });
+    expect(calls[2].init?.method).toBe("PATCH");
+    expect(calls[2].init?.headers).toMatchObject({ "If-Match": "1" });
+    expect(wrapper.text()).toContain("completed");
+  });
+
   it("renders planning goal tree from the API when available", async () => {
     vi.stubGlobal(
       "fetch",

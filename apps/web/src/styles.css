@@ -409,6 +409,50 @@ h3 {
   padding: var(--space-4);
 }
 
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.task-action-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-small);
+  padding: 0 var(--space-3);
+  color: var(--white);
+  background: var(--blue);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.task-action-button.secondary {
+  border-color: var(--gray-300);
+  color: var(--gray-800);
+  background: var(--white);
+}
+
+.task-action-button.danger {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.task-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.task-action-error {
+  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 750;
+}
+
 .task-card-header,
 .timeline-title,
 .mastery-row,
