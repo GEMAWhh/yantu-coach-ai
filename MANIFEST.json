@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 238,
+  "file_count": 239,
   "files": [
     {
       "path": ".editorconfig",
@@ -62,6 +62,11 @@
       "path": ".gitignore",
       "size": 389,
       "sha256": "cab0e9b869083a234d685ed447710fb355e0f5fe177b939b66b88f407c74e021"
+    },
+    {
+      "path": ".openai/hosting.json",
+      "size": 63,
+      "sha256": "b36a6a2ccbfc292e54b8d6efd8e7d617835ab46c4db2e7f19709766ddc9ea2d7"
     },
     {
       "path": "AGENTS.md",
