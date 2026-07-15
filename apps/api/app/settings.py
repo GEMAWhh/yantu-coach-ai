@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from functools import lru_cache
@@ -17,6 +18,11 @@ class RuntimeSettings:
     environment: AppEnvironment
     data_root: Path
     cors_allowed_origins: tuple[str, ...]
+    auth_token_sha256: str | None
+
+    @property
+    def authentication_required(self) -> bool:
+        return self.auth_token_sha256 is not None
 
     @property
     def public_data_root(self) -> str:
@@ -133,6 +139,19 @@ def _parse_cors_allowed_origins(environment: AppEnvironment) -> tuple[str, ...]:
     return tuple(origins)
 
 
+def _parse_auth_token_sha256(environment: AppEnvironment) -> str | None:
+    raw_digest = os.getenv("YANTU_AUTH_TOKEN_SHA256")
+    if raw_digest is None or not raw_digest.strip():
+        if environment is AppEnvironment.PROD:
+            raise RuntimeError("YANTU_AUTH_TOKEN_SHA256 is required in production")
+        return None
+
+    digest = raw_digest.strip().lower()
+    if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        raise ValueError("YANTU_AUTH_TOKEN_SHA256 must be a 64-character SHA-256 hex digest")
+    return digest
+
+
 @lru_cache
 def get_settings() -> RuntimeSettings:
     environment = _parse_environment(os.getenv("YANTU_APP_ENV", AppEnvironment.DEV.value))
@@ -142,4 +161,5 @@ def get_settings() -> RuntimeSettings:
         environment=environment,
         data_root=data_root,
         cors_allowed_origins=_parse_cors_allowed_origins(environment),
+        auth_token_sha256=_parse_auth_token_sha256(environment),
     )

@@ -651,3 +651,8 @@ export type ReviewResultSubmitPayload = {
   evaluation_reason: string | null;
   rule_version: "review-v1.0.0";
 };
+
+export type AuthStatusPayload = {
+  authenticated: true;
+  mode: "personal_token";
+};

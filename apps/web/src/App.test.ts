@@ -116,7 +116,18 @@ describe("App", () => {
   });
 
   afterEach(() => {
+    window.sessionStorage.clear();
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it("requires the personal access key when cloud authentication is enabled", async () => {
+    vi.stubEnv("VITE_YANTU_AUTH_REQUIRED", "true");
+
+    const wrapper = await mountApp();
+
+    expect(wrapper.get("#access-title").text()).toBe("进入研途教练");
+    expect(wrapper.find('[data-testid="app-title"]').exists()).toBe(false);
   });
 
   it("renders the five primary product entries", async () => {

@@ -35,6 +35,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 describe("ApiClient", () => {
   afterEach(() => {
+    window.sessionStorage.clear();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -78,6 +79,28 @@ describe("ApiClient", () => {
     await new ApiClient().health();
 
     expect(calls).toEqual(["https://api.yantu.example/health"]);
+  });
+
+  it("sends the personal access key as a bearer token", async () => {
+    window.sessionStorage.setItem(
+      "yantu.personalAccessKey",
+      "personal-access-key-with-at-least-32-characters",
+    );
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse({
+        data: { authenticated: true, mode: "personal_token" },
+        meta: { request_id: "auth-status" },
+      });
+    });
+
+    await client.authStatus();
+
+    expect(calls[0]?.input).toBe("/api/v1/auth/status");
+    expect(new Headers(calls[0]?.init?.headers).get("Authorization")).toBe(
+      "Bearer personal-access-key-with-at-least-32-characters",
+    );
   });
 
   it.each([

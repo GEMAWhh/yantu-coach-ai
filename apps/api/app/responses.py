@@ -12,6 +12,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: {"model": ApiErrorResponse, "description": "Authentication required"},
     404: {"model": ApiErrorResponse, "description": "Resource not found"},
     409: {"model": ApiErrorResponse, "description": "Version conflict"},
     422: {"model": ApiErrorResponse, "description": "Validation error"},

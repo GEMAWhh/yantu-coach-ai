@@ -4,6 +4,9 @@
 
 ## 1. 通用规则
 
+- 云端个人版业务端点使用 `Authorization: Bearer <personal-access-key>`；缺失或错误密钥返回 `401 AUTHENTICATION_REQUIRED`；
+- `GET /health`、`GET /api/v1/health`、`GET /api/v1/meta`、OpenAPI 文档保持公开，用于部署探活与版本诊断；
+
 - 成功响应统一使用 envelope：
 
 ```json
@@ -188,6 +191,7 @@ GET  /health
 GET  /api/v1/health
 GET  /api/v1/meta
 POST /api/v1/meta/version-check
+GET  /api/v1/auth/status
 ```
 
 `POST /api/v1/meta/version-check` 使用 `If-Match: contract-v1` 验证版本冲突响应结构。
@@ -198,6 +202,7 @@ POST /api/v1/meta/version-check
 - `NOT_FOUND`
 - `VERSION_CONFLICT`
 - `INTERNAL_SERVER_ERROR`
+- `AUTHENTICATION_REQUIRED`
 - `PREREQUISITE_NOT_MET`
 - `MASTERY_TRANSITION_BLOCKED`
 - `AI_DRAFT_NOT_CONFIRMED`

@@ -10,7 +10,18 @@ FastAPI 本地后端骨架。当前阶段提供系统端点、统一 API 契约�
 $env:YANTU_CORS_ALLOWED_ORIGINS = "https://your-web.example.com"
 ```
 
-只接受不含路径、查询参数或凭据的 HTTP(S) Origin，通配符 `*` 会在启动时被拒绝。CORS 只限制浏览器跨域访问，不替代身份认证；认证完成前不得公开部署正式写接口。
+只接受不含路径、查询参数或凭据的 HTTP(S) Origin，通配符 `*` 会在启动时被拒绝。CORS 只限制浏览器跨域访问，不替代身份认证；公开部署时必须同时启用下方的个人访问密钥。
+
+## 云端个人访问密钥
+
+生产环境必须配置个人访问密钥的 SHA-256 摘要。使用交互脚本生成摘要，避免把原始密钥写进命令历史：
+
+```powershell
+python scripts/hash_auth_token.py
+$env:YANTU_AUTH_TOKEN_SHA256 = "<脚本输出的摘要>"
+```
+
+密钥至少 32 个字符，推荐使用密码管理器生成。除健康检查、API 元数据和文档外，业务端点要求 `Authorization: Bearer <personal-access-key>`。生产环境缺少摘要时服务会拒绝启动。
 
 ## 契约端点
 

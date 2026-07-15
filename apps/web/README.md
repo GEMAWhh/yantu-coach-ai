@@ -39,6 +39,8 @@ npm run build:demo
 
 API 地址必须是 HTTP(S) Origin，不得包含凭据、路径、查询参数或片段。Vite 变量会进入公开构建产物，禁止在其中保存任何密钥。
 
+云端个人版设置 `VITE_YANTU_AUTH_REQUIRED=true` 后会先显示访问密钥页面。原始密钥由用户输入，只保存在当前浏览器 `sessionStorage`，并作为 Bearer Token 发送；禁止把原始密钥写入任何 `VITE_*` 变量。
+
 ## 检查
 
 ```powershell
