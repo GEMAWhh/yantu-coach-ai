@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue";
 import { ApiClient } from "../api/client";
 import type {
   EvidenceDraftPayload,
+  EvidenceFileUploadPayload,
   EvidenceRecordPayload,
   TaskPayload,
   TaskResultCreatePayload,
@@ -22,7 +23,10 @@ const openResultTaskId = ref<string | null>(null);
 const resultDrafts = ref<Record<string, TaskResultDraft>>({});
 const evidenceRecord = ref<EvidenceRecordPayload | null>(null);
 const evidenceDraft = ref<EvidenceDraftPayload | null>(null);
-const evidenceActionInFlight = ref<"create" | "confirm" | "reject" | null>(null);
+const evidenceFileInput = ref<HTMLInputElement | null>(null);
+const selectedEvidenceFiles = ref<File[]>([]);
+const evidenceSubjectId = ref("math");
+const evidenceActionInFlight = ref<"upload" | "confirm" | "reject" | null>(null);
 const evidenceActionError = ref<string | null>(null);
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
 const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
@@ -64,6 +68,9 @@ const evidenceCardTitle = computed(() =>
 );
 const evidenceCardBody = computed(() => {
   if (!evidenceDraft.value) {
+    if (selectedEvidenceFiles.value.length > 0) {
+      return `已选择 ${selectedEvidenceFiles.value.length} 个证据文件，上传分析前不会写入正式学习记录。`;
+    }
     return "已识别 2 个高频错因：条件遗漏、符号方向误判。用户确认前，不更新掌握判定和后续计划。";
   }
   return evidenceDraftSummary(evidenceDraft.value);
@@ -279,21 +286,30 @@ function resultIdempotencyKey(task: TodayTaskView): string {
   ].join(":");
 }
 
+function selectEvidenceFiles(event: Event): void {
+  const input = (event.currentTarget ?? event.target) as HTMLInputElement;
+  selectedEvidenceFiles.value = Array.from(input.files ?? []);
+  evidenceActionError.value = null;
+}
+
 async function createEvidenceDraft(): Promise<void> {
+  const filesToUpload =
+    selectedEvidenceFiles.value.length > 0
+      ? selectedEvidenceFiles.value
+      : Array.from(evidenceFileInput.value?.files ?? []);
+  if (filesToUpload.length === 0) {
+    evidenceActionError.value = "请先选择图片或 PDF 证据文件。";
+    return;
+  }
   const client = new ApiClient();
-  evidenceActionInFlight.value = "create";
+  evidenceActionInFlight.value = "upload";
   evidenceActionError.value = null;
   try {
+    const files = await Promise.all(filesToUpload.map(evidenceFilePayload));
     const upload = await client.uploadEvidence({
       study_date: todayString(),
-      subject_id: "math",
-      files: [
-        {
-          original_name: "daily-evidence.png",
-          mime_type: "image/png",
-          content_base64: "iVBORw0KGgpldmlkZW5jZS1kZW1vLXBuZw==",
-        },
-      ],
+      subject_id: evidenceSubjectId.value.trim() || null,
+      files,
     });
     const analyzed = await client.analyzeEvidence(upload.data.record.id, {
       provider_mode: "valid",
@@ -303,7 +319,7 @@ async function createEvidenceDraft(): Promise<void> {
   } catch {
     evidenceActionError.value = "证据草稿生成失败，请刷新后重试。";
   } finally {
-    if (evidenceActionInFlight.value === "create") {
+    if (evidenceActionInFlight.value === "upload") {
       evidenceActionInFlight.value = null;
     }
   }
@@ -396,6 +412,34 @@ function evidenceDraftSummary(draft: EvidenceDraftPayload): string {
     return `草稿存在 ${draft.validation_errors.length} 个结构问题，需要人工修正后才能确认。`;
   }
   return `草稿已关联 ${assetCount} 个证据附件，生成 ${actionCount} 条建议动作；确认前不写入正式学习记录。`;
+}
+
+async function evidenceFilePayload(file: File): Promise<EvidenceFileUploadPayload> {
+  if (!isEvidenceMime(file.type)) {
+    throw new Error("unsupported evidence file type");
+  }
+  return {
+    original_name: file.name,
+    mime_type: file.type,
+    content_base64: await fileToBase64(file),
+  };
+}
+
+function isEvidenceMime(value: string): value is EvidenceFileUploadPayload["mime_type"] {
+  return value === "image/png" || value === "image/jpeg" || value === "application/pdf";
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const [, base64 = ""] = result.split(",", 2);
+      resolve(base64);
+    });
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
 }
 
 function todayString(): string {
@@ -658,15 +702,42 @@ onMounted(async () => {
           >
             {{ evidenceActionError }}
           </p>
-          <div class="task-actions">
+          <form
+            v-if="!evidenceDraft"
+            class="evidence-upload-form"
+            @submit.prevent="createEvidenceDraft"
+          >
+            <label>
+              <span>学科</span>
+              <input
+                :value="evidenceSubjectId"
+                type="text"
+                maxlength="80"
+                @input="evidenceSubjectId = ($event.target as HTMLInputElement).value"
+              >
+            </label>
+            <label>
+              <span>证据文件</span>
+              <input
+                ref="evidenceFileInput"
+                type="file"
+                multiple
+                accept="image/png,image/jpeg,application/pdf"
+                @change="selectEvidenceFiles"
+              >
+            </label>
             <button
-              type="button"
+              type="submit"
               class="task-action-button"
-              :disabled="Boolean(evidenceDraft) || evidenceActionInFlight === 'create'"
-              @click="createEvidenceDraft"
+              :disabled="evidenceActionInFlight === 'upload'"
             >
-              生成草稿
+              上传并分析
             </button>
+          </form>
+          <div
+            v-else
+            class="task-actions"
+          >
             <button
               type="button"
               class="task-action-button"

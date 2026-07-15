@@ -780,8 +780,8 @@
     },
     {
       "path": "apps/web/src/App.test.ts",
-      "size": 39161,
-      "sha256": "89e409f89ee9d159ded222f2988422c1bc5be7ff26e32540f1728630db52458f"
+      "size": 39576,
+      "sha256": "457e9681df77ec9275b9096c3b39d6eba1615fbcc76eb39e5f9bc3e85176a58b"
     },
     {
       "path": "apps/web/src/App.vue",
@@ -865,8 +865,8 @@
     },
     {
       "path": "apps/web/src/pages/TodayPage.vue",
-      "size": 22361,
-      "sha256": "9b798074b27cce1647dedcf56bba452eb24562d30a91b07f221328529f2889bb"
+      "size": 24874,
+      "sha256": "df566bdaa7f0fed1223319bdfb9af08ad30e7d8e2ae099eb6c890db6ba0862bd"
     },
     {
       "path": "apps/web/src/router/index.ts",
@@ -885,8 +885,8 @@
     },
     {
       "path": "apps/web/src/styles.css",
-      "size": 14339,
-      "sha256": "49f5f1cbbd8a5fbeff27432ef24cc7fd7fcb840e83027592d7a4d14865ee1181"
+      "size": 14835,
+      "sha256": "19263ee6023063c5782653bcbc6520d8e34b8c94e057a5b9e8798c74152f8ebf"
     },
     {
       "path": "apps/web/src/styles/tokens.css",
