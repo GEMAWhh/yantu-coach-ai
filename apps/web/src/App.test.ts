@@ -315,6 +315,194 @@ describe("App", () => {
     expect(wrapper.text()).toContain("completed");
   });
 
+  it("generates and confirms an evidence draft from the today page", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        if (path.startsWith("/api/v1/today")) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                date: "2026-07-15",
+                total_tasks: 0,
+                estimated_minutes: 0,
+                tasks: [],
+              },
+              meta: { request_id: "today" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (path === "/api/v1/evidence/uploads") {
+          return new Response(
+            JSON.stringify({
+              data: {
+                record: {
+                  id: "evidence-1",
+                  version: 1,
+                  created_at: "2026-07-15T09:00:00Z",
+                  updated_at: "2026-07-15T09:00:00Z",
+                  created_by: "user",
+                  study_date: "2026-07-15",
+                  subject_id: "math",
+                  status: "pending",
+                  asset_count: 1,
+                  confirmed_facts: null,
+                  inferences: null,
+                  uncertain_fields: null,
+                  teaching_judgment: null,
+                  suggested_actions: null,
+                  confirmed_at: null,
+                  rejected_at: null,
+                },
+                assets: [
+                  {
+                    id: "asset-1",
+                    version: 1,
+                    created_at: "2026-07-15T09:00:00Z",
+                    updated_at: "2026-07-15T09:00:00Z",
+                    original_name: "daily-evidence.png",
+                    storage_path: "files/original/daily-evidence.png",
+                    mime_type: "image/png",
+                    size_bytes: 24,
+                    state: "inbox",
+                    reference_count: 1,
+                    page_order: 0,
+                  },
+                ],
+              },
+              meta: { request_id: "evidence-upload" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (path === "/api/v1/evidence/evidence-1/analyze") {
+          return new Response(
+            JSON.stringify({
+              data: {
+                draft: {
+                  id: "draft-1",
+                  version: 1,
+                  created_at: "2026-07-15T09:01:00Z",
+                  updated_at: "2026-07-15T09:01:00Z",
+                  evidence_record_id: "evidence-1",
+                  ai_job_id: "job-1",
+                  status: "draft",
+                  schema_version: "evidence-analysis-v1",
+                  structured_json: {
+                    confirmed_facts: { asset_count: 1 },
+                    suggested_actions: [{ type: "confirm_or_reject" }],
+                  },
+                  validation_errors: [],
+                  confirmed_at: null,
+                  rejected_at: null,
+                  rejection_reason: null,
+                  confirmed_once: false,
+                },
+                ai_job: {
+                  id: "job-1",
+                  version: 1,
+                  created_at: "2026-07-15T09:01:00Z",
+                  updated_at: "2026-07-15T09:01:00Z",
+                  job_type: "evidence_analysis",
+                  provider: "fake",
+                  model_name: "fake",
+                  prompt_version: "evidence-draft-fake-v1",
+                  status: "succeeded",
+                  attempts: 1,
+                  input_json: { record_id: "evidence-1" },
+                  output_json: null,
+                  error_code: null,
+                  error_message: null,
+                  started_at: "2026-07-15T09:01:00Z",
+                  completed_at: "2026-07-15T09:01:01Z",
+                },
+              },
+              meta: { request_id: "evidence-analyze" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: {
+              created: true,
+              record: {
+                id: "evidence-1",
+                version: 2,
+                created_at: "2026-07-15T09:00:00Z",
+                updated_at: "2026-07-15T09:02:00Z",
+                created_by: "user",
+                study_date: "2026-07-15",
+                subject_id: "math",
+                status: "confirmed",
+                asset_count: 1,
+                confirmed_facts: { asset_count: 1 },
+                inferences: { provider: "fake" },
+                uncertain_fields: [],
+                teaching_judgment: { risk: "low" },
+                suggested_actions: [{ type: "confirm_or_reject" }],
+                confirmed_at: "2026-07-15T09:02:00Z",
+                rejected_at: null,
+              },
+              draft: {
+                id: "draft-1",
+                version: 2,
+                created_at: "2026-07-15T09:01:00Z",
+                updated_at: "2026-07-15T09:02:00Z",
+                evidence_record_id: "evidence-1",
+                ai_job_id: "job-1",
+                status: "confirmed",
+                schema_version: "evidence-analysis-v1",
+                structured_json: {
+                  confirmed_facts: { asset_count: 1 },
+                  suggested_actions: [{ type: "confirm_or_reject" }],
+                },
+                validation_errors: [],
+                confirmed_at: "2026-07-15T09:02:00Z",
+                rejected_at: null,
+                rejection_reason: null,
+                confirmed_once: true,
+              },
+            },
+            meta: { request_id: "evidence-confirm" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/today");
+    const generateButton = wrapper.findAll("button").find((button) => button.text() === "生成草稿");
+
+    await generateButton?.trigger("click");
+    await flushPromises();
+
+    expect(calls.map((call) => call.path)).toEqual([
+      expect.stringMatching(/^\/api\/v1\/today\?date=/),
+      "/api/v1/evidence/uploads",
+      "/api/v1/evidence/evidence-1/analyze",
+    ]);
+    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+      study_date: expect.any(String),
+      subject_id: "math",
+      files: [{ original_name: "daily-evidence.png", mime_type: "image/png" }],
+    });
+    expect(JSON.parse(String(calls[2].init?.body))).toEqual({ provider_mode: "valid" });
+    expect(wrapper.text()).toContain("待确认证据草稿");
+
+    const confirmButton = wrapper.findAll("button").find((button) => button.text() === "确认");
+    await confirmButton?.trigger("click");
+    await flushPromises();
+
+    expect(calls[3].path).toBe("/api/v1/evidence/evidence-1/confirm");
+    expect(calls[3].init?.body).toBeUndefined();
+    expect(wrapper.text()).toContain("证据草稿已确认");
+    expect(wrapper.text()).toContain("证据记录 已确认");
+  });
+
   it("renders planning goal tree from the API when available", async () => {
     vi.stubGlobal(
       "fetch",
