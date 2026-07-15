@@ -1,7 +1,7 @@
 {
   "package": "????_AI?????",
   "version": "1.0.0",
-  "file_count": 236,
+  "file_count": 238,
   "files": [
     {
       "path": ".editorconfig",
@@ -60,8 +60,8 @@
     },
     {
       "path": ".gitignore",
-      "size": 369,
-      "sha256": "9069c07083ab08ba347d62b5fe288e195a3b0300a05ec8095730de49aa377b1d"
+      "size": 389,
+      "sha256": "cab0e9b869083a234d685ed447710fb355e0f5fe177b939b66b88f407c74e021"
     },
     {
       "path": "AGENTS.md",
@@ -690,8 +690,13 @@
     },
     {
       "path": "apps/web/README.md",
-      "size": 951,
-      "sha256": "da0d7ff523155850f943a5226f9451b03f2de1c0cc488769c6f2b1001b06a971"
+      "size": 1333,
+      "sha256": "9d7cb15525726ded95c02170f17165f9a070012d69fabf993d5876beee672b6f"
+    },
+    {
+      "path": "apps/web/.env.demo",
+      "size": 25,
+      "sha256": "7571bad69705ce4c4894086b23e194c4127678ed1f1eba3a8c42b0610bb4c43f"
     },
     {
       "path": "apps/web/e2e/README.md",
@@ -770,8 +775,8 @@
     },
     {
       "path": "apps/web/package.json",
-      "size": 910,
-      "sha256": "989424b68d0331c65498cf972b55eb63a9a8144a754167ca08619f889ba5d13e"
+      "size": 974,
+      "sha256": "3d323cf9c3843be297d2487170368cfdebea9dba7c1c1132259f5a895b9770c0"
     },
     {
       "path": "apps/web/playwright.config.ts",
@@ -790,13 +795,18 @@
     },
     {
       "path": "apps/web/src/api/client.test.ts",
-      "size": 31811,
-      "sha256": "b5f5de51cb60c94db27a27018f4dd8f96f345e32f49de6cee40930bbbdedc272"
+      "size": 32632,
+      "sha256": "788a369ecf1f683221a212a0b3202d10c7eb7a22f0ab33d5468f3f93d0fbd750"
     },
     {
       "path": "apps/web/src/api/client.ts",
-      "size": 10488,
-      "sha256": "ff049d7dc6c8c646450d0b7ce131735f6d143471b80968e4afd91ed9b0827750"
+      "size": 11008,
+      "sha256": "36e5876e3a1c171e36bd6339b56f77db827d302b769b5c0dd7ed6ec57db937d3"
+    },
+    {
+      "path": "apps/web/src/api/demoClient.ts",
+      "size": 43627,
+      "sha256": "f6abb8bba0e0c7c700bfe17c61f1b6ad00eb0b08cd3038dba09aea9a859fa1f9"
     },
     {
       "path": "apps/web/src/api/contracts.ts",

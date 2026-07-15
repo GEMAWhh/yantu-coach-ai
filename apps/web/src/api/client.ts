@@ -38,6 +38,7 @@ import type {
   WrongbookConfirmPayload,
   WrongbookDraftHistoryPayload,
 } from "./contracts";
+import { demoApiRequest, isDemoApiEnabled } from "./demoClient";
 
 export class ApiClientError extends Error {
   constructor(
@@ -266,6 +267,9 @@ export class ApiClient {
   }
 
   private async get<TData>(path: string): Promise<ApiResponse<TData>> {
+    if (this.shouldUseDemoApi()) {
+      return demoApiRequest<TData>({ method: "GET", path });
+    }
     const response = await this.fetcher(this.url(path), {
       headers: {
         Accept: "application/json",
@@ -286,6 +290,9 @@ export class ApiClient {
     body?: TBody,
     headers: Record<string, string> = {},
   ): Promise<ApiResponse<TData>> {
+    if (this.shouldUseDemoApi()) {
+      return demoApiRequest<TData>({ method: "POST", path, body, headers });
+    }
     const requestHeaders: Record<string, string> = {
       Accept: "application/json",
       ...headers,
@@ -323,6 +330,9 @@ export class ApiClient {
     body: TBody,
     headers: Record<string, string>,
   ): Promise<ApiResponse<TData>> {
+    if (this.shouldUseDemoApi()) {
+      return demoApiRequest<TData>({ method, path, body, headers });
+    }
     const response = await this.fetcher(this.url(path), {
       method,
       headers: {
@@ -344,5 +354,9 @@ export class ApiClient {
 
   private url(path: string): string {
     return `${this.baseUrl}${path}`;
+  }
+
+  private shouldUseDemoApi(): boolean {
+    return this.baseUrl === "" && this.fetcher === fetch && isDemoApiEnabled();
   }
 }

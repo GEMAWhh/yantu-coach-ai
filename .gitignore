@@ -19,6 +19,7 @@ test-results/
 .env
 .env.*
 !.env.example
+!apps/web/.env.demo
 data/dev/
 data/test/
 data/prod/

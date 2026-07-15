@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClient } from "./client";
 import type {
@@ -34,6 +34,11 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe("ApiClient", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
   it("calls health with typed response data", async () => {
     const payload: ApiResponse<HealthPayload> = {
       data: {
@@ -989,5 +994,23 @@ describe("ApiClient", () => {
       "If-Match": "2",
     });
     expect(JSON.parse(String(calls[0].init?.body))).toEqual({ status: "completed" });
+  });
+
+  it("serves hosted demo responses without calling the network", async () => {
+    vi.stubEnv("VITE_YANTU_DEMO_API", "true");
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const client = new ApiClient();
+
+    const today = await client.today("2026-07-15");
+    const evidenceHistory = await client.evidenceHistory(10);
+    const wrongbookHistory = await client.wrongbookDraftHistory(10);
+
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(today.data.tasks[0].title).toBe("导数应用闭卷回忆");
+    expect(evidenceHistory.data.items[0].draft?.status).toBe("draft");
+    expect(wrongbookHistory.data.items[0].draft?.structured_json.surface_cause).toBe(
+      "参数范围遗漏",
+    );
   });
 });
