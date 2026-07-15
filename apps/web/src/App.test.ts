@@ -475,9 +475,20 @@ describe("App", () => {
       }),
     );
     const wrapper = await mountApp("/today");
-    const generateButton = wrapper.findAll("button").find((button) => button.text() === "生成草稿");
+    const fileInput = wrapper.find('input[type="file"]');
+    const evidenceFile = new File(["evidence-demo-png"], "daily-proof.png", {
+      type: "image/png",
+    });
+    Object.defineProperty(fileInput.element, "files", {
+      configurable: true,
+      value: [evidenceFile],
+    });
+    await fileInput.trigger("change");
 
-    await generateButton?.trigger("click");
+    await wrapper.get(".evidence-upload-form").trigger("submit");
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 0);
+    });
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
@@ -488,7 +499,13 @@ describe("App", () => {
     expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
       study_date: expect.any(String),
       subject_id: "math",
-      files: [{ original_name: "daily-evidence.png", mime_type: "image/png" }],
+      files: [
+        {
+          original_name: "daily-proof.png",
+          mime_type: "image/png",
+          content_base64: expect.any(String),
+        },
+      ],
     });
     expect(JSON.parse(String(calls[2].init?.body))).toEqual({ provider_mode: "valid" });
     expect(wrapper.text()).toContain("待确认证据草稿");
