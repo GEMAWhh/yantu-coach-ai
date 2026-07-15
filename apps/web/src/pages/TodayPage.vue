@@ -2,7 +2,13 @@
 import { computed, onMounted, ref } from "vue";
 
 import { ApiClient } from "../api/client";
-import type { TaskPayload, TaskResultCreatePayload, TodayPayload } from "../api/contracts";
+import type {
+  EvidenceDraftPayload,
+  EvidenceRecordPayload,
+  TaskPayload,
+  TaskResultCreatePayload,
+  TodayPayload,
+} from "../api/contracts";
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
@@ -14,6 +20,10 @@ const actionInFlight = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const openResultTaskId = ref<string | null>(null);
 const resultDrafts = ref<Record<string, TaskResultDraft>>({});
+const evidenceRecord = ref<EvidenceRecordPayload | null>(null);
+const evidenceDraft = ref<EvidenceDraftPayload | null>(null);
+const evidenceActionInFlight = ref<"create" | "confirm" | "reject" | null>(null);
+const evidenceActionError = ref<string | null>(null);
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
 const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
 const todayTasks = computed<TodayTaskView[]>(() =>
@@ -40,11 +50,24 @@ const todayMetrics = computed(() => [
   },
   {
     label: "待确认草稿",
-    value: "2 份",
-    detail: "确认前不写正式记录",
+    value: evidenceDraft.value?.status === "draft" ? "1 份" : "0 份",
+    detail: evidenceRecord.value
+      ? `证据记录 ${evidenceRecordStatusLabel(evidenceRecord.value.status)}`
+      : "确认前不写正式记录",
     tone: "yellow" as Tone,
   },
 ]);
+const evidenceSourceLabel = computed(() => (evidenceRecord.value ? "正式草稿" : "原型草稿"));
+const evidenceSourceTone = computed<Tone>(() => (evidenceRecord.value ? "green" : "yellow"));
+const evidenceCardTitle = computed(() =>
+  evidenceDraft.value ? evidenceDraftTitle(evidenceDraft.value) : "昨日复盘草稿",
+);
+const evidenceCardBody = computed(() => {
+  if (!evidenceDraft.value) {
+    return "已识别 2 个高频错因：条件遗漏、符号方向误判。用户确认前，不更新掌握判定和后续计划。";
+  }
+  return evidenceDraftSummary(evidenceDraft.value);
+});
 
 type TodayTaskView = TodayTask & {
   version: number | null;
@@ -256,10 +279,132 @@ function resultIdempotencyKey(task: TodayTaskView): string {
   ].join(":");
 }
 
+async function createEvidenceDraft(): Promise<void> {
+  const client = new ApiClient();
+  evidenceActionInFlight.value = "create";
+  evidenceActionError.value = null;
+  try {
+    const upload = await client.uploadEvidence({
+      study_date: todayString(),
+      subject_id: "math",
+      files: [
+        {
+          original_name: "daily-evidence.png",
+          mime_type: "image/png",
+          content_base64: "iVBORw0KGgpldmlkZW5jZS1kZW1vLXBuZw==",
+        },
+      ],
+    });
+    const analyzed = await client.analyzeEvidence(upload.data.record.id, {
+      provider_mode: "valid",
+    });
+    evidenceRecord.value = upload.data.record;
+    evidenceDraft.value = analyzed.data.draft;
+  } catch {
+    evidenceActionError.value = "证据草稿生成失败，请刷新后重试。";
+  } finally {
+    if (evidenceActionInFlight.value === "create") {
+      evidenceActionInFlight.value = null;
+    }
+  }
+}
+
+async function confirmEvidenceDraft(): Promise<void> {
+  if (!evidenceDraft.value) {
+    return;
+  }
+  const client = new ApiClient();
+  evidenceActionInFlight.value = "confirm";
+  evidenceActionError.value = null;
+  try {
+    const confirmed = await client.confirmEvidenceDraft(evidenceDraft.value.evidence_record_id);
+    evidenceRecord.value = confirmed.data.record;
+    evidenceDraft.value = confirmed.data.draft;
+  } catch {
+    evidenceActionError.value = "证据草稿确认失败，请刷新后重试。";
+  } finally {
+    if (evidenceActionInFlight.value === "confirm") {
+      evidenceActionInFlight.value = null;
+    }
+  }
+}
+
+async function rejectEvidenceDraft(): Promise<void> {
+  if (!evidenceDraft.value) {
+    return;
+  }
+  const client = new ApiClient();
+  evidenceActionInFlight.value = "reject";
+  evidenceActionError.value = null;
+  try {
+    const rejected = await client.rejectEvidenceDraft(evidenceDraft.value.evidence_record_id, {
+      reason: "用户要求重新整理证据",
+    });
+    evidenceDraft.value = rejected.data;
+    if (evidenceRecord.value) {
+      evidenceRecord.value = {
+        ...evidenceRecord.value,
+        status: "rejected",
+        rejected_at: rejected.data.rejected_at,
+      };
+    }
+  } catch {
+    evidenceActionError.value = "证据草稿驳回失败，请刷新后重试。";
+  } finally {
+    if (evidenceActionInFlight.value === "reject") {
+      evidenceActionInFlight.value = null;
+    }
+  }
+}
+
+function canConfirmEvidence(): boolean {
+  return evidenceDraft.value?.status === "draft";
+}
+
+function canRejectEvidence(): boolean {
+  return evidenceDraft.value?.status === "draft" || evidenceDraft.value?.status === "needs_correction";
+}
+
+function evidenceRecordStatusLabel(status: EvidenceRecordPayload["status"]): string {
+  const labels: Record<EvidenceRecordPayload["status"], string> = {
+    pending: "待确认",
+    confirmed: "已确认",
+    rejected: "已驳回",
+  };
+  return labels[status];
+}
+
+function evidenceDraftTitle(draft: EvidenceDraftPayload): string {
+  if (draft.status === "confirmed") {
+    return "证据草稿已确认";
+  }
+  if (draft.status === "rejected") {
+    return "证据草稿已驳回";
+  }
+  if (draft.status === "needs_correction") {
+    return "证据草稿需修正";
+  }
+  return "待确认证据草稿";
+}
+
+function evidenceDraftSummary(draft: EvidenceDraftPayload): string {
+  const facts = draft.structured_json.confirmed_facts as Record<string, unknown> | undefined;
+  const suggested = draft.structured_json.suggested_actions as Array<Record<string, unknown>> | undefined;
+  const assetCount = Number(facts?.asset_count ?? evidenceRecord.value?.asset_count ?? 0);
+  const actionCount = Array.isArray(suggested) ? suggested.length : 0;
+  if (draft.validation_errors.length > 0) {
+    return `草稿存在 ${draft.validation_errors.length} 个结构问题，需要人工修正后才能确认。`;
+  }
+  return `草稿已关联 ${assetCount} 个证据附件，生成 ${actionCount} 条建议动作；确认前不写入正式学习记录。`;
+}
+
+function todayString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 onMounted(async () => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
-    const response = await new ApiClient().today(today);
+    const response = await new ApiClient().today(todayString());
     apiToday.value = response.data;
   } catch {
     apiToday.value = null;
@@ -501,13 +646,44 @@ onMounted(async () => {
       <aside class="panel stacked-panel">
         <section class="notice-card ai-draft">
           <StatusTag
-            label="AI 草稿 · 待确认"
-            tone="yellow"
+            :label="evidenceSourceLabel"
+            :tone="evidenceSourceTone"
           />
-          <h2>昨日复盘草稿</h2>
-          <p>
-            已识别 2 个高频错因：条件遗漏、符号方向误判。用户确认前，不更新掌握判定和后续计划。
+          <h2>{{ evidenceCardTitle }}</h2>
+          <p>{{ evidenceCardBody }}</p>
+          <p
+            v-if="evidenceActionError"
+            class="task-action-error"
+            role="status"
+          >
+            {{ evidenceActionError }}
           </p>
+          <div class="task-actions">
+            <button
+              type="button"
+              class="task-action-button"
+              :disabled="Boolean(evidenceDraft) || evidenceActionInFlight === 'create'"
+              @click="createEvidenceDraft"
+            >
+              生成草稿
+            </button>
+            <button
+              type="button"
+              class="task-action-button"
+              :disabled="!canConfirmEvidence() || evidenceActionInFlight === 'confirm'"
+              @click="confirmEvidenceDraft"
+            >
+              确认
+            </button>
+            <button
+              type="button"
+              class="task-action-button danger"
+              :disabled="!canRejectEvidence() || evidenceActionInFlight === 'reject'"
+              @click="rejectEvidenceDraft"
+            >
+              驳回
+            </button>
+          </div>
         </section>
 
         <section class="notice-card risk">

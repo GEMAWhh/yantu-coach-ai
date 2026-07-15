@@ -9,6 +9,13 @@ import type {
   AnalyticsOverviewPayload,
   AnalyticsTimePayload,
   DueReviewListPayload,
+  EvidenceAnalyzeCreatePayload,
+  EvidenceAnalyzePayload,
+  EvidenceConfirmPayload,
+  EvidenceDraftPayload,
+  EvidenceRejectCreatePayload,
+  EvidenceUploadCreatePayload,
+  EvidenceUploadPayload,
   GoalTreeListPayload,
   HealthPayload,
   KnowledgeNodeListPayload,
@@ -148,6 +155,38 @@ export class ApiClient {
       {
         "Idempotency-Key": idempotencyKey,
       },
+    );
+  }
+
+  uploadEvidence(
+    payload: EvidenceUploadCreatePayload,
+  ): Promise<ApiResponse<EvidenceUploadPayload>> {
+    return this.post<EvidenceUploadPayload>("/api/v1/evidence/uploads", payload);
+  }
+
+  analyzeEvidence(
+    recordId: string,
+    payload: EvidenceAnalyzeCreatePayload = {},
+  ): Promise<ApiResponse<EvidenceAnalyzePayload>> {
+    return this.post<EvidenceAnalyzePayload>(
+      `/api/v1/evidence/${encodeURIComponent(recordId)}/analyze`,
+      payload,
+    );
+  }
+
+  confirmEvidenceDraft(recordId: string): Promise<ApiResponse<EvidenceConfirmPayload>> {
+    return this.post<EvidenceConfirmPayload>(
+      `/api/v1/evidence/${encodeURIComponent(recordId)}/confirm`,
+    );
+  }
+
+  rejectEvidenceDraft(
+    recordId: string,
+    payload: EvidenceRejectCreatePayload,
+  ): Promise<ApiResponse<EvidenceDraftPayload>> {
+    return this.post<EvidenceDraftPayload>(
+      `/api/v1/evidence/${encodeURIComponent(recordId)}/reject`,
+      payload,
     );
   }
 

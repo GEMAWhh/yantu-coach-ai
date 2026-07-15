@@ -103,6 +103,115 @@ export type TaskResultSubmitPayload = {
   created: boolean;
 };
 
+export type EvidenceRecordStatus = "pending" | "confirmed" | "rejected";
+export type EvidenceDraftStatus = "draft" | "needs_correction" | "confirmed" | "rejected";
+export type EvidenceProviderMode = "valid" | "invalid_schema";
+
+export type EvidenceFileUploadPayload = {
+  original_name: string;
+  mime_type: "image/png" | "image/jpeg" | "application/pdf";
+  content_base64: string;
+};
+
+export type EvidenceUploadCreatePayload = {
+  study_date: string;
+  subject_id?: string | null;
+  files: EvidenceFileUploadPayload[];
+};
+
+export type EvidenceAssetPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  original_name: string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+  state: string;
+  reference_count: number;
+  page_order: number;
+};
+
+export type EvidenceRecordPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  study_date: string;
+  subject_id: string | null;
+  status: EvidenceRecordStatus;
+  asset_count: number;
+  confirmed_facts: Record<string, unknown> | null;
+  inferences: Record<string, unknown> | null;
+  uncertain_fields: Array<Record<string, unknown>> | null;
+  teaching_judgment: Record<string, unknown> | null;
+  suggested_actions: Array<Record<string, unknown>> | null;
+  confirmed_at: string | null;
+  rejected_at: string | null;
+};
+
+export type EvidenceUploadPayload = {
+  record: EvidenceRecordPayload;
+  assets: EvidenceAssetPayload[];
+};
+
+export type EvidenceAIJobPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  job_type: string;
+  provider: string;
+  model_name: string;
+  prompt_version: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  attempts: number;
+  input_json: Record<string, unknown>;
+  output_json: Record<string, unknown> | null;
+  error_code: string | null;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
+export type EvidenceDraftPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  evidence_record_id: string;
+  ai_job_id: string;
+  status: EvidenceDraftStatus;
+  schema_version: "evidence-analysis-v1";
+  structured_json: Record<string, unknown>;
+  validation_errors: string[];
+  confirmed_at: string | null;
+  rejected_at: string | null;
+  rejection_reason: string | null;
+  confirmed_once: boolean;
+};
+
+export type EvidenceAnalyzeCreatePayload = {
+  provider_mode?: EvidenceProviderMode;
+};
+
+export type EvidenceAnalyzePayload = {
+  draft: EvidenceDraftPayload;
+  ai_job: EvidenceAIJobPayload;
+};
+
+export type EvidenceConfirmPayload = {
+  record: EvidenceRecordPayload;
+  draft: EvidenceDraftPayload;
+  created: boolean;
+};
+
+export type EvidenceRejectCreatePayload = {
+  reason: string;
+};
+
 export type GoalPayload = {
   id: string;
   version: number;

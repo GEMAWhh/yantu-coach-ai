@@ -5,6 +5,10 @@ import type {
   AnalyticsMasteryPayload,
   ApiResponse,
   DueReviewListPayload,
+  EvidenceAnalyzePayload,
+  EvidenceConfirmPayload,
+  EvidenceDraftPayload,
+  EvidenceUploadPayload,
   HealthPayload,
   KnowledgeNodeListPayload,
   ReviewResultSubmitPayload,
@@ -506,6 +510,162 @@ describe("ApiClient", () => {
       is_correct: false,
       score: 30,
     });
+  });
+
+  it("uploads, analyzes, confirms, and rejects evidence drafts", async () => {
+    const record = {
+      id: "evidence-1",
+      version: 1,
+      created_at: "2026-07-15T09:00:00Z",
+      updated_at: "2026-07-15T09:00:00Z",
+      created_by: "user",
+      study_date: "2026-07-15",
+      subject_id: "math",
+      status: "pending" as const,
+      asset_count: 1,
+      confirmed_facts: null,
+      inferences: null,
+      uncertain_fields: null,
+      teaching_judgment: null,
+      suggested_actions: null,
+      confirmed_at: null,
+      rejected_at: null,
+    };
+    const draft = {
+      id: "draft-1",
+      version: 1,
+      created_at: "2026-07-15T09:01:00Z",
+      updated_at: "2026-07-15T09:01:00Z",
+      evidence_record_id: "evidence-1",
+      ai_job_id: "job-1",
+      status: "draft" as const,
+      schema_version: "evidence-analysis-v1" as const,
+      structured_json: {
+        confirmed_facts: { asset_count: 1 },
+        suggested_actions: [{ type: "confirm_or_reject" }],
+      },
+      validation_errors: [],
+      confirmed_at: null,
+      rejected_at: null,
+      rejection_reason: null,
+      confirmed_once: false,
+    };
+    const upload: ApiResponse<EvidenceUploadPayload> = {
+      data: {
+        record,
+        assets: [
+          {
+            id: "asset-1",
+            version: 1,
+            created_at: "2026-07-15T09:00:00Z",
+            updated_at: "2026-07-15T09:00:00Z",
+            original_name: "daily-proof.png",
+            storage_path: "files/original/daily-proof.png",
+            mime_type: "image/png",
+            size_bytes: 24,
+            state: "inbox",
+            reference_count: 1,
+            page_order: 0,
+          },
+        ],
+      },
+      meta: { request_id: "client-evidence-upload" },
+    };
+    const analyze: ApiResponse<EvidenceAnalyzePayload> = {
+      data: {
+        draft,
+        ai_job: {
+          id: "job-1",
+          version: 1,
+          created_at: "2026-07-15T09:01:00Z",
+          updated_at: "2026-07-15T09:01:00Z",
+          job_type: "evidence_analysis",
+          provider: "fake",
+          model_name: "fake",
+          prompt_version: "evidence-draft-fake-v1",
+          status: "succeeded",
+          attempts: 1,
+          input_json: { record_id: "evidence-1" },
+          output_json: draft.structured_json,
+          error_code: null,
+          error_message: null,
+          started_at: "2026-07-15T09:01:00Z",
+          completed_at: "2026-07-15T09:01:01Z",
+        },
+      },
+      meta: { request_id: "client-evidence-analyze" },
+    };
+    const confirm: ApiResponse<EvidenceConfirmPayload> = {
+      data: {
+        record: {
+          ...record,
+          version: 2,
+          status: "confirmed",
+          confirmed_facts: { asset_count: 1 },
+          confirmed_at: "2026-07-15T09:02:00Z",
+        },
+        draft: {
+          ...draft,
+          version: 2,
+          status: "confirmed",
+          confirmed_at: "2026-07-15T09:02:00Z",
+          confirmed_once: true,
+        },
+        created: true,
+      },
+      meta: { request_id: "client-evidence-confirm" },
+    };
+    const reject: ApiResponse<EvidenceDraftPayload> = {
+      data: {
+        ...draft,
+        version: 2,
+        status: "rejected",
+        rejected_at: "2026-07-15T09:03:00Z",
+        rejection_reason: "需要人工重拍",
+      },
+      meta: { request_id: "client-evidence-reject" },
+    };
+    const payloads = [upload, analyze, confirm, reject];
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payloads[calls.length - 1]);
+    });
+
+    await expect(
+      client.uploadEvidence({
+        study_date: "2026-07-15",
+        subject_id: "math",
+        files: [
+          {
+            original_name: "daily-proof.png",
+            mime_type: "image/png",
+            content_base64: "iVBORw0KGgpldmlkZW5jZS1kZW1vLXBuZw==",
+          },
+        ],
+      }),
+    ).resolves.toEqual(upload);
+    await expect(client.analyzeEvidence("evidence-1", { provider_mode: "valid" })).resolves.toEqual(
+      analyze,
+    );
+    await expect(client.confirmEvidenceDraft("evidence-1")).resolves.toEqual(confirm);
+    await expect(
+      client.rejectEvidenceDraft("evidence-1", { reason: "需要人工重拍" }),
+    ).resolves.toEqual(reject);
+
+    expect(calls.map((call) => call.input)).toEqual([
+      "/api/v1/evidence/uploads",
+      "/api/v1/evidence/evidence-1/analyze",
+      "/api/v1/evidence/evidence-1/confirm",
+      "/api/v1/evidence/evidence-1/reject",
+    ]);
+    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+      study_date: "2026-07-15",
+      files: [{ original_name: "daily-proof.png", mime_type: "image/png" }],
+    });
+    expect(JSON.parse(String(calls[1].init?.body))).toEqual({ provider_mode: "valid" });
+    expect(calls[2].init?.body).toBeUndefined();
+    expect(JSON.parse(String(calls[3].init?.body))).toEqual({ reason: "需要人工重拍" });
   });
 
   it("submits task status actions with version protection", async () => {
