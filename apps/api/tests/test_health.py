@@ -46,3 +46,56 @@ def test_invalid_environment_is_rejected(monkeypatch: pytest.MonkeyPatch) -> Non
 
     with pytest.raises(ValueError, match="YANTU_APP_ENV"):
         get_settings()
+
+
+def test_configured_frontend_origin_can_use_api(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "data" / "test"))
+    monkeypatch.setenv("YANTU_CORS_ALLOWED_ORIGINS", "https://study.example.com")
+
+    with TestClient(create_app()) as client:
+        response = client.options(
+            "/api/v1/meta",
+            headers={
+                "Origin": "https://study.example.com",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Authorization,X-Request-ID",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://study.example.com"
+    assert response.headers["access-control-allow-credentials"] == "true"
+
+
+def test_untrusted_frontend_origin_is_not_allowed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "data" / "test"))
+    monkeypatch.setenv("YANTU_CORS_ALLOWED_ORIGINS", "https://study.example.com")
+
+    with TestClient(create_app()) as client:
+        response = client.get(
+            "/api/v1/meta",
+            headers={"Origin": "https://attacker.example.com"},
+        )
+
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers
+
+
+@pytest.mark.parametrize(
+    "configured_origins",
+    ["*", "https://study.example.com/path", "javascript:alert(1)"],
+)
+def test_unsafe_cors_origins_are_rejected(
+    monkeypatch: pytest.MonkeyPatch, configured_origins: str
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_CORS_ALLOWED_ORIGINS", configured_origins)
+
+    with pytest.raises(ValueError, match="YANTU_CORS_ALLOWED_ORIGINS"):
+        get_settings()

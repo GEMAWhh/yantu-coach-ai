@@ -31,6 +31,14 @@ npm run build:demo
 
 构建产物会使用内存样例数据展示今日任务、五层规划、资料队列、复习、证据草稿、错题草稿、进度分析和设置规则。
 
+## 真实 API 配置
+
+- 本地或云端 API：设置 `VITE_YANTU_DEMO_API=false`，并将 `VITE_YANTU_API_BASE_URL` 设为 API Origin，例如 `http://127.0.0.1:8000` 或 `https://api.example.com`；
+- 同源反向代理：`VITE_YANTU_API_BASE_URL` 留空；
+- 演示站继续使用 `VITE_YANTU_DEMO_API=true`。
+
+API 地址必须是 HTTP(S) Origin，不得包含凭据、路径、查询参数或片段。Vite 变量会进入公开构建产物，禁止在其中保存任何密钥。
+
 ## 检查
 
 ```powershell

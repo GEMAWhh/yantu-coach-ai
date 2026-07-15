@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 class AppEnvironment(StrEnum):
@@ -15,6 +16,7 @@ class AppEnvironment(StrEnum):
 class RuntimeSettings:
     environment: AppEnvironment
     data_root: Path
+    cors_allowed_origins: tuple[str, ...]
 
     @property
     def public_data_root(self) -> str:
@@ -98,9 +100,46 @@ def _guard_environment_separation(environment: AppEnvironment, data_root: Path) 
         raise RuntimeError("dev/test runtime must not use a production-named data directory")
 
 
+def _parse_cors_allowed_origins(environment: AppEnvironment) -> tuple[str, ...]:
+    raw_origins = os.getenv("YANTU_CORS_ALLOWED_ORIGINS")
+    if raw_origins is None:
+        if environment is AppEnvironment.DEV:
+            return ("http://127.0.0.1:5173", "http://localhost:5173")
+        return ()
+
+    origins: list[str] = []
+    for raw_origin in raw_origins.split(","):
+        origin = raw_origin.strip().rstrip("/")
+        if not origin:
+            continue
+        if origin == "*":
+            raise ValueError("YANTU_CORS_ALLOWED_ORIGINS must not contain wildcard origins")
+
+        parsed = urlsplit(origin)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(
+                "YANTU_CORS_ALLOWED_ORIGINS entries must be HTTP(S) origins without paths"
+            )
+        if origin not in origins:
+            origins.append(origin)
+    return tuple(origins)
+
+
 @lru_cache
 def get_settings() -> RuntimeSettings:
     environment = _parse_environment(os.getenv("YANTU_APP_ENV", AppEnvironment.DEV.value))
     data_root = _resolve_data_root(environment)
     _guard_environment_separation(environment, data_root)
-    return RuntimeSettings(environment=environment, data_root=data_root)
+    return RuntimeSettings(
+        environment=environment,
+        data_root=data_root,
+        cors_allowed_origins=_parse_cors_allowed_origins(environment),
+    )
