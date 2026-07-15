@@ -20,6 +20,17 @@ npm run dev
 
 默认地址：http://127.0.0.1:5173
 
+## 联网演示构建
+
+静态托管或没有在线后端时，使用 demo API 构建。该模式只在 `--mode demo` 下启用，普通本地开发仍请求真实 API。
+
+```powershell
+cd apps/web
+npm run build:demo
+```
+
+构建产物会使用内存样例数据展示今日任务、五层规划、资料队列、复习、证据草稿、错题草稿、进度分析和设置规则。
+
 ## 检查
 
 ```powershell
