@@ -5,9 +5,9 @@ from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.evidence.service import EvidenceHistoryItem
 from app.models.asset import Asset
 from app.models.evidence import AIJob, EvidenceDraft, EvidenceRecord
-from app.evidence.service import EvidenceHistoryItem
 
 EvidenceRecordStatus = Literal["pending", "confirmed", "rejected"]
 EvidenceDraftStatus = Literal["draft", "needs_correction", "confirmed", "rejected"]
@@ -123,9 +123,7 @@ class EvidenceHistoryItemResponse(BaseModel):
         return cls(
             record=EvidenceRecordResponse.from_model(item.record),
             draft=(
-                EvidenceDraftResponse.from_model(item.draft)
-                if item.draft is not None
-                else None
+                EvidenceDraftResponse.from_model(item.draft) if item.draft is not None else None
             ),
         )
 
