@@ -12,6 +12,8 @@ const study = useMockStudyStore();
 const apiToday = ref<TodayPayload | null>(null);
 const actionInFlight = ref<string | null>(null);
 const actionError = ref<string | null>(null);
+const openResultTaskId = ref<string | null>(null);
+const resultDrafts = ref<Record<string, TaskResultDraft>>({});
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
 const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
 const todayTasks = computed<TodayTaskView[]>(() =>
@@ -47,6 +49,15 @@ const todayMetrics = computed(() => [
 type TodayTaskView = TodayTask & {
   version: number | null;
   apiBacked: boolean;
+};
+
+type TaskResultDraft = {
+  completionRatio: number;
+  actualMinutes: number;
+  questionCount: number | null;
+  correctCount: number | null;
+  confidence: number | null;
+  problemDescription: string;
 };
 
 function toneForStatus(status: TaskPayload["status"]): Tone {
@@ -97,6 +108,10 @@ function canComplete(task: TodayTaskView): boolean {
   return task.apiBacked && (task.status === "pending" || task.status === "in_progress");
 }
 
+function isResultFormOpen(task: TodayTaskView): boolean {
+  return openResultTaskId.value === task.id;
+}
+
 function updateTask(updatedTask: TaskPayload): void {
   if (!apiToday.value) {
     return;
@@ -126,8 +141,9 @@ async function runTaskAction(
     } else if (action === "withdraw") {
       updateTask((await client.withdrawTask(task.id, task.version)).data);
     } else {
-      await client.submitTaskResult(task.id, defaultTaskResult(task), resultIdempotencyKey(task));
+      await client.submitTaskResult(task.id, taskResultPayload(task), resultIdempotencyKey(task));
       updateTask((await client.completeTask(task.id, task.version)).data);
+      openResultTaskId.value = null;
     }
   } catch {
     actionError.value = "任务状态更新失败，请刷新后重试。";
@@ -138,17 +154,106 @@ async function runTaskAction(
   }
 }
 
-function defaultTaskResult(task: TodayTaskView): TaskResultCreatePayload {
+function openResultForm(task: TodayTaskView): void {
+  if (!canComplete(task)) {
+    return;
+  }
+  resultDrafts.value = {
+    ...resultDrafts.value,
+    [task.id]: resultDrafts.value[task.id] ?? defaultTaskResultDraft(task),
+  };
+  openResultTaskId.value = task.id;
+  actionError.value = null;
+}
+
+function closeResultForm(): void {
+  openResultTaskId.value = null;
+}
+
+function resultDraft(task: TodayTaskView): TaskResultDraft {
+  return resultDrafts.value[task.id] ?? defaultTaskResultDraft(task);
+}
+
+function updateResultDraft<K extends keyof TaskResultDraft>(
+  task: TodayTaskView,
+  key: K,
+  value: TaskResultDraft[K],
+): void {
+  resultDrafts.value = {
+    ...resultDrafts.value,
+    [task.id]: {
+      ...resultDraft(task),
+      [key]: value,
+    },
+  };
+}
+
+function defaultTaskResultDraft(task: TodayTaskView): TaskResultDraft {
   return {
-    result_type: "completed",
-    completion_ratio: 100,
-    actual_minutes: task.estimateMinutes,
+    completionRatio: 100,
+    actualMinutes: task.estimateMinutes,
+    questionCount: null,
+    correctCount: null,
+    confidence: null,
+    problemDescription: "",
+  };
+}
+
+function taskResultPayload(task: TodayTaskView): TaskResultCreatePayload {
+  const draft = resultDraft(task);
+  return {
+    result_type: draft.completionRatio >= 100 ? "completed" : "partial",
+    completion_ratio: clampPercent(draft.completionRatio),
+    actual_minutes: Math.max(0, draft.actualMinutes),
+    question_count: draft.questionCount,
+    correct_count: draft.correctCount,
+    accuracy: accuracyFromCounts(draft),
+    confidence: draft.confidence,
+    problem_description: draft.problemDescription.trim() || null,
     confirmed_at: new Date().toISOString(),
   };
 }
 
+function accuracyFromCounts(draft: TaskResultDraft): number | null {
+  if (draft.questionCount === null || draft.correctCount === null || draft.questionCount <= 0) {
+    return null;
+  }
+  return clampPercent(Math.round((draft.correctCount / draft.questionCount) * 100));
+}
+
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function numberOrNull(value: string): number | null {
+  if (value.trim() === "") {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : null;
+}
+
+function percentOrNull(value: string): number | null {
+  const parsed = numberOrNull(value);
+  return parsed === null ? null : clampPercent(parsed);
+}
+
+function numberOrZero(value: string): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
+}
+
 function resultIdempotencyKey(task: TodayTaskView): string {
-  return `${task.id}:complete:${task.version ?? "mock"}`;
+  const draft = resultDraft(task);
+  return [
+    task.id,
+    "complete",
+    task.version ?? "mock",
+    draft.completionRatio,
+    draft.actualMinutes,
+    draft.questionCount ?? "na",
+    draft.correctCount ?? "na",
+  ].join(":");
 }
 
 onMounted(async () => {
@@ -248,8 +353,8 @@ onMounted(async () => {
               <button
                 type="button"
                 class="task-action-button"
-                :disabled="!canComplete(task) || isActionRunning(task, 'complete')"
-                @click="runTaskAction(task, 'complete')"
+                :disabled="!canComplete(task)"
+                @click="openResultForm(task)"
               >
                 完成
               </button>
@@ -270,6 +375,125 @@ onMounted(async () => {
                 撤回
               </button>
             </div>
+            <form
+              v-if="task.apiBacked && isResultFormOpen(task)"
+              class="task-result-form"
+              @submit.prevent="runTaskAction(task, 'complete')"
+            >
+              <label>
+                <span>实际用时</span>
+                <input
+                  :value="resultDraft(task).actualMinutes"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'actualMinutes',
+                      numberOrZero(($event.target as HTMLInputElement).value),
+                    )
+                  "
+                >
+              </label>
+              <label>
+                <span>完成度</span>
+                <input
+                  :value="resultDraft(task).completionRatio"
+                  type="number"
+                  min="0"
+                  max="100"
+                  inputmode="numeric"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'completionRatio',
+                      clampPercent(numberOrZero(($event.target as HTMLInputElement).value)),
+                    )
+                  "
+                >
+              </label>
+              <label>
+                <span>题数</span>
+                <input
+                  :value="resultDraft(task).questionCount ?? ''"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'questionCount',
+                      numberOrNull(($event.target as HTMLInputElement).value),
+                    )
+                  "
+                >
+              </label>
+              <label>
+                <span>正确数</span>
+                <input
+                  :value="resultDraft(task).correctCount ?? ''"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'correctCount',
+                      numberOrNull(($event.target as HTMLInputElement).value),
+                    )
+                  "
+                >
+              </label>
+              <label>
+                <span>信心值</span>
+                <input
+                  :value="resultDraft(task).confidence ?? ''"
+                  type="number"
+                  min="0"
+                  max="100"
+                  inputmode="numeric"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'confidence',
+                      percentOrNull(($event.target as HTMLInputElement).value),
+                    )
+                  "
+                >
+              </label>
+              <label class="task-result-notes">
+                <span>问题描述</span>
+                <textarea
+                  :value="resultDraft(task).problemDescription"
+                  rows="3"
+                  @input="
+                    updateResultDraft(
+                      task,
+                      'problemDescription',
+                      ($event.target as HTMLTextAreaElement).value,
+                    )
+                  "
+                />
+              </label>
+              <div class="task-result-actions">
+                <button
+                  type="submit"
+                  class="task-action-button"
+                  :disabled="isActionRunning(task, 'complete')"
+                >
+                  提交结果
+                </button>
+                <button
+                  type="button"
+                  class="task-action-button secondary"
+                  :disabled="isActionRunning(task, 'complete')"
+                  @click="closeResultForm"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
           </article>
         </div>
       </section>

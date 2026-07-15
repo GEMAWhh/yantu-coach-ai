@@ -178,7 +178,7 @@ describe("App", () => {
     expect(wrapper.text()).toContain("in_progress");
   });
 
-  it("submits a default result and marks a today task completed", async () => {
+  it("submits a filled result form and marks a today task completed", async () => {
     const calls: Array<{ path: string; init?: RequestInit }> = [];
     vi.stubGlobal(
       "fetch",
@@ -231,17 +231,17 @@ describe("App", () => {
                   created_at: "2026-07-15T00:00:00Z",
                   updated_at: "2026-07-15T00:00:00Z",
                   task_id: "task-api-1",
-                  result_type: "completed",
-                  completion_ratio: 100,
-                  actual_minutes: 45,
-                  question_count: null,
-                  correct_count: null,
-                  accuracy: null,
-                  confidence: null,
+                  result_type: "partial",
+                  completion_ratio: 80,
+                  actual_minutes: 40,
+                  question_count: 5,
+                  correct_count: 4,
+                  accuracy: 80,
+                  confidence: 70,
                   hint_level: null,
                   focus_level: null,
                   difficulty_rating: null,
-                  problem_description: null,
+                  problem_description: "漏看条件",
                   confirmed_at: "2026-07-15T00:00:00Z",
                 },
               },
@@ -282,6 +282,14 @@ describe("App", () => {
     const completeButton = wrapper.findAll("button").find((button) => button.text() === "完成");
 
     await completeButton?.trigger("click");
+    const inputs = wrapper.findAll(".task-result-form input");
+    await inputs[0].setValue("40");
+    await inputs[1].setValue("80");
+    await inputs[2].setValue("5");
+    await inputs[3].setValue("4");
+    await inputs[4].setValue("70");
+    await wrapper.find(".task-result-form textarea").setValue("漏看条件");
+    await wrapper.find(".task-result-form").trigger("submit");
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
@@ -290,12 +298,17 @@ describe("App", () => {
       "/api/v1/tasks/task-api-1",
     ]);
     expect(calls[1].init?.headers).toMatchObject({
-      "Idempotency-Key": "task-api-1:complete:1",
+      "Idempotency-Key": "task-api-1:complete:1:80:40:5:4",
     });
     expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
-      result_type: "completed",
-      completion_ratio: 100,
-      actual_minutes: 45,
+      result_type: "partial",
+      completion_ratio: 80,
+      actual_minutes: 40,
+      question_count: 5,
+      correct_count: 4,
+      accuracy: 80,
+      confidence: 70,
+      problem_description: "漏看条件",
     });
     expect(calls[2].init?.method).toBe("PATCH");
     expect(calls[2].init?.headers).toMatchObject({ "If-Match": "1" });

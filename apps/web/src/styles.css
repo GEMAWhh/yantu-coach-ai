@@ -453,6 +453,52 @@ h3 {
   font-weight: 750;
 }
 
+.task-result-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+  border-top: 1px solid var(--gray-200);
+  padding-top: var(--space-3);
+}
+
+.task-result-form label {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.task-result-form input,
+.task-result-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-small);
+  padding: var(--space-2) var(--space-3);
+  color: var(--gray-900);
+  background: var(--white);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.task-result-form textarea {
+  resize: vertical;
+}
+
+.task-result-notes,
+.task-result-actions {
+  grid-column: 1 / -1;
+}
+
+.task-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .task-card-header,
 .timeline-title,
 .mastery-row,
