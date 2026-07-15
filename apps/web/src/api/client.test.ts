@@ -14,6 +14,7 @@ import type {
   TaskResultSubmitPayload,
   TodayPayload,
   WeakGraphPayload,
+  WrongbookAttemptSubmitPayload,
   WrongbookCandidateListPayload,
 } from "./contracts";
 
@@ -379,6 +380,131 @@ describe("ApiClient", () => {
     expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
       result_type: "pass",
       score: 90,
+    });
+  });
+
+  it("submits wrongbook variant and interval shortcut results with idempotency keys", async () => {
+    const baseSubmission: WrongbookAttemptSubmitPayload = {
+      created: true,
+      attempt: {
+        id: "attempt-1",
+        version: 1,
+        created_at: "2026-07-15T10:00:00Z",
+        updated_at: "2026-07-15T10:00:00Z",
+        created_by: "user",
+        question_id: "question-1",
+        wrong_record_id: "wrong-1",
+        idempotency_key: "wrong-1:variant:pass",
+        attempt_type: "variant",
+        attempted_at: "2026-07-15T10:00:00Z",
+        answer_text: null,
+        is_correct: true,
+        score: 96,
+        duration_seconds: null,
+        hint_level: null,
+        confidence: 80,
+        request_id: "wrongbook-variant",
+      },
+      record: {
+        id: "wrong-1",
+        version: 2,
+        created_at: "2026-07-14T00:00:00Z",
+        updated_at: "2026-07-15T10:00:00Z",
+        created_by: "user",
+        question_id: "question-1",
+        knowledge_node_id: "node-1",
+        surface_cause: "calculation slip",
+        deep_cause: "derivative rule not automatic",
+        prerequisite_gap: "power rule",
+        error_count: 1,
+        redo_count: 2,
+        current_status: "pending_interval",
+        next_review_at: "2026-07-18T10:00:00Z",
+        resolved_at: null,
+      },
+      verification: {
+        id: "verification-1",
+        version: 2,
+        created_at: "2026-07-14T00:00:00Z",
+        updated_at: "2026-07-15T10:00:00Z",
+        wrong_record_id: "wrong-1",
+        original_redo_passed: false,
+        no_hint_redo_passed: true,
+        variant_passed: true,
+        interval_test_passed: false,
+        transfer_test_passed: false,
+        last_attempt_id: "attempt-1",
+      },
+    };
+    const variant: ApiResponse<WrongbookAttemptSubmitPayload> = {
+      data: baseSubmission,
+      meta: { request_id: "client-wrongbook-variant" },
+    };
+    const interval: ApiResponse<WrongbookAttemptSubmitPayload> = {
+      data: {
+        ...baseSubmission,
+        attempt: {
+          ...baseSubmission.attempt,
+          id: "attempt-2",
+          idempotency_key: "wrong-1:interval:fail",
+          attempt_type: "interval_test",
+          is_correct: false,
+          score: 30,
+          confidence: null,
+        },
+        record: {
+          ...baseSubmission.record,
+          version: 3,
+          error_count: 2,
+          current_status: "regressed",
+        },
+        verification: {
+          ...baseSubmission.verification,
+          version: 3,
+          variant_passed: false,
+          last_attempt_id: "attempt-2",
+        },
+      },
+      meta: { request_id: "client-wrongbook-interval" },
+    };
+    const payloads = [variant, interval];
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payloads[calls.length - 1]);
+    });
+
+    await expect(
+      client.submitWrongbookVariantResult(
+        "wrong-1",
+        { is_correct: true, score: 96, confidence: 80 },
+        "wrong-1:variant:pass",
+      ),
+    ).resolves.toEqual(variant);
+    await expect(
+      client.submitWrongbookIntervalResult(
+        "wrong-1",
+        { is_correct: false, score: 30 },
+        "wrong-1:interval:fail",
+      ),
+    ).resolves.toEqual(interval);
+
+    expect(calls[0].input).toBe("/api/v1/wrongbook/wrong-1/variant-results");
+    expect(calls[0].init?.headers).toMatchObject({
+      "Idempotency-Key": "wrong-1:variant:pass",
+    });
+    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+      is_correct: true,
+      score: 96,
+      confidence: 80,
+    });
+    expect(calls[1].input).toBe("/api/v1/wrongbook/wrong-1/interval-results");
+    expect(calls[1].init?.headers).toMatchObject({
+      "Idempotency-Key": "wrong-1:interval:fail",
+    });
+    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+      is_correct: false,
+      score: 30,
     });
   });
 

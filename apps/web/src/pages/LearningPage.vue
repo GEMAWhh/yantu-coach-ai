@@ -8,6 +8,7 @@ import type {
   ResourcePayload,
   ReviewResultSubmitPayload,
   ReviewResultType,
+  WrongbookAttemptSubmitPayload,
   WrongbookCandidatePayload,
 } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
@@ -22,6 +23,9 @@ const apiDueReviews = ref<DueReviewPayload[] | null>(null);
 const reviewActionInFlight = ref<string | null>(null);
 const reviewActionError = ref<string | null>(null);
 const reviewSubmissions = ref<Record<string, ReviewResultSubmitPayload>>({});
+const wrongbookActionInFlight = ref<string | null>(null);
+const wrongbookActionError = ref<string | null>(null);
+const wrongbookSubmissions = ref<Record<string, WrongbookAttemptSubmitPayload>>({});
 
 type KnowledgeChip = {
   label: string;
@@ -31,6 +35,16 @@ type KnowledgeChip = {
 type LoopCard = {
   title: string;
   body: string;
+};
+
+type WrongbookCard = LoopCard & {
+  id: string;
+  status: string;
+  tone: Tone;
+  apiBacked: boolean;
+  sourceId: string | null;
+  taskType: string | null;
+  resultNote: string | null;
 };
 
 type ReviewCard = {
@@ -161,39 +175,90 @@ const reviewCards = computed<ReviewCard[]>(() => {
   });
 });
 
-const wrongbookCards = computed<LoopCard[]>(() => {
+const wrongbookCards = computed<WrongbookCard[]>(() => {
   if (!apiWrongbookCandidates.value) {
     return [
       {
+        id: "mock-wrongbook-1",
         title: "1. 分类上传",
         body: "题干、作答、答案、解析、错因、重做和变式附件分别保存。",
+        status: "原型",
+        tone: "blue",
+        apiBacked: false,
+        sourceId: null,
+        taskType: null,
+        resultNote: null,
       },
       {
+        id: "mock-wrongbook-2",
         title: "2. 用户确认",
         body: "OCR 或 AI 结构化结果必须由用户确认后才进入正式记录。",
+        status: "原型",
+        tone: "yellow",
+        apiBacked: false,
+        sourceId: null,
+        taskType: null,
+        resultNote: null,
       },
       {
+        id: "mock-wrongbook-3",
         title: "3. 隔日重做",
         body: "原题即时正确最多推进到待变式验证，不直接标记解决。",
+        status: "原型",
+        tone: "yellow",
+        apiBacked: false,
+        sourceId: null,
+        taskType: null,
+        resultNote: null,
       },
       {
+        id: "mock-wrongbook-4",
         title: "4. 稳定修正",
         body: "无提示重做、变式和间隔复测均通过后，才可稳定修正。",
+        status: "原型",
+        tone: "green",
+        apiBacked: false,
+        sourceId: null,
+        taskType: null,
+        resultNote: null,
       },
     ];
   }
   if (apiWrongbookCandidates.value.length === 0) {
     return [
       {
+        id: "empty-wrongbook",
         title: "暂无错题候选",
         body: "当前没有进入今日计划的错题候选，继续按资源和知识图谱推进。",
+        status: "空队列",
+        tone: "neutral",
+        apiBacked: false,
+        sourceId: null,
+        taskType: null,
+        resultNote: null,
       },
     ];
   }
-  return apiWrongbookCandidates.value.slice(0, 4).map((candidate, index) => ({
-    title: `${index + 1}. ${candidate.title}`,
-    body: `${candidate.subject_id} · ${candidate.estimated_minutes} 分钟 · 弱项 ${candidate.weakness} · 重复错因 ${candidate.repeat_error}`,
-  }));
+  return apiWrongbookCandidates.value.slice(0, 4).map((candidate, index) => {
+    const submission = candidate.source_id
+      ? wrongbookSubmissions.value[candidate.source_id]
+      : null;
+    return {
+      id: candidate.id,
+      title: `${index + 1}. ${candidate.title}`,
+      body: `${candidate.subject_id} · ${candidate.estimated_minutes} 分钟 · 弱项 ${candidate.weakness} · 重复错因 ${candidate.repeat_error}`,
+      status: submission ? wrongbookStatusLabel(submission.record.current_status) : "待验证",
+      tone: submission ? toneForWrongbookStatus(submission.record.current_status) : "yellow",
+      apiBacked: true,
+      sourceId: candidate.source_id,
+      taskType: candidate.task_type,
+      resultNote: submission
+        ? `${attemptTypeLabel(submission.attempt.attempt_type)} · ${
+            submission.attempt.is_correct ? "正确" : "错误"
+          } · ${submission.created ? "已记录" : "幂等返回"}`
+        : null,
+    };
+  });
 });
 
 function formatBytes(sizeBytes: number): string {
@@ -302,6 +367,114 @@ function reviewIdempotencyKey(review: ReviewCard, resultType: ReviewResultType):
 
 function formatDate(value: string): string {
   return value.slice(0, 10);
+}
+
+function isWrongbookActionRunning(
+  card: WrongbookCard,
+  resultKind: "variant" | "interval",
+  isCorrect: boolean,
+): boolean {
+  return wrongbookActionInFlight.value === wrongbookActionKey(card, resultKind, isCorrect);
+}
+
+async function submitWrongbookResult(
+  card: WrongbookCard,
+  resultKind: "variant" | "interval",
+  isCorrect: boolean,
+): Promise<void> {
+  if (!card.apiBacked || !card.sourceId) {
+    return;
+  }
+  const actionKey = wrongbookActionKey(card, resultKind, isCorrect);
+  const client = new ApiClient();
+  wrongbookActionInFlight.value = actionKey;
+  wrongbookActionError.value = null;
+  try {
+    const payload = {
+      is_correct: isCorrect,
+      score: isCorrect ? 96 : 40,
+      confidence: isCorrect ? 80 : 40,
+      attempted_at: new Date().toISOString(),
+    };
+    const response =
+      resultKind === "variant"
+        ? await client.submitWrongbookVariantResult(
+            card.sourceId,
+            payload,
+            wrongbookIdempotencyKey(card, resultKind, isCorrect),
+          )
+        : await client.submitWrongbookIntervalResult(
+            card.sourceId,
+            payload,
+            wrongbookIdempotencyKey(card, resultKind, isCorrect),
+          );
+    wrongbookSubmissions.value = {
+      ...wrongbookSubmissions.value,
+      [card.sourceId]: response.data,
+    };
+  } catch {
+    wrongbookActionError.value = "错题验证结果提交失败，请刷新后重试。";
+  } finally {
+    if (wrongbookActionInFlight.value === actionKey) {
+      wrongbookActionInFlight.value = null;
+    }
+  }
+}
+
+function wrongbookActionKey(
+  card: WrongbookCard,
+  resultKind: "variant" | "interval",
+  isCorrect: boolean,
+): string {
+  return [card.sourceId, resultKind, isCorrect ? "pass" : "fail"].join(":");
+}
+
+function wrongbookIdempotencyKey(
+  card: WrongbookCard,
+  resultKind: "variant" | "interval",
+  isCorrect: boolean,
+): string {
+  return [card.sourceId, resultKind, isCorrect ? "pass" : "fail", card.taskType ?? "candidate"].join(
+    ":",
+  );
+}
+
+function wrongbookStatusLabel(status: WrongbookAttemptSubmitPayload["record"]["current_status"]): string {
+  const labels: Record<WrongbookAttemptSubmitPayload["record"]["current_status"], string> = {
+    pending_analysis: "待分析",
+    pending_no_hint_redo: "待无提示重做",
+    pending_variant: "待变式",
+    pending_interval: "待间隔复测",
+    stable_corrected: "稳定修正",
+    regressed: "已回退",
+  };
+  return labels[status];
+}
+
+function toneForWrongbookStatus(
+  status: WrongbookAttemptSubmitPayload["record"]["current_status"],
+): Tone {
+  if (status === "stable_corrected") {
+    return "green";
+  }
+  if (status === "regressed") {
+    return "red";
+  }
+  if (status === "pending_interval") {
+    return "blue";
+  }
+  return "yellow";
+}
+
+function attemptTypeLabel(type: WrongbookAttemptSubmitPayload["attempt"]["attempt_type"]): string {
+  const labels: Record<WrongbookAttemptSubmitPayload["attempt"]["attempt_type"], string> = {
+    original_redo: "原题重做",
+    no_hint_redo: "无提示重做",
+    variant: "变式",
+    interval_test: "间隔复测",
+    transfer_test: "迁移测试",
+  };
+  return labels[type];
 }
 
 function todayString(): string {
@@ -491,13 +664,75 @@ onMounted(async () => {
           :tone="wrongbookSourceTone"
         />
       </div>
+      <p
+        v-if="wrongbookActionError"
+        class="task-action-error"
+        role="status"
+      >
+        {{ wrongbookActionError }}
+      </p>
       <div class="step-grid">
         <article
           v-for="card in wrongbookCards"
-          :key="card.title"
+          :key="card.id"
         >
-          <strong>{{ card.title }}</strong>
+          <div class="task-card-header">
+            <strong>{{ card.title }}</strong>
+            <StatusTag
+              :label="card.status"
+              :tone="card.tone"
+            />
+          </div>
           <p>{{ card.body }}</p>
+          <p v-if="card.resultNote">
+            {{ card.resultNote }}
+          </p>
+          <div
+            v-if="card.apiBacked"
+            class="task-actions"
+            aria-label="错题验证操作"
+          >
+            <button
+              type="button"
+              class="task-action-button"
+              :disabled="
+                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'variant', true)
+              "
+              @click="submitWrongbookResult(card, 'variant', true)"
+            >
+              变式通过
+            </button>
+            <button
+              type="button"
+              class="task-action-button danger"
+              :disabled="
+                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'variant', false)
+              "
+              @click="submitWrongbookResult(card, 'variant', false)"
+            >
+              变式失败
+            </button>
+            <button
+              type="button"
+              class="task-action-button secondary"
+              :disabled="
+                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'interval', true)
+              "
+              @click="submitWrongbookResult(card, 'interval', true)"
+            >
+              间隔通过
+            </button>
+            <button
+              type="button"
+              class="task-action-button danger"
+              :disabled="
+                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'interval', false)
+              "
+              @click="submitWrongbookResult(card, 'interval', false)"
+            >
+              间隔失败
+            </button>
+          </div>
         </article>
       </div>
     </section>
