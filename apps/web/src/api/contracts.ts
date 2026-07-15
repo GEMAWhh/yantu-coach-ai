@@ -302,3 +302,86 @@ export type WrongbookCandidateListPayload = {
   items: WrongbookCandidatePayload[];
   total: number;
 };
+
+export type ReviewResultType = "pass" | "fail";
+
+export type ReviewSchedulePayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  knowledge_node_id: string;
+  subject_id: string | null;
+  current_stage: number;
+  status: "active" | "paused" | "completed" | "archived";
+  due_at: string;
+  interval_days: number;
+  pass_streak: number;
+  fail_streak: number;
+  last_reviewed_at: string | null;
+  last_result_id: string | null;
+  source_snapshot_id: string | null;
+  rule_version: "review-v1.0.0";
+  next_reason: string;
+};
+
+export type ReviewCandidatePayload = {
+  id: string;
+  title: string;
+  subject_id: string;
+  estimated_minutes: number;
+  cognitive_load: "low" | "medium" | "high";
+  source_type: string;
+  source_id: string | null;
+  task_type: string;
+  review_due: number;
+  knowledge_importance: number;
+};
+
+export type DueReviewPayload = {
+  schedule: ReviewSchedulePayload;
+  knowledge_node_name: string;
+  candidate: ReviewCandidatePayload;
+};
+
+export type DueReviewListPayload = {
+  date: string;
+  items: DueReviewPayload[];
+  total: number;
+};
+
+export type ReviewResultCreatePayload = {
+  result_type: ReviewResultType;
+  score?: number | null;
+  sample_count?: number;
+  correct_count?: number | null;
+  accuracy?: number | null;
+  occurred_at?: string | null;
+};
+
+export type ReviewResultPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  schedule_id: string;
+  knowledge_node_id: string;
+  result_type: ReviewResultType;
+  score: number | null;
+  sample_count: number;
+  correct_count: number | null;
+  accuracy: number | null;
+  occurred_at: string;
+  independent_timepoint: boolean;
+  evidence_id: string | null;
+  snapshot_id: string | null;
+};
+
+export type ReviewResultSubmitPayload = {
+  result: ReviewResultPayload;
+  schedule: ReviewSchedulePayload;
+  created: boolean;
+  evaluation_new_stage: number | null;
+  evaluation_reason: string | null;
+  rule_version: "review-v1.0.0";
+};

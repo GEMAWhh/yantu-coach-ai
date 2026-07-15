@@ -4,8 +4,10 @@ import { ApiClient } from "./client";
 import type {
   AnalyticsMasteryPayload,
   ApiResponse,
+  DueReviewListPayload,
   HealthPayload,
   KnowledgeNodeListPayload,
+  ReviewResultSubmitPayload,
   ResourceListPayload,
   SettingsRulesPayload,
   TaskPayload,
@@ -265,6 +267,119 @@ describe("ApiClient", () => {
       "/api/v1/knowledge/nodes",
       "/api/v1/wrongbook/planning-candidates",
     ]);
+  });
+
+  it("loads due reviews and submits review results with an idempotency key", async () => {
+    const dueReviews: ApiResponse<DueReviewListPayload> = {
+      data: {
+        date: "2026-07-15",
+        total: 1,
+        items: [
+          {
+            knowledge_node_name: "导数应用",
+            schedule: {
+              id: "review-1",
+              version: 1,
+              created_at: "2026-07-14T00:00:00Z",
+              updated_at: "2026-07-14T00:00:00Z",
+              knowledge_node_id: "node-1",
+              subject_id: "math",
+              current_stage: 3,
+              status: "active",
+              due_at: "2026-07-15T00:00:00Z",
+              interval_days: 3,
+              pass_streak: 0,
+              fail_streak: 0,
+              last_reviewed_at: null,
+              last_result_id: null,
+              source_snapshot_id: "snapshot-1",
+              rule_version: "review-v1.0.0",
+              next_reason: "base_interval:closed_book_recall",
+            },
+            candidate: {
+              id: "review:review-1",
+              title: "复习：导数应用",
+              subject_id: "math",
+              estimated_minutes: 20,
+              cognitive_load: "medium",
+              source_type: "review_schedule",
+              source_id: "review-1",
+              task_type: "review",
+              review_due: 100,
+              knowledge_importance: 80,
+            },
+          },
+        ],
+      },
+      meta: { request_id: "client-due-reviews" },
+    };
+    const submitted: ApiResponse<ReviewResultSubmitPayload> = {
+      data: {
+        created: true,
+        evaluation_new_stage: 3,
+        evaluation_reason: "review_passed",
+        rule_version: "review-v1.0.0",
+        result: {
+          id: "result-1",
+          version: 1,
+          created_at: "2026-07-15T10:00:00Z",
+          updated_at: "2026-07-15T10:00:00Z",
+          schedule_id: "review-1",
+          knowledge_node_id: "node-1",
+          result_type: "pass",
+          score: 90,
+          sample_count: 0,
+          correct_count: null,
+          accuracy: null,
+          occurred_at: "2026-07-15T10:00:00Z",
+          independent_timepoint: true,
+          evidence_id: "evidence-1",
+          snapshot_id: "snapshot-2",
+        },
+        schedule: {
+          ...dueReviews.data.items[0].schedule,
+          version: 2,
+          interval_days: 6,
+          pass_streak: 1,
+          due_at: "2026-07-21T10:00:00Z",
+          last_result_id: "result-1",
+          next_reason: "passed_independent_review:1",
+        },
+      },
+      meta: { request_id: "client-review-result" },
+    };
+    const payloads = [dueReviews, submitted];
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(payloads[calls.length - 1]);
+    });
+
+    await expect(client.dueReviews("2026-07-15")).resolves.toEqual(dueReviews);
+    await expect(
+      client.submitReviewResult(
+        "review-1",
+        {
+          result_type: "pass",
+          score: 90,
+          occurred_at: "2026-07-15T10:00:00.000Z",
+        },
+        "review-1:pass:1",
+      ),
+    ).resolves.toEqual(submitted);
+
+    expect(calls[0].input).toBe("/api/v1/reviews/due?date=2026-07-15");
+    expect(calls[1].input).toBe("/api/v1/reviews/review-1/results");
+    expect(calls[1].init?.method).toBe("POST");
+    expect(calls[1].init?.headers).toMatchObject({
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "Idempotency-Key": "review-1:pass:1",
+    });
+    expect(JSON.parse(String(calls[1].init?.body))).toMatchObject({
+      result_type: "pass",
+      score: 90,
+    });
   });
 
   it("submits task status actions with version protection", async () => {

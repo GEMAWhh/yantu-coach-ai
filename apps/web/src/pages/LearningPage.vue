@@ -3,8 +3,11 @@ import { computed, onMounted, ref } from "vue";
 
 import { ApiClient } from "../api/client";
 import type {
+  DueReviewPayload,
   KnowledgeNodePayload,
   ResourcePayload,
+  ReviewResultSubmitPayload,
+  ReviewResultType,
   WrongbookCandidatePayload,
 } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
@@ -15,6 +18,10 @@ const study = useMockStudyStore();
 const apiResources = ref<ResourcePayload[] | null>(null);
 const apiKnowledgeNodes = ref<KnowledgeNodePayload[] | null>(null);
 const apiWrongbookCandidates = ref<WrongbookCandidatePayload[] | null>(null);
+const apiDueReviews = ref<DueReviewPayload[] | null>(null);
+const reviewActionInFlight = ref<string | null>(null);
+const reviewActionError = ref<string | null>(null);
+const reviewSubmissions = ref<Record<string, ReviewResultSubmitPayload>>({});
 
 type KnowledgeChip = {
   label: string;
@@ -24,6 +31,20 @@ type KnowledgeChip = {
 type LoopCard = {
   title: string;
   body: string;
+};
+
+type ReviewCard = {
+  id: string;
+  title: string;
+  subject: string;
+  meta: string;
+  reason: string;
+  status: string;
+  tone: Tone;
+  apiBacked: boolean;
+  scheduleId: string | null;
+  scheduleVersion: number | null;
+  resultNote: string | null;
 };
 
 const resourceSourceLabel = computed(() => (apiResources.value ? "正式资源" : "本地优先"));
@@ -36,6 +57,8 @@ const wrongbookSourceLabel = computed(() =>
 const wrongbookSourceTone = computed<Tone>(() =>
   apiWrongbookCandidates.value ? "green" : "blue",
 );
+const reviewSourceLabel = computed(() => (apiDueReviews.value ? "正式复习" : "原型复习"));
+const reviewSourceTone = computed<Tone>(() => (apiDueReviews.value ? "green" : "yellow"));
 
 const resourceRows = computed<LearningResource[]>(() => {
   if (!apiResources.value) {
@@ -78,6 +101,64 @@ const knowledgeChips = computed<KnowledgeChip[]>(() => {
       label: node.name,
       className: classForNode(node),
     }));
+});
+
+const reviewCards = computed<ReviewCard[]>(() => {
+  if (!apiDueReviews.value) {
+    return [
+      {
+        id: "mock-review-1",
+        title: "矩阵秩闭卷抽测",
+        subject: "数学一",
+        meta: "阶段 3 · 预计 20 分钟 · 原型卡片",
+        reason: "多时间点复习通过后才延长间隔；失败会触发回退和短间隔复测。",
+        status: "待复习",
+        tone: "yellow",
+        apiBacked: false,
+        scheduleId: null,
+        scheduleVersion: null,
+        resultNote: null,
+      },
+    ];
+  }
+  if (apiDueReviews.value.length === 0) {
+    return [
+      {
+        id: "empty-review",
+        title: "暂无到期复习",
+        subject: "复习",
+        meta: "今日没有需要提交的间隔复习结果",
+        reason: "继续按今日任务推进；新的掌握证据会重新生成复习计划。",
+        status: "空队列",
+        tone: "neutral",
+        apiBacked: false,
+        scheduleId: null,
+        scheduleVersion: null,
+        resultNote: null,
+      },
+    ];
+  }
+  return apiDueReviews.value.map((item) => {
+    const submission = reviewSubmissions.value[item.schedule.id];
+    const submittedPass = submission?.result.result_type === "pass";
+    return {
+      id: item.schedule.id,
+      title: item.candidate.title || item.knowledge_node_name,
+      subject: item.schedule.subject_id ?? item.candidate.subject_id,
+      meta: `阶段 ${item.schedule.current_stage} · ${item.candidate.estimated_minutes} 分钟 · 到期 ${formatDate(item.schedule.due_at)}`,
+      reason: item.schedule.next_reason,
+      status: submission ? (submittedPass ? "已通过" : "已失败") : "待复习",
+      tone: submission ? (submittedPass ? "green" : "red") : "yellow",
+      apiBacked: true,
+      scheduleId: item.schedule.id,
+      scheduleVersion: item.schedule.version,
+      resultNote: submission
+        ? `下次间隔 ${submission.schedule.interval_days} 天 · ${
+            submission.created ? "已写入证据" : "幂等返回"
+          }`
+        : null,
+    };
+  });
 });
 
 const wrongbookCards = computed<LoopCard[]>(() => {
@@ -162,21 +243,89 @@ function classForNode(node: KnowledgeNodePayload): KnowledgeChip["className"] {
   return "weak";
 }
 
+function isReviewActionRunning(review: ReviewCard, resultType: ReviewResultType): boolean {
+  return reviewActionInFlight.value === `${review.scheduleId}:${resultType}`;
+}
+
+async function submitReviewResult(
+  review: ReviewCard,
+  resultType: ReviewResultType,
+): Promise<void> {
+  if (!review.apiBacked || !review.scheduleId || review.scheduleVersion === null) {
+    return;
+  }
+  const actionKey = `${review.scheduleId}:${resultType}`;
+  const client = new ApiClient();
+  reviewActionInFlight.value = actionKey;
+  reviewActionError.value = null;
+  try {
+    const response = await client.submitReviewResult(
+      review.scheduleId,
+      {
+        result_type: resultType,
+        score: resultType === "pass" ? 90 : 40,
+        occurred_at: new Date().toISOString(),
+      },
+      reviewIdempotencyKey(review, resultType),
+    );
+    reviewSubmissions.value = {
+      ...reviewSubmissions.value,
+      [review.scheduleId]: response.data,
+    };
+    updateReviewSchedule(response.data);
+  } catch {
+    reviewActionError.value = "复习结果提交失败，请刷新后重试。";
+  } finally {
+    if (reviewActionInFlight.value === actionKey) {
+      reviewActionInFlight.value = null;
+    }
+  }
+}
+
+function updateReviewSchedule(submission: ReviewResultSubmitPayload): void {
+  if (!apiDueReviews.value) {
+    return;
+  }
+  apiDueReviews.value = apiDueReviews.value.map((item) =>
+    item.schedule.id === submission.schedule.id
+      ? {
+          ...item,
+          schedule: submission.schedule,
+        }
+      : item,
+  );
+}
+
+function reviewIdempotencyKey(review: ReviewCard, resultType: ReviewResultType): string {
+  return [review.scheduleId, resultType, review.scheduleVersion].join(":");
+}
+
+function formatDate(value: string): string {
+  return value.slice(0, 10);
+}
+
+function todayString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 onMounted(async () => {
   const client = new ApiClient();
   try {
-    const [resources, knowledgeNodes, wrongbookCandidates] = await Promise.all([
+    const [resources, knowledgeNodes, wrongbookCandidates, dueReviews] = await Promise.all([
       client.resources(),
       client.knowledgeNodes(),
       client.wrongbookPlanningCandidates(),
+      client.dueReviews(todayString()),
     ]);
     apiResources.value = resources.data.items;
     apiKnowledgeNodes.value = knowledgeNodes.data.items;
     apiWrongbookCandidates.value = wrongbookCandidates.data.items;
+    apiDueReviews.value = dueReviews.data.items;
   } catch {
     apiResources.value = null;
     apiKnowledgeNodes.value = null;
     apiWrongbookCandidates.value = null;
+    apiDueReviews.value = null;
   }
 });
 </script>
@@ -253,6 +402,81 @@ onMounted(async () => {
         </div>
       </section>
     </div>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">
+            间隔复习
+          </p>
+          <h2>到期卡片与结果提交</h2>
+        </div>
+        <StatusTag
+          :label="reviewSourceLabel"
+          :tone="reviewSourceTone"
+        />
+      </div>
+      <p
+        v-if="reviewActionError"
+        class="task-action-error"
+        role="status"
+      >
+        {{ reviewActionError }}
+      </p>
+      <div class="review-list">
+        <article
+          v-for="review in reviewCards"
+          :key="review.id"
+          class="review-card"
+        >
+          <div class="task-card-header">
+            <span class="subject-chip">{{ review.subject }}</span>
+            <StatusTag
+              :label="review.status"
+              :tone="review.tone"
+            />
+          </div>
+          <h3>{{ review.title }}</h3>
+          <p>{{ review.reason }}</p>
+          <dl class="detail-list">
+            <div>
+              <dt>规则</dt>
+              <dd>{{ review.meta }}</dd>
+            </div>
+            <div v-if="review.resultNote">
+              <dt>提交后</dt>
+              <dd>{{ review.resultNote }}</dd>
+            </div>
+          </dl>
+          <div
+            v-if="review.apiBacked"
+            class="task-actions"
+            aria-label="复习操作"
+          >
+            <button
+              type="button"
+              class="task-action-button"
+              :disabled="
+                Boolean(review.resultNote) || isReviewActionRunning(review, 'pass')
+              "
+              @click="submitReviewResult(review, 'pass')"
+            >
+              通过
+            </button>
+            <button
+              type="button"
+              class="task-action-button danger"
+              :disabled="
+                Boolean(review.resultNote) || isReviewActionRunning(review, 'fail')
+              "
+              @click="submitReviewResult(review, 'fail')"
+            >
+              失败
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section class="panel">
       <div class="section-heading">
