@@ -780,8 +780,8 @@
     },
     {
       "path": "apps/web/src/App.test.ts",
-      "size": 26888,
-      "sha256": "24023ce8abc45cab4605c590a3fe6c6ebc30571d65da4b9817f9f973d5edae55"
+      "size": 31915,
+      "sha256": "98b07980b6df00159cd31a00e6579ec14be2e62bb940f9563aa01821f5e87171"
     },
     {
       "path": "apps/web/src/App.vue",
@@ -790,18 +790,18 @@
     },
     {
       "path": "apps/web/src/api/client.test.ts",
-      "size": 16533,
-      "sha256": "a13974779ade1ed63d3af8a111c56ab23b0631163a34dfb78aca307dcbe3d159"
+      "size": 20574,
+      "sha256": "631ed6a80ff4f5165d4c2db759d48f14ee1cf80e09a3b1af296b0cb19944cea8"
     },
     {
       "path": "apps/web/src/api/client.ts",
-      "size": 7389,
-      "sha256": "9c86b09c7c09670ba7ed1e288537456944e2598cc9eb370ed4c3ccc825e67aca"
+      "size": 8295,
+      "sha256": "dfbe5323360cfbbdf6300f65340872a12157a6832f4910472fcc54d6ab917f60"
     },
     {
       "path": "apps/web/src/api/contracts.ts",
-      "size": 8843,
-      "sha256": "2636476b438a0a74eeaf18ca1537d096e76592daa17a87b106f3c1757494c895"
+      "size": 10861,
+      "sha256": "7c6795bf4de98eb4b452aa38809ac7437629d61d6355c5d5f879f38daeac7ccd"
     },
     {
       "path": "apps/web/src/app/navigation.test.ts",
@@ -845,8 +845,8 @@
     },
     {
       "path": "apps/web/src/pages/LearningPage.vue",
-      "size": 15102,
-      "sha256": "274b6b6c1b5b27d1df2c7008295e5e2010042fb402277dae33f3efe4e93965bd"
+      "size": 22303,
+      "sha256": "b77bbc3ed61507c47e31b5b2d73c7236077f6b2f246c7af7d974c173a75ade96"
     },
     {
       "path": "apps/web/src/pages/PlanningPage.vue",

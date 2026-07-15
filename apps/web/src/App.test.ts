@@ -756,4 +756,136 @@ describe("App", () => {
     expect(wrapper.text()).toContain("已通过");
     expect(wrapper.text()).toContain("下次间隔 6 天");
   });
+
+  it("submits a wrongbook shortcut result from the learning page", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        const emptyList = { total: 0, items: [] };
+        if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
+          return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (path.startsWith("/api/v1/reviews/due?date=")) {
+          return new Response(
+            JSON.stringify({ data: { date: "2026-07-15", ...emptyList }, meta: { request_id: path } }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (path === "/api/v1/wrongbook/planning-candidates") {
+          return new Response(
+            JSON.stringify({
+              data: {
+                total: 1,
+                items: [
+                  {
+                    id: "candidate-1",
+                    title: "导数错题变式验证",
+                    subject_id: "math",
+                    estimated_minutes: 25,
+                    cognitive_load: "medium",
+                    source_type: "wrong_record",
+                    source_id: "wrong-1",
+                    task_type: "wrongbook_variant",
+                    difficulty: "medium",
+                    review_due: 80,
+                    knowledge_importance: 90,
+                    weakness: 80,
+                    repeat_error: 50,
+                  },
+                ],
+              },
+              meta: { request_id: "wrongbook-candidates" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            data: {
+              created: true,
+              attempt: {
+                id: "attempt-1",
+                version: 1,
+                created_at: "2026-07-15T10:00:00Z",
+                updated_at: "2026-07-15T10:00:00Z",
+                created_by: "user",
+                question_id: "question-1",
+                wrong_record_id: "wrong-1",
+                idempotency_key: "wrong-1:variant:pass:wrongbook_variant",
+                attempt_type: "variant",
+                attempted_at: "2026-07-15T10:00:00Z",
+                answer_text: null,
+                is_correct: true,
+                score: 96,
+                duration_seconds: null,
+                hint_level: null,
+                confidence: 80,
+                request_id: "wrongbook-result",
+              },
+              record: {
+                id: "wrong-1",
+                version: 2,
+                created_at: "2026-07-14T00:00:00Z",
+                updated_at: "2026-07-15T10:00:00Z",
+                created_by: "user",
+                question_id: "question-1",
+                knowledge_node_id: "node-1",
+                surface_cause: "calculation slip",
+                deep_cause: "derivative rule not automatic",
+                prerequisite_gap: "power rule",
+                error_count: 1,
+                redo_count: 2,
+                current_status: "pending_interval",
+                next_review_at: "2026-07-18T10:00:00Z",
+                resolved_at: null,
+              },
+              verification: {
+                id: "verification-1",
+                version: 2,
+                created_at: "2026-07-14T00:00:00Z",
+                updated_at: "2026-07-15T10:00:00Z",
+                wrong_record_id: "wrong-1",
+                original_redo_passed: false,
+                no_hint_redo_passed: true,
+                variant_passed: true,
+                interval_test_passed: false,
+                transfer_test_passed: false,
+                last_attempt_id: "attempt-1",
+              },
+            },
+            meta: { request_id: "wrongbook-result" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+    const wrapper = await mountApp("/learning");
+    const variantPassButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "变式通过");
+
+    await variantPassButton?.trigger("click");
+    await flushPromises();
+
+    const resultCall = calls.find(
+      (call) => call.path === "/api/v1/wrongbook/wrong-1/variant-results",
+    );
+    expect(resultCall).toBeDefined();
+    expect(resultCall?.init?.headers).toMatchObject({
+      "Idempotency-Key": "wrong-1:variant:pass:wrongbook_variant",
+    });
+    expect(JSON.parse(String(resultCall?.init?.body))).toMatchObject({
+      is_correct: true,
+      score: 96,
+      confidence: 80,
+    });
+    expect(wrapper.text()).toContain("待间隔复测");
+    expect(wrapper.text()).toContain("变式 · 正确");
+  });
 });

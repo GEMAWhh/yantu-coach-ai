@@ -22,6 +22,8 @@ import type {
   TaskResultSubmitPayload,
   TodayPayload,
   WeakGraphPayload,
+  WrongbookAttemptResultCreatePayload,
+  WrongbookAttemptSubmitPayload,
   WrongbookCandidateListPayload,
 } from "./contracts";
 
@@ -101,6 +103,34 @@ export class ApiClient {
 
   wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
+  }
+
+  submitWrongbookVariantResult(
+    wrongRecordId: string,
+    payload: WrongbookAttemptResultCreatePayload,
+    idempotencyKey: string,
+  ): Promise<ApiResponse<WrongbookAttemptSubmitPayload>> {
+    return this.post<WrongbookAttemptSubmitPayload>(
+      `/api/v1/wrongbook/${encodeURIComponent(wrongRecordId)}/variant-results`,
+      payload,
+      {
+        "Idempotency-Key": idempotencyKey,
+      },
+    );
+  }
+
+  submitWrongbookIntervalResult(
+    wrongRecordId: string,
+    payload: WrongbookAttemptResultCreatePayload,
+    idempotencyKey: string,
+  ): Promise<ApiResponse<WrongbookAttemptSubmitPayload>> {
+    return this.post<WrongbookAttemptSubmitPayload>(
+      `/api/v1/wrongbook/${encodeURIComponent(wrongRecordId)}/interval-results`,
+      payload,
+      {
+        "Idempotency-Key": idempotencyKey,
+      },
+    );
   }
 
   dueReviews(date: string): Promise<ApiResponse<DueReviewListPayload>> {

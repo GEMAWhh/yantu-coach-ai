@@ -303,6 +303,90 @@ export type WrongbookCandidateListPayload = {
   total: number;
 };
 
+export type WrongbookAttemptType =
+  | "original_redo"
+  | "no_hint_redo"
+  | "variant"
+  | "interval_test"
+  | "transfer_test";
+
+export type WrongbookStatus =
+  | "pending_analysis"
+  | "pending_no_hint_redo"
+  | "pending_variant"
+  | "pending_interval"
+  | "stable_corrected"
+  | "regressed";
+
+export type WrongbookAttemptResultCreatePayload = {
+  is_correct: boolean;
+  attempted_at?: string | null;
+  answer_text?: string | null;
+  score?: number | null;
+  duration_seconds?: number | null;
+  hint_level?: number | null;
+  confidence?: number | null;
+};
+
+export type WrongbookRecordPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  question_id: string;
+  knowledge_node_id: string | null;
+  surface_cause: string | null;
+  deep_cause: string | null;
+  prerequisite_gap: string | null;
+  error_count: number;
+  redo_count: number;
+  current_status: WrongbookStatus;
+  next_review_at: string | null;
+  resolved_at: string | null;
+};
+
+export type WrongbookVerificationPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  wrong_record_id: string;
+  original_redo_passed: boolean;
+  no_hint_redo_passed: boolean;
+  variant_passed: boolean;
+  interval_test_passed: boolean;
+  transfer_test_passed: boolean;
+  last_attempt_id: string | null;
+};
+
+export type WrongbookAttemptPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  question_id: string;
+  wrong_record_id: string;
+  idempotency_key: string | null;
+  attempt_type: WrongbookAttemptType;
+  attempted_at: string;
+  answer_text: string | null;
+  is_correct: boolean;
+  score: number | null;
+  duration_seconds: number | null;
+  hint_level: number | null;
+  confidence: number | null;
+  request_id: string | null;
+};
+
+export type WrongbookAttemptSubmitPayload = {
+  attempt: WrongbookAttemptPayload;
+  record: WrongbookRecordPayload;
+  verification: WrongbookVerificationPayload;
+  created: boolean;
+};
+
 export type ReviewResultType = "pass" | "fail";
 
 export type ReviewSchedulePayload = {
