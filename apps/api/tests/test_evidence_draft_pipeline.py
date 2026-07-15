@@ -176,6 +176,36 @@ def test_invalid_fake_provider_output_enters_correction_state_then_can_be_fixed(
     assert record.status == "rejected"
 
 
+def test_evidence_history_lists_records_with_latest_drafts(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        first_upload = _upload(client)
+        first_id = first_upload.json()["data"]["record"]["id"]
+        client.post(f"/api/v1/evidence/{first_id}/analyze", json={})
+        second_upload = _upload(client)
+        second_id = second_upload.json()["data"]["record"]["id"]
+        client.post(
+            f"/api/v1/evidence/{second_id}/analyze",
+            json={"provider_mode": "invalid_schema"},
+        )
+        history = client.get(
+            "/api/v1/evidence/history?limit=1",
+            headers={"X-Request-ID": "evidence-history"},
+        )
+
+    body = history.json()
+    assert history.status_code == 200
+    assert body["meta"] == {"request_id": "evidence-history"}
+    assert body["data"]["total"] == 1
+    item = body["data"]["items"][0]
+    assert item["record"]["id"] == second_id
+    assert item["record"]["status"] == "pending"
+    assert item["draft"]["evidence_record_id"] == second_id
+    assert item["draft"]["status"] == "needs_correction"
+    assert item["draft"]["validation_errors"]
+
+
 def _upload(client: TestClient) -> Any:
     return client.post(
         "/api/v1/evidence/uploads",

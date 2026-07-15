@@ -8,6 +8,7 @@ import type {
   EvidenceAnalyzePayload,
   EvidenceConfirmPayload,
   EvidenceDraftPayload,
+  EvidenceHistoryPayload,
   EvidenceUploadPayload,
   HealthPayload,
   KnowledgeNodeListPayload,
@@ -666,6 +667,61 @@ describe("ApiClient", () => {
     expect(JSON.parse(String(calls[1].init?.body))).toEqual({ provider_mode: "valid" });
     expect(calls[2].init?.body).toBeUndefined();
     expect(JSON.parse(String(calls[3].init?.body))).toEqual({ reason: "需要人工重拍" });
+  });
+
+  it("loads evidence history records with their latest draft", async () => {
+    const payload: ApiResponse<EvidenceHistoryPayload> = {
+      data: {
+        total: 1,
+        items: [
+          {
+            record: {
+              id: "evidence-1",
+              version: 1,
+              created_at: "2026-07-15T09:00:00Z",
+              updated_at: "2026-07-15T09:00:00Z",
+              created_by: "user",
+              study_date: "2026-07-15",
+              subject_id: "math",
+              status: "pending",
+              asset_count: 1,
+              confirmed_facts: null,
+              inferences: null,
+              uncertain_fields: null,
+              teaching_judgment: null,
+              suggested_actions: null,
+              confirmed_at: null,
+              rejected_at: null,
+            },
+            draft: {
+              id: "draft-1",
+              version: 1,
+              created_at: "2026-07-15T09:01:00Z",
+              updated_at: "2026-07-15T09:01:00Z",
+              evidence_record_id: "evidence-1",
+              ai_job_id: "job-1",
+              status: "draft",
+              schema_version: "evidence-analysis-v1",
+              structured_json: { confirmed_facts: { asset_count: 1 } },
+              validation_errors: [],
+              confirmed_at: null,
+              rejected_at: null,
+              rejection_reason: null,
+              confirmed_once: false,
+            },
+          },
+        ],
+      },
+      meta: { request_id: "client-evidence-history" },
+    };
+    const calls: string[] = [];
+    const client = new ApiClient("", async (input) => {
+      calls.push(String(input));
+      return jsonResponse(payload);
+    });
+
+    await expect(client.evidenceHistory(5)).resolves.toEqual(payload);
+    expect(calls).toEqual(["/api/v1/evidence/history?limit=5"]);
   });
 
   it("submits task status actions with version protection", async () => {

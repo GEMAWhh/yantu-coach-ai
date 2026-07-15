@@ -529,6 +529,39 @@ h3 {
   font-weight: 650;
 }
 
+.evidence-history-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.evidence-history-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  padding: var(--space-3);
+  color: var(--gray-900);
+  background: var(--gray-100);
+  text-align: left;
+}
+
+.evidence-history-item span,
+.evidence-history-item strong,
+.evidence-history-item small {
+  display: block;
+  min-width: 0;
+}
+
+.evidence-history-item small {
+  margin-top: 2px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .task-card-header,
 .timeline-title,
 .mastery-row,

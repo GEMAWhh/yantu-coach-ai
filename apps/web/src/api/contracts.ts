@@ -208,6 +208,16 @@ export type EvidenceConfirmPayload = {
   created: boolean;
 };
 
+export type EvidenceHistoryItemPayload = {
+  record: EvidenceRecordPayload;
+  draft: EvidenceDraftPayload | null;
+};
+
+export type EvidenceHistoryPayload = {
+  items: EvidenceHistoryItemPayload[];
+  total: number;
+};
+
 export type EvidenceRejectCreatePayload = {
   reason: string;
 };

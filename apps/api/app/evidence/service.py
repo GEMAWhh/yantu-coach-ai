@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import literal_column, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.files.storage import store_original_file
@@ -57,6 +57,12 @@ class EvidenceConfirmation:
     record: EvidenceRecord
     draft: EvidenceDraft
     created: bool
+
+
+@dataclass(frozen=True)
+class EvidenceHistoryItem:
+    record: EvidenceRecord
+    draft: EvidenceDraft | None
 
 
 def upload_evidence_files(
@@ -172,7 +178,8 @@ def get_evidence_draft(session: Session, record_id: str) -> EvidenceDraft:
     draft = session.scalar(
         select(EvidenceDraft)
         .where(EvidenceDraft.evidence_record_id == record_id)
-        .order_by(literal_column("rowid").desc())
+        .order_by(EvidenceDraft.created_at.desc(), EvidenceDraft.updated_at.desc())
+        .limit(1)
     )
     if draft is None:
         raise EvidenceError(
@@ -182,6 +189,24 @@ def get_evidence_draft(session: Session, record_id: str) -> EvidenceDraft:
             details={"record_id": record_id},
         )
     return draft
+
+
+def list_evidence_history(session: Session, *, limit: int = 20) -> list[EvidenceHistoryItem]:
+    records = session.scalars(
+        select(EvidenceRecord)
+        .order_by(EvidenceRecord.study_date.desc(), EvidenceRecord.created_at.desc())
+        .limit(limit)
+    ).all()
+    items: list[EvidenceHistoryItem] = []
+    for record in records:
+        draft = session.scalar(
+            select(EvidenceDraft)
+            .where(EvidenceDraft.evidence_record_id == record.id)
+            .order_by(EvidenceDraft.created_at.desc(), EvidenceDraft.updated_at.desc())
+            .limit(1)
+        )
+        items.append(EvidenceHistoryItem(record=record, draft=draft))
+    return items
 
 
 def update_evidence_draft(

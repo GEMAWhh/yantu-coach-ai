@@ -13,6 +13,7 @@ import type {
   EvidenceAnalyzePayload,
   EvidenceConfirmPayload,
   EvidenceDraftPayload,
+  EvidenceHistoryPayload,
   EvidenceRejectCreatePayload,
   EvidenceUploadCreatePayload,
   EvidenceUploadPayload,
@@ -162,6 +163,10 @@ export class ApiClient {
     payload: EvidenceUploadCreatePayload,
   ): Promise<ApiResponse<EvidenceUploadPayload>> {
     return this.post<EvidenceUploadPayload>("/api/v1/evidence/uploads", payload);
+  }
+
+  evidenceHistory(limit = 20): Promise<ApiResponse<EvidenceHistoryPayload>> {
+    return this.get<EvidenceHistoryPayload>(`/api/v1/evidence/history?limit=${limit}`);
   }
 
   analyzeEvidence(
