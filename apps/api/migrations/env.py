@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy import Engine
 
 from app.db.database import get_engine
+from app.db.migrations import use_batch_migrations
 from app.models import Base
 from app.settings import RuntimeSettings, get_settings
 
@@ -44,7 +45,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True,
+            render_as_batch=use_batch_migrations(settings),
         )
 
         with context.begin_transaction():

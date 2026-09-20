@@ -6,6 +6,8 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from sqlalchemy.engine import make_url
+
 
 class AppEnvironment(StrEnum):
     DEV = "dev"
@@ -13,10 +15,17 @@ class AppEnvironment(StrEnum):
     PROD = "prod"
 
 
+class DatabaseBackend(StrEnum):
+    SQLITE = "sqlite"
+    POSTGRESQL = "postgresql"
+
+
 @dataclass(frozen=True)
 class RuntimeSettings:
     environment: AppEnvironment
     data_root: Path
+    database_url: str
+    database_backend: DatabaseBackend
     cors_allowed_origins: tuple[str, ...]
     auth_token_sha256: str | None
 
@@ -35,10 +44,6 @@ class RuntimeSettings:
     @property
     def database_path(self) -> Path:
         return self.database_dir / "study.db"
-
-    @property
-    def database_url(self) -> str:
-        return f"sqlite:///{self.database_path.as_posix()}"
 
     @property
     def files_dir(self) -> Path:
@@ -61,8 +66,7 @@ class RuntimeSettings:
         return self.data_root / "cache"
 
     def ensure_runtime_dirs(self) -> None:
-        for path in [
-            self.database_dir,
+        paths = [
             self.files_dir / "original",
             self.files_dir / "derived",
             self.files_dir / "thumbnails",
@@ -71,7 +75,10 @@ class RuntimeSettings:
             self.backups_dir,
             self.logs_dir,
             self.cache_dir,
-        ]:
+        ]
+        if self.database_backend is DatabaseBackend.SQLITE:
+            paths.append(self.database_dir)
+        for path in paths:
             path.mkdir(parents=True, exist_ok=True)
 
 
@@ -152,14 +159,62 @@ def _parse_auth_token_sha256(environment: AppEnvironment) -> str | None:
     return digest
 
 
+def _default_sqlite_database_url(data_root: Path) -> str:
+    return f"sqlite:///{(data_root / 'database' / 'study.db').as_posix()}"
+
+
+def _parse_database_url(
+    environment: AppEnvironment,
+    data_root: Path,
+) -> tuple[str, DatabaseBackend]:
+    configured_url = os.getenv("YANTU_DATABASE_URL")
+    if configured_url is None or not configured_url.strip():
+        if environment is AppEnvironment.PROD:
+            raise RuntimeError("YANTU_DATABASE_URL is required in production")
+        return _default_sqlite_database_url(data_root), DatabaseBackend.SQLITE
+
+    raw_url = configured_url.strip()
+    try:
+        parsed = make_url(raw_url)
+    except Exception as exc:
+        raise ValueError("YANTU_DATABASE_URL must be a valid database URL") from exc
+
+    if parsed.get_backend_name() == DatabaseBackend.SQLITE:
+        if environment is AppEnvironment.PROD:
+            raise RuntimeError("production must use a PostgreSQL YANTU_DATABASE_URL")
+        return raw_url, DatabaseBackend.SQLITE
+
+    if parsed.get_backend_name() != DatabaseBackend.POSTGRESQL:
+        raise ValueError("YANTU_DATABASE_URL must use SQLite or PostgreSQL")
+    if environment is not AppEnvironment.PROD:
+        raise RuntimeError("dev/test runtime must not use a cloud PostgreSQL database")
+    if parsed.drivername not in {"postgresql", "postgresql+psycopg"}:
+        raise ValueError("YANTU_DATABASE_URL must use the psycopg PostgreSQL driver")
+    if not parsed.host or not parsed.database or not parsed.username or parsed.password is None:
+        raise ValueError(
+            "YANTU_DATABASE_URL must include PostgreSQL host, database, and credentials"
+        )
+    if parsed.query.get("sslmode") not in {"require", "verify-ca", "verify-full"}:
+        raise ValueError("YANTU_DATABASE_URL must require TLS with sslmode=require")
+
+    if parsed.drivername == "postgresql":
+        raw_url = f"postgresql+psycopg{raw_url[len('postgresql') :]}"
+    return raw_url, DatabaseBackend.POSTGRESQL
+
+
 @lru_cache
 def get_settings() -> RuntimeSettings:
     environment = _parse_environment(os.getenv("YANTU_APP_ENV", AppEnvironment.DEV.value))
     data_root = _resolve_data_root(environment)
     _guard_environment_separation(environment, data_root)
+    cors_allowed_origins = _parse_cors_allowed_origins(environment)
+    auth_token_sha256 = _parse_auth_token_sha256(environment)
+    database_url, database_backend = _parse_database_url(environment, data_root)
     return RuntimeSettings(
         environment=environment,
         data_root=data_root,
-        cors_allowed_origins=_parse_cors_allowed_origins(environment),
-        auth_token_sha256=_parse_auth_token_sha256(environment),
+        database_url=database_url,
+        database_backend=database_backend,
+        cors_allowed_origins=cors_allowed_origins,
+        auth_token_sha256=auth_token_sha256,
     )
