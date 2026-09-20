@@ -607,10 +607,9 @@ describe("App", () => {
     await fileInput.trigger("change");
 
     await wrapper.get(".evidence-upload-form").trigger("submit");
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
+    await vi.waitFor(() => {
+      expect(calls).toHaveLength(5);
     });
-    await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
       "/api/v1/evidence/history?limit=10",
