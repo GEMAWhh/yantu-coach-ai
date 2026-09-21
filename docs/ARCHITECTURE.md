@@ -42,6 +42,9 @@ SQLite + 本地文件目录
 ```
 
 云端个人版部署保持相同的模块边界：静态 Web 与 FastAPI 可以独立部署，前端通过 `VITE_YANTU_API_BASE_URL` 连接 API，后端通过 `YANTU_CORS_ALLOWED_ORIGINS` 仅允许已批准的 Web Origin。
+免费试运行的数据库运行时见 `ADR-0006`：云端 API 使用托管 PostgreSQL，本地开发/测试仍使用
+隔离 SQLite。文件对象、备份和恢复必须继续经过各自独立的云端迁移，不得将 API 容器本地磁盘
+作为正式数据存储。
 
 AI 管线是独立适配层：
 

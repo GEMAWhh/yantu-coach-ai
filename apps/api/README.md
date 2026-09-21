@@ -51,6 +51,22 @@ alembic -c apps/api/alembic.ini upgrade head
 
 测试必须设置 `YANTU_APP_ENV=test` 和临时 `YANTU_DATA_ROOT`，不得访问 `data/prod`。
 
+## 云端 PostgreSQL 试运行
+
+本地开发和测试继续默认使用隔离 SQLite。云端生产模式必须显式配置：
+
+```text
+YANTU_APP_ENV=prod
+YANTU_DATABASE_URL=postgresql://.../postgres?sslmode=require
+YANTU_AUTH_TOKEN_SHA256=<sha256 digest only>
+YANTU_CORS_ALLOWED_ORIGINS=https://<approved-web-origin>
+```
+
+应用会把标准 PostgreSQL URL 规范为 `postgresql+psycopg://`，并拒绝生产 SQLite、非 TLS
+连接和不完整连接信息。实际值只能在部署服务的私密环境变量中配置，不得提交到仓库、日志或
+聊天记录。当前变更只覆盖结构化数据库运行时；对象存储和云端备份恢复完成前，不得将上传文件
+或备份能力视为云端持久化。
+
 ## 文件与备份
 
 当前提供服务层能力，不包含 OCR、PDF 解析或用户上传 UI：

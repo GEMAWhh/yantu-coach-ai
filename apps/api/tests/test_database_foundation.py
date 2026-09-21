@@ -13,6 +13,7 @@ from app.db.migrations import (
     get_database_revision,
     initialize_database,
     upgrade_database,
+    use_batch_migrations,
 )
 from app.models.audit import AuditEvent
 from app.services.audit import write_audit_event
@@ -37,6 +38,7 @@ def test_empty_database_upgrades_to_head(test_settings: RuntimeSettings) -> None
 
     assert test_settings.database_path.is_file()
     assert get_database_revision(test_settings) == DATABASE_HEAD_REVISION
+    assert use_batch_migrations(test_settings) is True
 
 
 def test_sqlite_wal_foreign_keys_and_fk_enforcement(test_settings: RuntimeSettings) -> None:

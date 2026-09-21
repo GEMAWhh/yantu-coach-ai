@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.db.migrations import use_batch_migrations
 from app.main import create_app
-from app.settings import get_settings
+from app.settings import DatabaseBackend, get_settings
 
 
 @pytest.fixture(autouse=True)
@@ -99,4 +100,67 @@ def test_unsafe_cors_origins_are_rejected(
     monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
 
     with pytest.raises(ValueError, match="YANTU_CORS_ALLOWED_ORIGINS"):
+        get_settings()
+
+
+def test_production_requires_a_postgresql_database_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.delenv("YANTU_DATABASE_URL", raising=False)
+
+    with pytest.raises(RuntimeError, match="YANTU_DATABASE_URL is required"):
+        get_settings()
+
+
+@pytest.mark.parametrize(
+    "database_url, message",
+    [
+        ("sqlite:////tmp/study.db", "production must use a PostgreSQL"),
+        ("postgresql://user:password@db.example.com:5432/study", "must require TLS"),
+    ],
+)
+def test_production_rejects_unsafe_database_urls(
+    monkeypatch: pytest.MonkeyPatch,
+    database_url: str,
+    message: str,
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.setenv("YANTU_DATABASE_URL", database_url)
+
+    with pytest.raises((RuntimeError, ValueError), match=message):
+        get_settings()
+
+
+def test_production_normalizes_tls_postgresql_url_without_exposing_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "runtime"))
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.setenv(
+        "YANTU_DATABASE_URL",
+        "postgresql://postgres:example-password@db.example.com:5432/postgres?sslmode=require",
+    )
+
+    settings = get_settings()
+
+    assert settings.database_backend is DatabaseBackend.POSTGRESQL
+    assert settings.database_url == (
+        "postgresql+psycopg://postgres:example-password@db.example.com:5432/postgres?sslmode=require"
+    )
+    assert use_batch_migrations(settings) is False
+    settings.ensure_runtime_dirs()
+    assert not settings.database_dir.exists()
+
+
+def test_test_environment_rejects_cloud_postgresql_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv(
+        "YANTU_DATABASE_URL",
+        "postgresql://postgres:example-password@db.example.com:5432/postgres?sslmode=require",
+    )
+
+    with pytest.raises(RuntimeError, match="dev/test runtime"):
         get_settings()

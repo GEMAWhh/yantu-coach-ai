@@ -17,12 +17,14 @@ def _configure_sqlite_engine(engine: Engine) -> None:
 
 @lru_cache
 def get_engine(database_url: str) -> Engine:
+    is_sqlite = database_url.startswith("sqlite:")
     engine = create_engine(
         database_url,
-        connect_args={"check_same_thread": False, "timeout": 30},
+        connect_args={"check_same_thread": False, "timeout": 30} if is_sqlite else {},
         future=True,
+        pool_pre_ping=not is_sqlite,
     )
-    if engine.url.get_backend_name() == "sqlite":
+    if is_sqlite:
         _configure_sqlite_engine(engine)
     return engine
 
