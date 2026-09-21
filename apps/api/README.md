@@ -53,6 +53,9 @@ alembic -c apps/api/alembic.ini upgrade head
 
 ## 云端 PostgreSQL 试运行
 
+Render Free 的完整创建与人工验收步骤见 `docs/CLOUD_TRIAL_DEPLOYMENT.md`；仓库根目录
+`render.yaml` 是唯一的部署配置来源。
+
 本地开发和测试继续默认使用隔离 SQLite。云端生产模式必须显式配置：
 
 ```text
