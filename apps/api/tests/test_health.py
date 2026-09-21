@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 from pathlib import Path
 
@@ -40,6 +41,33 @@ def test_health_uses_isolated_test_data_dir(
     assert (data_root / "database" / "study.db").is_file()
     assert (data_root / "files" / "original").is_dir()
     assert not (tmp_path / "data" / "prod").exists()
+
+
+def test_database_startup_failure_is_logged_without_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    database_url = (
+        "postgresql://postgres:private-password@db.example.com:5432/postgres?sslmode=require"
+    )
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "data" / "test"))
+
+    def fail_database_initialization(_settings: object) -> None:
+        raise RuntimeError(f"connection refused for {database_url}")
+
+    monkeypatch.setattr("app.main.initialize_database", fail_database_initialization)
+
+    with caplog.at_level(logging.ERROR, logger="app.main"):
+        with pytest.raises(RuntimeError, match="connection refused"):
+            with TestClient(create_app()):
+                pass
+
+    log_output = caplog.text
+    assert "Database initialization failed (RuntimeError)" in log_output
+    assert "postgresql://postgres:***@db.example.com" in log_output
+    assert "private-password" not in log_output
 
 
 def test_invalid_environment_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:

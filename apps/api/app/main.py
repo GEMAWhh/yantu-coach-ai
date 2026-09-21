@@ -1,3 +1,5 @@
+import logging
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
@@ -39,13 +41,31 @@ from app.security import personal_token_auth_middleware
 from app.settings import get_settings
 
 CONTRACT_VERSION: Literal["contract-v1"] = "contract-v1"
+LOGGER = logging.getLogger(__name__)
+POSTGRESQL_CREDENTIALS_PATTERN = re.compile(
+    r"(?P<prefix>postgres(?:ql)?(?:\+psycopg)?://[^:\s/@]+:)[^@\s]+@",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_startup_error(error: Exception) -> str:
+    message = str(error).strip() or "no error detail was provided"
+    return POSTGRESQL_CREDENTIALS_PATTERN.sub(r"\g<prefix>***@", message)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     settings.ensure_runtime_dirs()
-    initialize_database(settings)
+    try:
+        initialize_database(settings)
+    except Exception as error:
+        LOGGER.error(
+            "Database initialization failed (%s): %s",
+            type(error).__name__,
+            _sanitize_startup_error(error),
+        )
+        raise
     app.state.settings = settings
     yield
 
