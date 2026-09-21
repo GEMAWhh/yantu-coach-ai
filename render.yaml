@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: yantu-coach-api
+    runtime: python
+    plan: free
+    branch: develop
+    autoDeployTrigger: checksPass
+    buildCommand: pip install -e apps/api
+    startCommand: python -m uvicorn app.main:app --app-dir apps/api --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: YANTU_APP_ENV
+        value: prod
+      - key: YANTU_CORS_ALLOWED_ORIGINS
+        value: https://yantu-coach-ai-demo-20260715.h1660930192.chatgpt.site
+      - key: YANTU_SUPABASE_STORAGE_BUCKET
+        value: yantu-assets
+      - key: YANTU_DATABASE_URL
+        sync: false
+      - key: YANTU_AUTH_TOKEN_SHA256
+        sync: false
+      - key: YANTU_SUPABASE_URL
+        sync: false
+      - key: YANTU_SUPABASE_SECRET_KEY
+        sync: false

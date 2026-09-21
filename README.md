@@ -122,13 +122,15 @@ npm run test:unit
 npm run build
 ```
 
-## 9. 当前仓库门禁限制
+## 9. 当前仓库门禁
 
-当前仓库位于个人账号的私有仓库中，未升级 GitHub Pro/Team。GitHub Rulesets 和私有仓库分支保护不会被强制执行。
+免费云端试运行的 Render Blueprint、Supabase 私密变量填写和部署后验收步骤见
+[`docs/CLOUD_TRIAL_DEPLOYMENT.md`](docs/CLOUD_TRIAL_DEPLOYMENT.md)。在部署健康检查、认证、迁移和
+文件重启后读取均通过前，公开 Sites 仍应视为演示环境。
 
-在升级前，本项目采用以下替代约束：
+当前仓库为公开仓库。无论 GitHub 套餐和 Ruleset 状态如何，研发流程均执行以下约束：
 
 1. 所有开发任务仍按 Issue → 独立分支 → PR → CI → 审查 → 合并执行。
-2. 不把 Ruleset 或 Protected Branch 标记为“已强制生效”。
-3. `main` 和 `develop` 的直接推送属于流程违规，即使 GitHub 当前无法技术性阻止。
+2. 不以仓库公开为由提交任何数据库连接、Secret Key、访问密钥或正式数据。
+3. 禁止直接推送 `main` 和 `develop`。
 4. 每次合并前必须确认 `backend`、`frontend`、`e2e`、`validate` 检查通过。
