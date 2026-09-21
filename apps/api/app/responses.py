@@ -17,6 +17,7 @@ ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     409: {"model": ApiErrorResponse, "description": "Version conflict"},
     422: {"model": ApiErrorResponse, "description": "Validation error"},
     500: {"model": ApiErrorResponse, "description": "Internal server error"},
+    503: {"model": ApiErrorResponse, "description": "Required cloud persistence is not ready"},
 }
 
 

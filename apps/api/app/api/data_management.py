@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from app.cloud import require_persistent_cloud_capability
 from app.data_management.service import (
     DataManagementError,
     create_backup_response,
@@ -21,6 +22,7 @@ def create_backup_endpoint(
     request: Request,
     payload: BackupCreateRequest,
 ) -> ApiResponse[BackupResponse]:
+    require_persistent_cloud_capability(get_settings(), "backup_restore")
     try:
         response = create_backup_response(get_settings(), label=payload.label)
     except DataManagementError as exc:
@@ -30,12 +32,14 @@ def create_backup_endpoint(
 
 @router.get("/backups", response_model=ApiResponse[BackupListResponse])
 def list_backups_endpoint(request: Request) -> ApiResponse[BackupListResponse]:
+    require_persistent_cloud_capability(get_settings(), "backup_restore")
     items = list_backup_responses(get_settings())
     return api_response(BackupListResponse(items=items, total=len(items)), request)
 
 
 @router.post("/backups/{backup_id}/verify", response_model=ApiResponse[BackupResponse])
 def verify_backup_endpoint(request: Request, backup_id: str) -> ApiResponse[BackupResponse]:
+    require_persistent_cloud_capability(get_settings(), "backup_restore")
     try:
         response = verify_backup_response(get_settings(), backup_id)
     except DataManagementError as exc:
@@ -45,6 +49,7 @@ def verify_backup_endpoint(request: Request, backup_id: str) -> ApiResponse[Back
 
 @router.post("/backups/{backup_id}/restore", response_model=ApiResponse[BackupResponse])
 def restore_backup_endpoint(request: Request, backup_id: str) -> ApiResponse[BackupResponse]:
+    require_persistent_cloud_capability(get_settings(), "backup_restore")
     try:
         response = restore_backup_response(get_settings(), backup_id)
     except DataManagementError as exc:
@@ -54,6 +59,7 @@ def restore_backup_endpoint(request: Request, backup_id: str) -> ApiResponse[Bac
 
 @router.get("/exports/full", response_model=ApiResponse[BackupResponse])
 def export_full_endpoint(request: Request) -> ApiResponse[BackupResponse]:
+    require_persistent_cloud_capability(get_settings(), "backup_restore")
     try:
         response = create_backup_response(get_settings(), label="export")
     except DataManagementError as exc:

@@ -65,7 +65,9 @@ YANTU_CORS_ALLOWED_ORIGINS=https://<approved-web-origin>
 应用会把标准 PostgreSQL URL 规范为 `postgresql+psycopg://`，并拒绝生产 SQLite、非 TLS
 连接和不完整连接信息。实际值只能在部署服务的私密环境变量中配置，不得提交到仓库、日志或
 聊天记录。当前变更只覆盖结构化数据库运行时；对象存储和云端备份恢复完成前，不得将上传文件
-或备份能力视为云端持久化。
+或备份能力视为云端持久化。生产 PostgreSQL 模式会对原件上传和读取、证据上传、备份、恢复、
+完整导出及本地个人设置端点返回 `503`，并给出稳定的 `CLOUD_*_NOT_READY` 错误码；本地 SQLite
+开发流程不受影响。规则文件是只读的，仍可正常读取。
 
 ## 文件与备份
 
