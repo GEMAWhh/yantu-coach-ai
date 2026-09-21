@@ -14,5 +14,13 @@ class FileReferenceError(FileStorageError):
     pass
 
 
+class PersistentStorageError(FileStorageError):
+    pass
+
+
+class RemoteObjectNotFoundError(PersistentStorageError):
+    pass
+
+
 class BackupIntegrityError(ValueError):
     pass

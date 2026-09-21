@@ -27,6 +27,8 @@ def require_persistent_cloud_capability(
 ) -> None:
     if settings.database_backend is not DatabaseBackend.POSTGRESQL:
         return
+    if capability == "asset_storage" and settings.cloud_asset_storage_ready:
+        return
     code, message = _CAPABILITY_ERRORS[capability]
     raise ApiError(
         status_code=503,

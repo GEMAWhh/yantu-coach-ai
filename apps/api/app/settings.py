@@ -1,6 +1,6 @@
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +21,13 @@ class DatabaseBackend(StrEnum):
 
 
 @dataclass(frozen=True)
+class SupabaseStorageSettings:
+    project_url: str
+    secret_key: str = field(repr=False)
+    bucket: str
+
+
+@dataclass(frozen=True)
 class RuntimeSettings:
     environment: AppEnvironment
     data_root: Path
@@ -28,10 +35,15 @@ class RuntimeSettings:
     database_backend: DatabaseBackend
     cors_allowed_origins: tuple[str, ...]
     auth_token_sha256: str | None
+    supabase_storage: SupabaseStorageSettings | None
 
     @property
     def authentication_required(self) -> bool:
         return self.auth_token_sha256 is not None
+
+    @property
+    def cloud_asset_storage_ready(self) -> bool:
+        return self.supabase_storage is not None
 
     @property
     def public_data_root(self) -> str:
@@ -159,6 +171,54 @@ def _parse_auth_token_sha256(environment: AppEnvironment) -> str | None:
     return digest
 
 
+def _parse_supabase_storage(
+    environment: AppEnvironment,
+) -> SupabaseStorageSettings | None:
+    raw_url = os.getenv("YANTU_SUPABASE_URL")
+    raw_secret = os.getenv("YANTU_SUPABASE_SECRET_KEY")
+    raw_bucket = os.getenv("YANTU_SUPABASE_STORAGE_BUCKET")
+    configured_values = (raw_url, raw_secret, raw_bucket)
+    if all(value is None or not value.strip() for value in configured_values):
+        return None
+    if environment is not AppEnvironment.PROD:
+        raise RuntimeError("dev/test runtime must not use Supabase Storage")
+    if any(value is None or not value.strip() for value in configured_values):
+        raise RuntimeError(
+            "YANTU_SUPABASE_URL, YANTU_SUPABASE_SECRET_KEY, and "
+            "YANTU_SUPABASE_STORAGE_BUCKET must be configured together"
+        )
+    assert raw_url is not None
+    assert raw_secret is not None
+    assert raw_bucket is not None
+
+    project_url = raw_url.strip().rstrip("/")
+    parsed = urlsplit(project_url)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname is None
+        or not parsed.hostname.endswith(".supabase.co")
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("YANTU_SUPABASE_URL must be an HTTPS Supabase project origin")
+
+    secret_key = raw_secret.strip()
+    if len(secret_key) < 32:
+        raise ValueError("YANTU_SUPABASE_SECRET_KEY is invalid")
+
+    bucket = raw_bucket.strip()
+    if re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,62}", bucket) is None:
+        raise ValueError("YANTU_SUPABASE_STORAGE_BUCKET must be a safe lowercase bucket name")
+    return SupabaseStorageSettings(
+        project_url=project_url,
+        secret_key=secret_key,
+        bucket=bucket,
+    )
+
+
 def _default_sqlite_database_url(data_root: Path) -> str:
     return f"sqlite:///{(data_root / 'database' / 'study.db').as_posix()}"
 
@@ -210,6 +270,7 @@ def get_settings() -> RuntimeSettings:
     cors_allowed_origins = _parse_cors_allowed_origins(environment)
     auth_token_sha256 = _parse_auth_token_sha256(environment)
     database_url, database_backend = _parse_database_url(environment, data_root)
+    supabase_storage = _parse_supabase_storage(environment)
     return RuntimeSettings(
         environment=environment,
         data_root=data_root,
@@ -217,4 +278,5 @@ def get_settings() -> RuntimeSettings:
         database_backend=database_backend,
         cors_allowed_origins=cors_allowed_origins,
         auth_token_sha256=auth_token_sha256,
+        supabase_storage=supabase_storage,
     )

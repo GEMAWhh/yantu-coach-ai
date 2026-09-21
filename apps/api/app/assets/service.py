@@ -6,7 +6,14 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.files.exceptions import FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError
+from app.files.exceptions import (
+    FileReferenceError,
+    PersistentStorageError,
+    RemoteObjectNotFoundError,
+    UnsafeFileNameError,
+    UnsupportedFileTypeError,
+)
+from app.files.object_storage import SupabaseObjectStorage
 from app.files.storage import store_original_file
 from app.models.asset import Asset
 from app.settings import RuntimeSettings
@@ -86,6 +93,26 @@ def get_asset(session: Session, asset_id: str, *, include_deleted: bool = False)
 
 def read_asset_content(settings: RuntimeSettings, session: Session, asset_id: str) -> AssetContent:
     asset = get_asset(session, asset_id)
+    if settings.supabase_storage is not None:
+        try:
+            content = SupabaseObjectStorage(settings.supabase_storage).download(asset.storage_path)
+        except RemoteObjectNotFoundError as exc:
+            raise AssetServiceError(
+                "asset file is missing",
+                code="ASSET_FILE_MISSING",
+                status_code=404,
+                details={"asset_id": asset_id},
+            ) from exc
+        except PersistentStorageError as exc:
+            raise AssetServiceError(
+                "cloud file storage is temporarily unavailable",
+                code="CLOUD_FILE_STORAGE_UNAVAILABLE",
+                status_code=503,
+            ) from exc
+        return AssetContent(
+            asset=asset,
+            content_base64=base64.b64encode(content).decode("ascii"),
+        )
     path = _asset_file_path(settings, asset)
     if not path.is_file():
         raise AssetServiceError(
@@ -134,8 +161,17 @@ def list_resources(session: Session) -> list[Asset]:
 
 
 def api_error_from_storage_error(
-    exc: FileReferenceError | UnsafeFileNameError | UnsupportedFileTypeError,
+    exc: FileReferenceError
+    | PersistentStorageError
+    | UnsafeFileNameError
+    | UnsupportedFileTypeError,
 ) -> AssetServiceError:
+    if isinstance(exc, PersistentStorageError):
+        return AssetServiceError(
+            "cloud file storage is temporarily unavailable",
+            code="CLOUD_FILE_STORAGE_UNAVAILABLE",
+            status_code=503,
+        )
     if isinstance(exc, UnsupportedFileTypeError):
         return AssetServiceError(str(exc), code="ASSET_TYPE_INVALID", status_code=422)
     if isinstance(exc, UnsafeFileNameError):

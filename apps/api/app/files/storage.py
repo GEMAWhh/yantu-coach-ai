@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.files.exceptions import FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError
+from app.files.object_storage import SupabaseObjectStorage
 from app.models.asset import Asset
 from app.settings import RuntimeSettings
 
@@ -78,7 +79,8 @@ def store_original_file(
     state: str = "inbox",
 ) -> Asset:
     safe_name = _safe_original_name(original_name)
-    sample = source_path.read_bytes()[:16]
+    content = source_path.read_bytes()
+    sample = content[:16]
     extension, mime_type = _validated_extension_and_mime(safe_name, declared_mime_type, sample)
     digest = calculate_sha256(source_path)
     size_bytes = source_path.stat().st_size
@@ -94,9 +96,12 @@ def store_original_file(
         return existing
 
     absolute_path, relative_path = _asset_storage_path(settings, digest, extension)
-    absolute_path.parent.mkdir(parents=True, exist_ok=True)
-    if not absolute_path.exists():
-        absolute_path.write_bytes(source_path.read_bytes())
+    if settings.supabase_storage is not None:
+        SupabaseObjectStorage(settings.supabase_storage).upload(relative_path, content, mime_type)
+    else:
+        absolute_path.parent.mkdir(parents=True, exist_ok=True)
+        if not absolute_path.exists():
+            absolute_path.write_bytes(content)
 
     asset = Asset(
         id=str(uuid4()),
@@ -130,6 +135,9 @@ def delete_asset_file_if_unreferenced(
         raise FileReferenceError("asset not found")
     if asset.reference_count > 0:
         raise FileReferenceError("asset still has active references")
+    if settings.supabase_storage is not None:
+        SupabaseObjectStorage(settings.supabase_storage).delete(asset.storage_path)
+        return
     path = (settings.data_root / Path(asset.storage_path)).resolve()
     original_root = (settings.files_dir / "original").resolve()
     if original_root not in path.parents:

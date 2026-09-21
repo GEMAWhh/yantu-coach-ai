@@ -164,3 +164,73 @@ def test_test_environment_rejects_cloud_postgresql_url(monkeypatch: pytest.Monke
 
     with pytest.raises(RuntimeError, match="dev/test runtime"):
         get_settings()
+
+
+def test_production_accepts_complete_supabase_storage_config_without_repr_secret(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    test_credential = "fake-secret-key-with-at-least-32-characters"
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "runtime"))
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.setenv(
+        "YANTU_DATABASE_URL",
+        "postgresql://postgres:password@db.example.com:5432/postgres?sslmode=require",
+    )
+    monkeypatch.setenv("YANTU_SUPABASE_URL", "https://example.supabase.co/")
+    monkeypatch.setenv("YANTU_SUPABASE_SECRET_KEY", test_credential)
+    monkeypatch.setenv("YANTU_SUPABASE_STORAGE_BUCKET", "yantu-assets")
+
+    settings = get_settings()
+
+    assert settings.cloud_asset_storage_ready is True
+    assert settings.supabase_storage is not None
+    assert settings.supabase_storage.project_url == "https://example.supabase.co"
+    assert settings.supabase_storage.bucket == "yantu-assets"
+    assert test_credential not in repr(settings)
+
+
+def test_supabase_storage_config_must_be_complete(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.setenv(
+        "YANTU_DATABASE_URL",
+        "postgresql://postgres:password@db.example.com:5432/postgres?sslmode=require",
+    )
+    monkeypatch.setenv("YANTU_SUPABASE_URL", "https://example.supabase.co")
+
+    with pytest.raises(RuntimeError, match="must be configured together"):
+        get_settings()
+
+
+@pytest.mark.parametrize(
+    "project_url",
+    ["http://example.supabase.co", "https://example.com", "https://example.supabase.co/path"],
+)
+def test_supabase_storage_rejects_unsafe_project_urls(
+    monkeypatch: pytest.MonkeyPatch,
+    project_url: str,
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "prod")
+    monkeypatch.setenv("YANTU_AUTH_TOKEN_SHA256", "a" * 64)
+    monkeypatch.setenv(
+        "YANTU_DATABASE_URL",
+        "postgresql://postgres:password@db.example.com:5432/postgres?sslmode=require",
+    )
+    monkeypatch.setenv("YANTU_SUPABASE_URL", project_url)
+    monkeypatch.setenv("YANTU_SUPABASE_SECRET_KEY", "fake-secret-key-with-at-least-32-characters")
+    monkeypatch.setenv("YANTU_SUPABASE_STORAGE_BUCKET", "yantu-assets")
+
+    with pytest.raises(ValueError, match="YANTU_SUPABASE_URL"):
+        get_settings()
+
+
+def test_test_environment_rejects_supabase_storage(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv("YANTU_SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("YANTU_SUPABASE_SECRET_KEY", "fake-secret-key-with-at-least-32-characters")
+    monkeypatch.setenv("YANTU_SUPABASE_STORAGE_BUCKET", "yantu-assets")
+
+    with pytest.raises(RuntimeError, match="dev/test runtime"):
+        get_settings()
