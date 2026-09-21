@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Request
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.cloud import require_persistent_cloud_capability
 from app.db.database import get_session_factory
 from app.errors import ApiError
 from app.evidence.service import (
@@ -47,6 +48,7 @@ def upload_evidence(
     payload: EvidenceUploadRequest,
 ) -> ApiResponse[EvidenceUploadResponse]:
     settings = get_settings()
+    require_persistent_cloud_capability(settings, "asset_storage")
     session_factory = _session_factory()
     try:
         with session_factory.begin() as session:

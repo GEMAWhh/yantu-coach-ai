@@ -12,6 +12,7 @@ from app.assets.service import (
     read_asset_content,
     restore_asset,
 )
+from app.cloud import require_persistent_cloud_capability
 from app.db.database import get_session_factory
 from app.errors import ApiError
 from app.files.exceptions import FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError
@@ -36,6 +37,7 @@ def upload_asset(
     payload: AssetUploadRequest,
 ) -> ApiResponse[AssetResponse]:
     settings = get_settings()
+    require_persistent_cloud_capability(settings, "asset_storage")
     session_factory = _session_factory()
     try:
         with session_factory.begin() as session:
@@ -62,6 +64,7 @@ def asset_metadata(request: Request, asset_id: str) -> ApiResponse[AssetResponse
 @router.get("/assets/{asset_id}/content", response_model=ApiResponse[AssetContentResponse])
 def asset_content(request: Request, asset_id: str) -> ApiResponse[AssetContentResponse]:
     settings = get_settings()
+    require_persistent_cloud_capability(settings, "asset_storage")
     session_factory = _session_factory()
     try:
         with session_factory() as session:

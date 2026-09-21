@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from app.cloud import require_persistent_cloud_capability
 from app.errors import ApiError
 from app.responses import api_response
 from app.schemas.common import ApiResponse
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
 @router.get("/profile", response_model=ApiResponse[ProfileResponse])
 def get_profile(request: Request) -> ApiResponse[ProfileResponse]:
+    require_persistent_cloud_capability(get_settings(), "profile_settings")
     try:
         response = read_profile(get_settings())
     except SettingsApiError as exc:
@@ -24,6 +26,7 @@ def patch_profile(
     request: Request,
     payload: ProfileUpdate,
 ) -> ApiResponse[ProfileResponse]:
+    require_persistent_cloud_capability(get_settings(), "profile_settings")
     try:
         response = update_profile(get_settings(), payload)
     except SettingsApiError as exc:
