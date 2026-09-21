@@ -1,14 +1,24 @@
 import base64
 from collections.abc import Generator
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 
+from app.db.database import get_session_factory
 from app.db.migrations import initialize_database
+from app.files.exceptions import PersistentStorageError
 from app.main import create_app
-from app.settings import RuntimeSettings, get_settings
+from app.models.asset import Asset
+from app.settings import (
+    DatabaseBackend,
+    RuntimeSettings,
+    SupabaseStorageSettings,
+    get_settings,
+)
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\nasset-api-test-png"
 PDF_BYTES = b"%PDF-1.7\nasset-api-test-pdf"
@@ -100,6 +110,37 @@ def test_asset_upload_rejects_masquerade_and_path_traversal(
     assert masquerade.json()["error"]["code"] == "ASSET_TYPE_INVALID"
     assert traversal.status_code == 422
     assert traversal.json()["error"]["code"] == "ASSET_NAME_INVALID"
+
+
+def test_cloud_storage_failure_returns_503_and_rolls_back_asset_metadata(
+    test_settings: RuntimeSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cloud_settings = replace(
+        test_settings,
+        database_backend=DatabaseBackend.POSTGRESQL,
+        supabase_storage=SupabaseStorageSettings(
+            "https://example.supabase.co",
+            "fake-secret-key-with-at-least-32-characters",
+            "yantu-assets",
+        ),
+    )
+
+    def fail_upload(_self: object, _path: str, _content: bytes, _mime: str) -> None:
+        raise PersistentStorageError("cloud object storage upload failed")
+
+    monkeypatch.setattr("app.api.assets.get_settings", lambda: cloud_settings)
+    monkeypatch.setattr("app.files.storage.SupabaseObjectStorage.upload", fail_upload)
+
+    with TestClient(create_app()) as client:
+        response = _upload_png(client)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "CLOUD_FILE_STORAGE_UNAVAILABLE"
+    assert "example.supabase.co" not in str(response.json())
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        assert session.scalar(select(func.count(Asset.id))) == 0
 
 
 def _upload_png(client: TestClient) -> Any:

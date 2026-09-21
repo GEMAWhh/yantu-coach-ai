@@ -1,10 +1,12 @@
 import zipfile
 from collections.abc import Generator
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 from sqlalchemy import func, select
 
+from app.assets.service import read_asset_content
 from app.db.database import get_session_factory
 from app.db.migrations import initialize_database
 from app.files.backup import create_backup, restore_backup, verify_backup
@@ -15,7 +17,7 @@ from app.files.storage import (
     store_original_file,
 )
 from app.models.asset import Asset
-from app.settings import RuntimeSettings, get_settings
+from app.settings import RuntimeSettings, SupabaseStorageSettings, get_settings
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\nlocal-test-png"
 JPEG_BYTES = b"\xff\xd8\xff\xe0local-test-jpeg"
@@ -204,3 +206,68 @@ def test_corrupt_or_missing_backup_is_rejected_without_restore(
         restore_backup(test_settings, missing_entry)
 
     assert test_settings.database_path.read_bytes() == before_database
+
+
+def test_cloud_storage_preserves_deduplication_read_and_reference_safe_delete(
+    test_settings: RuntimeSettings,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cloud_settings = replace(
+        test_settings,
+        supabase_storage=SupabaseStorageSettings(
+            "https://example.supabase.co",
+            "fake-secret-key-with-at-least-32-characters",
+            "yantu-assets",
+        ),
+    )
+    objects: dict[str, bytes] = {}
+    uploads: list[str] = []
+
+    def upload(_self: object, object_path: str, content: bytes, _mime_type: str) -> None:
+        uploads.append(object_path)
+        objects[object_path] = content
+
+    def download(_self: object, object_path: str) -> bytes:
+        return objects[object_path]
+
+    def delete(_self: object, object_path: str) -> None:
+        objects.pop(object_path)
+
+    monkeypatch.setattr("app.files.storage.SupabaseObjectStorage.upload", upload)
+    monkeypatch.setattr("app.files.storage.SupabaseObjectStorage.delete", delete)
+    monkeypatch.setattr("app.assets.service.SupabaseObjectStorage.download", download)
+    source = _write(tmp_path / "cloud.png", PNG_BYTES)
+    session_factory = get_session_factory(test_settings.database_url)
+
+    with session_factory.begin() as session:
+        first = store_original_file(
+            cloud_settings,
+            session,
+            source_path=source,
+            original_name="cloud.png",
+            declared_mime_type="image/png",
+        )
+        second = store_original_file(
+            cloud_settings,
+            session,
+            source_path=source,
+            original_name="cloud.png",
+            declared_mime_type="image/png",
+        )
+        asset_id = first.id
+        storage_path = first.storage_path
+        assert second.id == asset_id
+        assert second.reference_count == 2
+
+    assert uploads == [storage_path]
+    assert not (test_settings.data_root / storage_path).exists()
+    with session_factory() as session:
+        assert read_asset_content(cloud_settings, session, asset_id).content_base64
+
+    with session_factory.begin() as session:
+        release_asset_reference(session, asset_id)
+        release_asset_reference(session, asset_id)
+        delete_asset_file_if_unreferenced(cloud_settings, session, asset_id)
+
+    assert storage_path not in objects

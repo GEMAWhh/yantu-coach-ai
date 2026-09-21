@@ -1,5 +1,6 @@
 import base64
 from collections.abc import Generator
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -9,12 +10,18 @@ from sqlalchemy import func, select
 
 from app.db.database import get_session_factory
 from app.db.migrations import initialize_database
+from app.files.exceptions import PersistentStorageError
 from app.main import create_app
 from app.models.audit import AuditEvent
 from app.models.evidence import AIJob, EvidenceAsset, EvidenceDraft, EvidenceRecord
 from app.models.mastery import MasteryEvidence, MasterySnapshot
 from app.models.planning import Task
-from app.settings import RuntimeSettings, get_settings
+from app.settings import (
+    DatabaseBackend,
+    RuntimeSettings,
+    SupabaseStorageSettings,
+    get_settings,
+)
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\nevidence-test-png"
 JPEG_BYTES = b"\xff\xd8\xff\xe0evidence-test-jpeg"
@@ -55,6 +62,37 @@ def test_multi_file_upload_links_assets_to_one_evidence_record(
         )
 
     assert linked_count == 2
+
+
+def test_cloud_storage_failure_rolls_back_evidence_record(
+    test_settings: RuntimeSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cloud_settings = replace(
+        test_settings,
+        database_backend=DatabaseBackend.POSTGRESQL,
+        supabase_storage=SupabaseStorageSettings(
+            "https://example.supabase.co",
+            "fake-secret-key-with-at-least-32-characters",
+            "yantu-assets",
+        ),
+    )
+
+    def fail_upload(_self: object, _path: str, _content: bytes, _mime: str) -> None:
+        raise PersistentStorageError("cloud object storage upload failed")
+
+    monkeypatch.setattr("app.api.evidence.get_settings", lambda: cloud_settings)
+    monkeypatch.setattr("app.files.storage.SupabaseObjectStorage.upload", fail_upload)
+
+    with TestClient(create_app()) as client:
+        response = _upload(client)
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "CLOUD_FILE_STORAGE_UNAVAILABLE"
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        assert session.scalar(select(func.count(EvidenceRecord.id))) == 0
+        assert session.scalar(select(func.count(EvidenceAsset.id))) == 0
 
 
 def test_fake_provider_creates_schema_valid_draft_without_changing_formal_learning_state(

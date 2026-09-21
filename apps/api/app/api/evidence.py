@@ -17,7 +17,12 @@ from app.evidence.service import (
     update_evidence_draft,
     upload_evidence_files,
 )
-from app.files.exceptions import FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError
+from app.files.exceptions import (
+    FileReferenceError,
+    PersistentStorageError,
+    UnsafeFileNameError,
+    UnsupportedFileTypeError,
+)
 from app.models.evidence import AIJob
 from app.request_context import get_request_id
 from app.responses import api_response
@@ -75,7 +80,12 @@ def upload_evidence(
             )
     except EvidenceError as exc:
         raise _api_evidence_error(exc) from exc
-    except (FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError) as exc:
+    except (
+        FileReferenceError,
+        PersistentStorageError,
+        UnsafeFileNameError,
+        UnsupportedFileTypeError,
+    ) as exc:
         raise _api_file_error(exc) from exc
     return api_response(response, request)
 
@@ -203,8 +213,17 @@ def _api_evidence_error(exc: EvidenceError) -> ApiError:
 
 
 def _api_file_error(
-    exc: FileReferenceError | UnsafeFileNameError | UnsupportedFileTypeError,
+    exc: FileReferenceError
+    | PersistentStorageError
+    | UnsafeFileNameError
+    | UnsupportedFileTypeError,
 ) -> ApiError:
+    if isinstance(exc, PersistentStorageError):
+        return ApiError(
+            status_code=503,
+            code="CLOUD_FILE_STORAGE_UNAVAILABLE",
+            message="cloud file storage is temporarily unavailable",
+        )
     return ApiError(
         status_code=422,
         code="EVIDENCE_FILE_INVALID",

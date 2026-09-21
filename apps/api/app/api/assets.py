@@ -15,7 +15,12 @@ from app.assets.service import (
 from app.cloud import require_persistent_cloud_capability
 from app.db.database import get_session_factory
 from app.errors import ApiError
-from app.files.exceptions import FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError
+from app.files.exceptions import (
+    FileReferenceError,
+    PersistentStorageError,
+    UnsafeFileNameError,
+    UnsupportedFileTypeError,
+)
 from app.responses import api_response
 from app.schemas.assets import (
     AssetContentResponse,
@@ -43,7 +48,12 @@ def upload_asset(
         with session_factory.begin() as session:
             asset = create_asset(settings, session, **payload.model_dump())
             response = AssetResponse.from_model(asset)
-    except (FileReferenceError, UnsafeFileNameError, UnsupportedFileTypeError) as exc:
+    except (
+        FileReferenceError,
+        PersistentStorageError,
+        UnsafeFileNameError,
+        UnsupportedFileTypeError,
+    ) as exc:
         raise _api_asset_error(api_error_from_storage_error(exc)) from exc
     except AssetServiceError as exc:
         raise _api_asset_error(exc) from exc

@@ -49,8 +49,10 @@
 - 生产环境必须配置 TLS `YANTU_DATABASE_URL`，且只能使用 PostgreSQL；SQLite URL 会在启动前被拒绝；
 - 数据库 URL、密码和 Supabase 密钥只配置在部署平台的私密环境变量中，不得提交、打印或粘贴到 Issue、PR、聊天和截图；
 - Render 的本地磁盘是临时介质，禁止将它用于结构化正式数据、上传原件或唯一备份；
-- 文件对象存储和云端备份恢复尚未完成前，不得导入或上传正式学习数据；生产 PostgreSQL 模式会拒绝原件和证据上传、备份、恢复、完整导出及本地个人设置读写，避免请求表面成功但数据随容器消失；
-- 上述拒绝响应只返回稳定的 `CLOUD_FILE_STORAGE_NOT_READY`、`CLOUD_BACKUP_NOT_READY` 或 `CLOUD_SETTINGS_NOT_READY` 错误码，不泄露本地路径、连接信息或密钥。
+- Supabase Storage bucket 必须保持私有；Secret Key 只允许配置在 FastAPI 部署环境，禁止放入 Web 构建变量、浏览器存储、GitHub、日志、截图或聊天；
+- 未配置对象存储时，生产 PostgreSQL 模式会拒绝原件和证据上传；配置后由服务端以内容哈希路径访问私有 bucket，网络或服务失败时回滚新元数据事务；
+- 云端备份恢复尚未完成前，不得将当前导出或备份能力视为云端持久化；生产 PostgreSQL 模式会继续拒绝备份、恢复、完整导出及本地个人设置读写；
+- 上述拒绝或服务异常响应只返回稳定的 `CLOUD_FILE_STORAGE_NOT_READY`、`CLOUD_FILE_STORAGE_UNAVAILABLE`、`CLOUD_BACKUP_NOT_READY` 或 `CLOUD_SETTINGS_NOT_READY` 错误码，不泄露本地路径、连接信息或密钥。
 
 ## 4. 文件上传
 

@@ -60,14 +60,21 @@ YANTU_APP_ENV=prod
 YANTU_DATABASE_URL=postgresql://.../postgres?sslmode=require
 YANTU_AUTH_TOKEN_SHA256=<sha256 digest only>
 YANTU_CORS_ALLOWED_ORIGINS=https://<approved-web-origin>
+YANTU_SUPABASE_URL=https://<project-ref>.supabase.co
+YANTU_SUPABASE_SECRET_KEY=<server-only secret key>
+YANTU_SUPABASE_STORAGE_BUCKET=yantu-assets
 ```
 
 应用会把标准 PostgreSQL URL 规范为 `postgresql+psycopg://`，并拒绝生产 SQLite、非 TLS
 连接和不完整连接信息。实际值只能在部署服务的私密环境变量中配置，不得提交到仓库、日志或
-聊天记录。当前变更只覆盖结构化数据库运行时；对象存储和云端备份恢复完成前，不得将上传文件
-或备份能力视为云端持久化。生产 PostgreSQL 模式会对原件上传和读取、证据上传、备份、恢复、
-完整导出及本地个人设置端点返回 `503`，并给出稳定的 `CLOUD_*_NOT_READY` 错误码；本地 SQLite
-开发流程不受影响。规则文件是只读的，仍可正常读取。
+聊天记录。Supabase Storage 配置必须三项同时提供，项目 URL 只接受 HTTPS Supabase Origin，
+Secret Key 不会出现在设置对象的日志表示中。`yantu-assets` 必须预先建立为私有 bucket；原件上传、
+读取和无引用删除通过服务端 Storage API 完成，前端不会获得 Secret Key 或公开对象 URL。
+
+未配置对象存储时，生产 PostgreSQL 模式会对原件上传和读取、证据上传返回
+`CLOUD_FILE_STORAGE_NOT_READY`。Storage 服务故障返回 `CLOUD_FILE_STORAGE_UNAVAILABLE`，且新元数据
+事务会回滚。云端备份、恢复、完整导出及本地个人设置仍返回对应 `CLOUD_*_NOT_READY`；本地 SQLite
+开发流程不受影响，规则文件仍可正常读取。
 
 ## 文件与备份
 
@@ -255,6 +262,7 @@ Stage 7 starts the file/resource API boundary on top of the existing local file 
 - `POST /api/v1/resources` and `GET /api/v1/resources`: promote an asset to `organized` and list organized/archived assets as lightweight resource entries.
 
 The resource index intentionally reuses `assets.state`; a separate `resources` table is deferred until the product model defines catalog metadata.
+In production PostgreSQL mode, the same API uses a private Supabase Storage bucket while preserving server-generated content-hash paths and database metadata deduplication.
 
 ## Graph and analytics
 
