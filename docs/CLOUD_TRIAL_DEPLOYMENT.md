@@ -66,7 +66,7 @@ Blueprint 自动设置：
 4. 带正确密钥请求 `/api/v1/meta` 必须成功。
 5. 运行一轮图片上传和读取，Render 重启后再次读取仍必须成功。
 6. Supabase Table Editor 应出现迁移后的业务表，Storage 的 `yantu-assets` 中应出现内容哈希对象。
-7. 完成以上项目后，才把 Sites Web 的 API 地址切换到 Render URL。
+7. 完成以上项目后，使用 `apps/web/.env.production` 把 Sites Web 的 API 地址切换到 Render URL，并确认生产构建关闭 Demo API、启用个人访问密钥入口。
 
 ## 6. 失败与回滚
 
