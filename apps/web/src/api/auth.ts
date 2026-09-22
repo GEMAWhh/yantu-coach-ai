@@ -1,6 +1,7 @@
 import { isDemoApiEnabled } from "./demoClient";
 
 const ACCESS_KEY_STORAGE_KEY = "yantu.personalAccessKey";
+let volatileAccessKey: string | null = null;
 
 export function isPersonalAuthRequired(): boolean {
   return (
@@ -11,17 +12,23 @@ export function isPersonalAuthRequired(): boolean {
 
 export function getPersonalAccessKey(): string | null {
   try {
-    return window.sessionStorage.getItem(ACCESS_KEY_STORAGE_KEY);
+    return window.sessionStorage.getItem(ACCESS_KEY_STORAGE_KEY) ?? volatileAccessKey;
   } catch {
-    return null;
+    return volatileAccessKey;
   }
 }
 
 export function setPersonalAccessKey(accessKey: string): void {
-  window.sessionStorage.setItem(ACCESS_KEY_STORAGE_KEY, accessKey);
+  try {
+    window.sessionStorage.setItem(ACCESS_KEY_STORAGE_KEY, accessKey);
+    volatileAccessKey = null;
+  } catch {
+    volatileAccessKey = accessKey;
+  }
 }
 
 export function clearPersonalAccessKey(): void {
+  volatileAccessKey = null;
   try {
     window.sessionStorage.removeItem(ACCESS_KEY_STORAGE_KEY);
   } catch {
