@@ -30,7 +30,7 @@
 
 ## 3.1 云端个人版连接边界
 
-- Web 构建通过 `VITE_YANTU_API_BASE_URL` 指向独立 API；该变量只能包含公开 API Origin，不得包含密钥、凭据、路径或查询参数；
+- Web 构建可通过 `VITE_YANTU_API_BASE_URL` 指向独立 API；该变量只能包含公开 API Origin，不得包含密钥、凭据、路径或查询参数。Sites 生产构建留空并使用固定目标的同源 Worker 代理；
 - API 通过 `YANTU_CORS_ALLOWED_ORIGINS` 配置明确的前端 Origin；禁止 `*`；
 - 未配置允许 Origin 的生产 API 不返回跨域许可；
 - CORS 不是身份认证；公开部署时必须同时启用下方的个人访问密钥；

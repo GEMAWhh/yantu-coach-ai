@@ -37,6 +37,7 @@ jobs:
         shell: bash
         run: |
           if [ -f apps/web/package.json ]; then
+            node --test scripts/sites_worker.test.mjs
             cd apps/web
             npm ci
             npm run typecheck
