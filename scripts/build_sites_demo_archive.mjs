@@ -5,6 +5,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { renderSitesWorker } from "./sites_worker.mjs";
+
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distRoot = path.join(repoRoot, "apps", "web", "dist");
 const hostingConfig = path.join(repoRoot, ".openai", "hosting.json");
@@ -30,18 +32,7 @@ fs.copyFileSync(hostingConfig, path.join(archiveRoot, ".openai", "hosting.json")
 
 writeFile(
   path.join(archiveRoot, ".open-next", "worker.js"),
-  `export default {
-  async fetch(request, env) {
-    const response = await env.ASSETS.fetch(request);
-    if (response.status !== 404) {
-      return response;
-    }
-    const url = new URL(request.url);
-    const indexUrl = new URL("/index.html", url.origin);
-    return env.ASSETS.fetch(new Request(indexUrl, request));
-  },
-};
-`,
+  renderSitesWorker("https://yantu-coach-api.onrender.com"),
 );
 
 writeFile(

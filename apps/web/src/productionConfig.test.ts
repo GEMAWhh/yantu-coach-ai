@@ -20,9 +20,7 @@ describe("production deployment configuration", () => {
 
     expect(environment.get("VITE_YANTU_DEMO_API")).toBe("false");
     expect(environment.get("VITE_YANTU_AUTH_REQUIRED")).toBe("true");
-    expect(environment.get("VITE_YANTU_API_BASE_URL")).toBe(
-      "https://yantu-coach-api.onrender.com",
-    );
+    expect(environment.get("VITE_YANTU_API_BASE_URL")).toBe("");
     expect([...environment.keys()].some((key) => /token|secret|password/iu.test(key))).toBe(false);
   });
 });

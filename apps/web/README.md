@@ -37,7 +37,7 @@ npm run build:demo
 - 同源反向代理：`VITE_YANTU_API_BASE_URL` 留空；
 - 演示站继续使用 `VITE_YANTU_DEMO_API=true`。
 
-当前生产构建由 `.env.production` 指向已验收的 Render API，并启用个人访问密钥入口。该文件只能保存公开 API Origin 和功能开关，原始访问密钥仍只由用户在浏览器会话中输入。
+当前生产构建由 `.env.production` 使用 Sites Worker 同源代理，并启用个人访问密钥入口。Worker 只把 `/health` 和 `/api/*` 转发到已验收的 Render API。原始访问密钥仍只由用户在浏览器会话中输入。
 
 API 地址必须是 HTTP(S) Origin，不得包含凭据、路径、查询参数或片段。Vite 变量会进入公开构建产物，禁止在其中保存任何密钥。
 
