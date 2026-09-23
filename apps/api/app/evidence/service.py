@@ -217,14 +217,15 @@ def list_evidence_history(session: Session, *, limit: int = 20) -> list[Evidence
             .order_by(EvidenceDraft.created_at.desc(), EvidenceDraft.updated_at.desc())
             .limit(1)
         )
-        linked_assets = list(
-            session.execute(
+        linked_assets = [
+            (asset, page_order)
+            for asset, page_order in session.execute(
                 select(Asset, EvidenceAsset.page_order)
                 .join(EvidenceAsset, EvidenceAsset.asset_id == Asset.id)
                 .where(EvidenceAsset.evidence_record_id == record.id)
                 .order_by(EvidenceAsset.page_order)
-            ).all()
-        )
+            )
+        ]
         items.append(EvidenceHistoryItem(record=record, draft=draft, assets=linked_assets))
     return items
 

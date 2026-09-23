@@ -292,6 +292,7 @@ def test_delete_unconfirmed_evidence_removes_record_drafts_and_unreferenced_asse
             )
         )
     assert audit is not None
+    assert audit.before_json is not None
     assert audit.before_json["asset_ids"] == asset_ids
 
 
