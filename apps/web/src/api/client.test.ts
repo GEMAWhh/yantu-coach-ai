@@ -60,6 +60,35 @@ describe("ApiClient", () => {
     expect(calls).toEqual(["http://127.0.0.1:8000/health"]);
   });
 
+  it("calls browser fetch with the global receiver", async () => {
+    const fetcher = vi.fn(function (
+      this: typeof globalThis,
+      _input: RequestInfo | URL,
+      _init?: RequestInit,
+    ) {
+      void _input;
+      void _init;
+      expect(this).toBe(globalThis);
+      return Promise.resolve(
+        jsonResponse({
+          data: {
+            status: "ok",
+            service: "yantu-coach-api",
+            environment: "prod",
+            data_root: "data/prod",
+          },
+          meta: { request_id: "receiver-sensitive-fetch" },
+        }),
+      );
+    });
+    const client = new ApiClient("", fetcher);
+
+    await expect(client.health()).resolves.toMatchObject({
+      data: { status: "ok" },
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it("uses the configured cloud API origin by default", async () => {
     vi.stubEnv("VITE_YANTU_API_BASE_URL", "https://api.yantu.example/");
     const calls: string[] = [];
