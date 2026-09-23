@@ -20,11 +20,26 @@ class DatabaseBackend(StrEnum):
     POSTGRESQL = "postgresql"
 
 
+class EvidenceAIProviderName(StrEnum):
+    FAKE = "fake"
+    DEEPSEEK = "deepseek"
+    OPENAI_COMPATIBLE = "openai_compatible"
+
+
 @dataclass(frozen=True)
 class SupabaseStorageSettings:
     project_url: str
     secret_key: str = field(repr=False)
     bucket: str
+
+
+@dataclass(frozen=True)
+class EvidenceAISettings:
+    provider: EvidenceAIProviderName
+    base_url: str | None
+    api_key: str | None = field(repr=False)
+    model: str
+    timeout_seconds: float
 
 
 @dataclass(frozen=True)
@@ -36,6 +51,7 @@ class RuntimeSettings:
     cors_allowed_origins: tuple[str, ...]
     auth_token_sha256: str | None
     supabase_storage: SupabaseStorageSettings | None
+    evidence_ai: EvidenceAISettings
 
     @property
     def authentication_required(self) -> bool:
@@ -223,6 +239,67 @@ def _default_sqlite_database_url(data_root: Path) -> str:
     return f"sqlite:///{(data_root / 'database' / 'study.db').as_posix()}"
 
 
+def _parse_evidence_ai_settings() -> EvidenceAISettings:
+    raw_provider = os.getenv("YANTU_EVIDENCE_AI_PROVIDER", EvidenceAIProviderName.FAKE.value)
+    try:
+        provider = EvidenceAIProviderName(raw_provider.strip().lower())
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in EvidenceAIProviderName)
+        raise ValueError(f"YANTU_EVIDENCE_AI_PROVIDER must be one of: {allowed}") from exc
+
+    if provider is EvidenceAIProviderName.FAKE:
+        return EvidenceAISettings(
+            provider=provider,
+            base_url=None,
+            api_key=None,
+            model="fake-evidence-provider",
+            timeout_seconds=30.0,
+        )
+
+    raw_api_key = os.getenv("YANTU_EVIDENCE_AI_API_KEY")
+    if raw_api_key is None or not raw_api_key.strip():
+        raise RuntimeError("YANTU_EVIDENCE_AI_API_KEY is required for a real AI provider")
+
+    default_base_url = (
+        "https://api.deepseek.com" if provider is EvidenceAIProviderName.DEEPSEEK else None
+    )
+    raw_base_url = os.getenv("YANTU_EVIDENCE_AI_BASE_URL") or default_base_url
+    if raw_base_url is None or not raw_base_url.strip():
+        raise RuntimeError("YANTU_EVIDENCE_AI_BASE_URL is required for openai_compatible provider")
+    base_url = raw_base_url.strip().rstrip("/")
+    parsed = urlsplit(base_url)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname is None
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("YANTU_EVIDENCE_AI_BASE_URL must be an HTTPS URL without credentials")
+
+    default_model = "deepseek-flash" if provider is EvidenceAIProviderName.DEEPSEEK else None
+    raw_model = os.getenv("YANTU_EVIDENCE_AI_MODEL") or default_model
+    if raw_model is None or not raw_model.strip():
+        raise RuntimeError("YANTU_EVIDENCE_AI_MODEL is required for openai_compatible provider")
+
+    raw_timeout = os.getenv("YANTU_EVIDENCE_AI_TIMEOUT_SECONDS", "60")
+    try:
+        timeout_seconds = float(raw_timeout)
+    except ValueError as exc:
+        raise ValueError("YANTU_EVIDENCE_AI_TIMEOUT_SECONDS must be a number") from exc
+    if not 1 <= timeout_seconds <= 300:
+        raise ValueError("YANTU_EVIDENCE_AI_TIMEOUT_SECONDS must be between 1 and 300")
+
+    return EvidenceAISettings(
+        provider=provider,
+        base_url=base_url,
+        api_key=raw_api_key.strip(),
+        model=raw_model.strip(),
+        timeout_seconds=timeout_seconds,
+    )
+
+
 def _parse_database_url(
     environment: AppEnvironment,
     data_root: Path,
@@ -271,6 +348,7 @@ def get_settings() -> RuntimeSettings:
     auth_token_sha256 = _parse_auth_token_sha256(environment)
     database_url, database_backend = _parse_database_url(environment, data_root)
     supabase_storage = _parse_supabase_storage(environment)
+    evidence_ai = _parse_evidence_ai_settings()
     return RuntimeSettings(
         environment=environment,
         data_root=data_root,
@@ -279,4 +357,5 @@ def get_settings() -> RuntimeSettings:
         cors_allowed_origins=cors_allowed_origins,
         auth_token_sha256=auth_token_sha256,
         supabase_storage=supabase_storage,
+        evidence_ai=evidence_ai,
     )

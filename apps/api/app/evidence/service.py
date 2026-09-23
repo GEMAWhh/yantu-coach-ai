@@ -3,12 +3,20 @@ from dataclasses import dataclass
 from datetime import date
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.assets.service import AssetServiceError, read_asset_content
+from app.evidence.providers import (
+    EvidenceAnalysisInput,
+    EvidenceImage,
+    EvidenceProviderError,
+    ProviderMode,
+    build_evidence_provider,
+)
 from app.files.storage import (
     delete_asset_file_if_unreferenced,
     release_asset_reference,
@@ -21,11 +29,6 @@ from app.services.audit import write_audit_event
 from app.settings import RuntimeSettings
 
 EVIDENCE_SCHEMA_VERSION = "evidence-analysis-v1"
-FAKE_PROVIDER = "fake"
-FAKE_MODEL_NAME = "fake-evidence-provider"
-FAKE_PROMPT_VERSION = "evidence-draft-fake-v1"
-
-ProviderMode = Literal["valid", "invalid_schema"]
 
 
 class EvidenceError(ValueError):
@@ -131,6 +134,7 @@ def upload_evidence_files(
 
 
 def analyze_evidence_record(
+    settings: RuntimeSettings,
     session: Session,
     record_id: str,
     *,
@@ -139,21 +143,58 @@ def analyze_evidence_record(
     record = get_evidence_record(session, record_id)
     asset_ids = _asset_ids_for_record(session, record.id)
     started_at = utc_now()
-    output = _fake_provider_output(record, asset_ids, provider_mode)
+    provider = build_evidence_provider(settings.evidence_ai)
+    output: dict[str, Any] = {}
+    provider_error: EvidenceProviderError | None = None
+    asset_mime_types: list[str] = []
+    try:
+        images = _load_evidence_images(settings, session, asset_ids)
+        asset_mime_types = [image.mime_type for image in images]
+        output = provider.analyze(
+            EvidenceAnalysisInput(
+                record_id=record.id,
+                study_date=record.study_date.isoformat(),
+                asset_ids=asset_ids,
+                images=images,
+                provider_mode=provider_mode,
+            )
+        )
+    except AssetServiceError:
+        provider_error = EvidenceProviderError(
+            code="AI_EVIDENCE_ASSET_UNAVAILABLE",
+            message="evidence asset could not be read for AI analysis",
+        )
+    except EvidenceProviderError as exc:
+        provider_error = exc
+
     validation_errors = validate_evidence_payload(output)
+    if provider_error is not None:
+        validation_errors.insert(0, f"provider:{provider_error.code}")
     job_status = "succeeded" if not validation_errors else "failed"
     job = AIJob(
         id=str(uuid4()),
         job_type="evidence_analysis",
-        provider=FAKE_PROVIDER,
-        model_name=FAKE_MODEL_NAME,
-        prompt_version=FAKE_PROMPT_VERSION,
+        provider=provider.provider_name,
+        model_name=provider.model_name,
+        prompt_version=provider.prompt_version,
         status=job_status,
         attempts=1,
-        input_json={"record_id": record.id, "asset_ids": asset_ids},
-        output_json=output,
-        error_code=None if not validation_errors else "AI_OUTPUT_SCHEMA_INVALID",
-        error_message=None if not validation_errors else "; ".join(validation_errors),
+        input_json={
+            "record_id": record.id,
+            "asset_ids": asset_ids,
+            "asset_mime_types": asset_mime_types,
+        },
+        output_json=output if provider_error is None else None,
+        error_code=(
+            provider_error.code
+            if provider_error is not None
+            else (None if not validation_errors else "AI_OUTPUT_SCHEMA_INVALID")
+        ),
+        error_message=(
+            str(provider_error)
+            if provider_error is not None
+            else (None if not validation_errors else "; ".join(validation_errors))
+        ),
         started_at=started_at,
         completed_at=utc_now(),
     )
@@ -468,36 +509,6 @@ def _validate_teaching_judgment(value: object, errors: list[str]) -> None:
                 errors.append(f"type:teaching_judgment.evidence_basis[{index}]")
 
 
-def _fake_provider_output(
-    record: EvidenceRecord,
-    asset_ids: list[str],
-    provider_mode: ProviderMode,
-) -> dict[str, Any]:
-    if provider_mode == "invalid_schema":
-        return {"confirmed_facts": {"asset_count": len(asset_ids)}}
-    return {
-        "confirmed_facts": {
-            "record_id": record.id,
-            "asset_count": len(asset_ids),
-            "study_date": record.study_date.isoformat(),
-        },
-        "inferences": {"provider": FAKE_PROVIDER, "ocr_performed": False},
-        "uncertain_fields": [
-            {
-                "field": "ocr_text",
-                "reason": "fake provider does not read image content",
-                "confidence": 0.2,
-            }
-        ],
-        "teaching_judgment": {
-            "diagnosis": "pending_user_confirmation",
-            "evidence_basis": [f"asset:{asset_id}" for asset_id in asset_ids],
-            "risk": "needs_human_review",
-        },
-        "suggested_actions": [{"type": "confirm_or_edit", "priority": "normal"}],
-    }
-
-
 def _asset_ids_for_record(session: Session, record_id: str) -> list[str]:
     return list(
         session.scalars(
@@ -506,6 +517,31 @@ def _asset_ids_for_record(session: Session, record_id: str) -> list[str]:
             .order_by(EvidenceAsset.page_order)
         ).all()
     )
+
+
+def _load_evidence_images(
+    settings: RuntimeSettings,
+    session: Session,
+    asset_ids: list[str],
+) -> list[EvidenceImage]:
+    if settings.evidence_ai.provider.value == "fake":
+        return []
+    images: list[EvidenceImage] = []
+    for asset_id in asset_ids:
+        content = read_asset_content(settings, session, asset_id)
+        if content.asset.mime_type not in {"image/png", "image/jpeg"}:
+            raise EvidenceProviderError(
+                code="AI_EVIDENCE_TYPE_UNSUPPORTED",
+                message="AI evidence analysis currently supports PNG and JPEG images only",
+            )
+        images.append(
+            EvidenceImage(
+                asset_id=asset_id,
+                mime_type=content.asset.mime_type,
+                content_base64=content.content_base64,
+            )
+        )
+    return images
 
 
 def _write_upload_to_cache(settings: RuntimeSettings, file: EvidenceFileInput) -> Path:

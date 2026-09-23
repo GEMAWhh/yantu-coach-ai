@@ -48,6 +48,28 @@ python scripts/hash_auth_token.py
 
 在 Supabase `Project Settings` → `API Keys` 中创建或复制服务端 Secret Key。该密钥绕过 Storage RLS，只允许保存在 Render 后端环境变量中。
 
+### 证据 AI Provider
+
+Blueprint 默认设置 `YANTU_EVIDENCE_AI_PROVIDER=fake`，因此没有模型密钥时仍可部署和使用确定性核心。测试 DeepSeek 时，在 Render Environment 中设置：
+
+```text
+YANTU_EVIDENCE_AI_PROVIDER=deepseek
+YANTU_EVIDENCE_AI_API_KEY=<DeepSeek 服务端 API Key>
+```
+
+DeepSeek 自动使用 `https://api.deepseek.com` 和 `deepseek-flash`。不要把 Key 填到研途网页、个人访问密钥输入框、GitHub 或 Sites 环境变量中。
+
+百炼、硅基流动等 OpenAI 兼容服务使用：
+
+```text
+YANTU_EVIDENCE_AI_PROVIDER=openai_compatible
+YANTU_EVIDENCE_AI_API_KEY=<服务端 API Key>
+YANTU_EVIDENCE_AI_BASE_URL=<供应商文档给出的 HTTPS OpenAI-compatible API 根地址>
+YANTU_EVIDENCE_AI_MODEL=<支持图片输入的模型名>
+```
+
+代码会在 Base URL 后追加 `/chat/completions`。切换 Provider 后需要保存环境变量并重新部署 Render。真实 Provider 当前只分析 PNG/JPEG；PDF 仍可保存和查看，但分析会明确失败关闭。
+
 ## 4. 自动配置
 
 Blueprint 自动设置：
@@ -55,6 +77,7 @@ Blueprint 自动设置：
 - `YANTU_APP_ENV=prod`；
 - `YANTU_CORS_ALLOWED_ORIGINS=https://yantu-coach-ai-demo-20260715.h1660930192.chatgpt.site`；
 - `YANTU_SUPABASE_STORAGE_BUCKET=yantu-assets`。
+- `YANTU_EVIDENCE_AI_PROVIDER=fake`（配置真实 Provider 前保持降级模式）。
 
 不要把 bucket 改为 Public。Web 只通过带个人访问密钥的研途教练 API 读取原件。
 
@@ -73,5 +96,6 @@ Blueprint 自动设置：
 - 构建失败：检查 Python 版本和依赖安装日志，不修改 Supabase 数据。
 - 启动失败：优先检查 Session pooler URI、密码 URL 编码和 `sslmode=require`。
 - Storage 返回 503：检查 Project URL、Secret Key 和私有 bucket 名称；禁止回退到 Render 本地磁盘。
+- AI 分析显示鉴权失败：只检查 Render 中的 `YANTU_EVIDENCE_AI_*`，不要修改网页登录用的个人访问密钥。
 - 需要停止试运行时，在 Render 暂停服务；不要删除 Supabase 数据库或 bucket。
 - 回滚代码时使用 Render 最近的成功部署或回滚对应 Git 提交，不执行数据库降级或数据删除。

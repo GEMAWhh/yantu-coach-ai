@@ -1,15 +1,18 @@
 import base64
+import json
 from collections.abc import Generator
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from app.db.database import get_session_factory
 from app.db.migrations import initialize_database
+from app.evidence.providers import OpenAICompatibleEvidenceProvider
 from app.files.exceptions import PersistentStorageError
 from app.main import create_app
 from app.models.asset import Asset
@@ -19,6 +22,8 @@ from app.models.mastery import MasteryEvidence, MasterySnapshot
 from app.models.planning import Task
 from app.settings import (
     DatabaseBackend,
+    EvidenceAIProviderName,
+    EvidenceAISettings,
     RuntimeSettings,
     SupabaseStorageSettings,
     get_settings,
@@ -131,6 +136,92 @@ def test_fake_provider_creates_schema_valid_draft_without_changing_formal_learni
     assert task_count == 0
     assert evidence_count == 0
     assert snapshot_count == 0
+
+
+def test_deepseek_analysis_persists_only_safe_request_metadata(
+    test_settings: RuntimeSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api_key = "deepseek-test-key-never-persist"
+    model_output = _valid_payload("provider-record-placeholder")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["authorization"] == f"Bearer {api_key}"
+        payload = request.read().decode("utf-8")
+        assert "data:image/png;base64" in payload
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": json.dumps(model_output)}}]},
+        )
+
+    ai_settings = EvidenceAISettings(
+        provider=EvidenceAIProviderName.DEEPSEEK,
+        base_url="https://api.deepseek.com",
+        api_key=api_key,
+        model="deepseek-flash",
+        timeout_seconds=60,
+    )
+    real_settings = replace(test_settings, evidence_ai=ai_settings)
+    provider = OpenAICompatibleEvidenceProvider(
+        ai_settings,
+        transport=httpx.MockTransport(handler),
+    )
+    monkeypatch.setattr("app.api.evidence.get_settings", lambda: real_settings)
+    monkeypatch.setattr("app.evidence.service.build_evidence_provider", lambda _settings: provider)
+
+    with TestClient(create_app()) as client:
+        upload = _upload(client)
+        record_id = upload.json()["data"]["record"]["id"]
+        response = client.post(f"/api/v1/evidence/{record_id}/analyze", json={})
+
+    assert response.status_code == 200
+    assert response.json()["data"]["ai_job"]["provider"] == "deepseek"
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        job = session.scalar(select(AIJob).where(AIJob.provider == "deepseek"))
+    assert job is not None
+    persisted = repr(job.input_json) + repr(job.output_json) + str(job.error_message)
+    assert api_key not in persisted
+    assert base64.b64encode(PNG_BYTES).decode("ascii") not in persisted
+    assert job.input_json["asset_mime_types"] == ["image/png", "image/jpeg"]
+
+
+def test_real_provider_marks_pdf_as_unsupported_without_calling_upstream(
+    test_settings: RuntimeSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ai_settings = EvidenceAISettings(
+        provider=EvidenceAIProviderName.OPENAI_COMPATIBLE,
+        base_url="https://example-provider.invalid/v1",
+        api_key="unused-test-key",
+        model="vision-model",
+        timeout_seconds=60,
+    )
+    real_settings = replace(test_settings, evidence_ai=ai_settings)
+    monkeypatch.setattr("app.api.evidence.get_settings", lambda: real_settings)
+
+    with TestClient(create_app()) as client:
+        upload = client.post(
+            "/api/v1/evidence/uploads",
+            json={
+                "study_date": "2026-09-23",
+                "files": [
+                    {
+                        "original_name": "notes.pdf",
+                        "mime_type": "application/pdf",
+                        "content_base64": base64.b64encode(b"%PDF-1.7 test").decode("ascii"),
+                    }
+                ],
+            },
+        )
+        record_id = upload.json()["data"]["record"]["id"]
+        response = client.post(f"/api/v1/evidence/{record_id}/analyze", json={})
+
+    assert response.status_code == 200
+    job = response.json()["data"]["ai_job"]
+    assert job["status"] == "failed"
+    assert job["error_code"] == "AI_EVIDENCE_TYPE_UNSUPPORTED"
+    assert response.json()["data"]["draft"]["status"] == "needs_correction"
 
 
 def test_confirm_is_idempotent_and_audited_once(test_settings: RuntimeSettings) -> None:
