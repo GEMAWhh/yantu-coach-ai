@@ -259,8 +259,7 @@ def test_delete_unconfirmed_evidence_removes_record_drafts_and_unreferenced_asse
         record_id = upload_data["record"]["id"]
         asset_ids = [asset["id"] for asset in upload_data["assets"]]
         asset_paths = [
-            test_settings.data_root / Path(asset["storage_path"])
-            for asset in upload_data["assets"]
+            test_settings.data_root / Path(asset["storage_path"]) for asset in upload_data["assets"]
         ]
         client.post(f"/api/v1/evidence/{record_id}/analyze", json={})
         deleted = client.delete(
