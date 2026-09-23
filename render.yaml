@@ -17,6 +17,8 @@ services:
         value: https://yantu-coach-ai-demo-20260715.h1660930192.chatgpt.site
       - key: YANTU_SUPABASE_STORAGE_BUCKET
         value: yantu-assets
+      - key: YANTU_EVIDENCE_AI_PROVIDER
+        value: fake
       - key: YANTU_DATABASE_URL
         sync: false
       - key: YANTU_AUTH_TOKEN_SHA256
@@ -24,4 +26,6 @@ services:
       - key: YANTU_SUPABASE_URL
         sync: false
       - key: YANTU_SUPABASE_SECRET_KEY
+        sync: false
+      - key: YANTU_EVIDENCE_AI_API_KEY
         sync: false

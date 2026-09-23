@@ -66,6 +66,7 @@ YANTU_CORS_ALLOWED_ORIGINS=https://<approved-web-origin>
 YANTU_SUPABASE_URL=https://<project-ref>.supabase.co
 YANTU_SUPABASE_SECRET_KEY=<server-only secret key>
 YANTU_SUPABASE_STORAGE_BUCKET=yantu-assets
+YANTU_EVIDENCE_AI_PROVIDER=fake
 ```
 
 应用会把标准 PostgreSQL URL 规范为 `postgresql+psycopg://`，并拒绝生产 SQLite、非 TLS
@@ -218,7 +219,7 @@ mypy apps/api/app apps/api/tests
 Stage 5 adds the first governed AI-draft boundary for daily study evidence:
 
 - `POST /api/v1/evidence/uploads`: accepts JSON/base64 files and links multiple images or PDFs to one `evidence_record`.
-- `POST /api/v1/evidence/{record_id}/analyze`: runs the deterministic Fake Provider and stores an `ai_job` plus `evidence_draft`.
+- `POST /api/v1/evidence/{record_id}/analyze`: runs the server-selected Fake, DeepSeek, or OpenAI-compatible Provider and stores an `ai_job` plus unconfirmed `evidence_draft`.
 - `GET|PATCH /api/v1/evidence/{record_id}/draft`: reads or edits the structured draft. Schema-invalid payloads stay in `needs_correction`.
 - `POST /api/v1/evidence/{record_id}/confirm`: idempotently copies a valid draft into the formal evidence record and writes `evidence.confirmed` audit once.
 - `POST /api/v1/evidence/{record_id}/reject`: marks the current draft and record as rejected.

@@ -94,10 +94,12 @@ tests/fixtures/ai/
 `apps/api/tests/test_evidence_draft_pipeline.py` covers the first AI-draft gate:
 
 - `EVID-001`: two uploaded files are linked to one evidence record with stable page order.
-- `AI-002`: Fake Provider valid output conforms to `evidence-analysis-v1`.
+- `AI-002`: Fake Provider and mocked OpenAI-compatible output conform to `evidence-analysis-v1`.
 - `EVID-002`: unconfirmed drafts do not create tasks, mastery evidence, mastery snapshots, or formal confirmed fields.
 - `EVID-003`: confirmation is idempotent and writes exactly one `evidence.confirmed` audit event.
 - `AI-003`: schema-invalid Fake Provider output becomes `failed`/`needs_correction`, then can be manually patched to `draft`.
+- `AI-005`: mocked DeepSeek requests include image inputs while persisted jobs exclude API keys and base64 content.
+- `AI-006`: a PDF sent to a real Provider fails closed as `AI_EVIDENCE_TYPE_UNSUPPORTED`.
 - `EVID-004`: rejected drafts mark the draft and record as rejected without confirmation side effects.
 - `EVID-005`: history returns ordered attachment metadata; deleting unconfirmed evidence removes drafts, jobs, links, and unreferenced files, while confirmed evidence returns a conflict.
 

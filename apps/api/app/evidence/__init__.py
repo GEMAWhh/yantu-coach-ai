@@ -1,3 +1,4 @@
+from app.evidence.providers import ProviderMode
 from app.evidence.service import (
     EVIDENCE_SCHEMA_VERSION,
     EvidenceConfirmation,
@@ -5,7 +6,6 @@ from app.evidence.service import (
     EvidenceFileInput,
     EvidenceHistoryItem,
     EvidenceUpload,
-    ProviderMode,
     analyze_evidence_record,
     confirm_evidence_draft,
     get_evidence_draft,

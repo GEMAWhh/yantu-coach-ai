@@ -142,10 +142,16 @@ def analyze_evidence(
     record_id: str,
     payload: EvidenceAnalyzeRequest,
 ) -> ApiResponse[EvidenceAnalyzeResponse]:
+    settings = get_settings()
     session_factory = _session_factory()
     try:
         with session_factory.begin() as session:
-            draft = analyze_evidence_record(session, record_id, provider_mode=payload.provider_mode)
+            draft = analyze_evidence_record(
+                settings,
+                session,
+                record_id,
+                provider_mode=payload.provider_mode,
+            )
             ai_job = session.get(AIJob, draft.ai_job_id)
             if ai_job is None:
                 raise EvidenceError(

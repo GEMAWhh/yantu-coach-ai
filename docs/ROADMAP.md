@@ -30,7 +30,7 @@ FastAPI、SQLite、SQLAlchemy、Alembic、文件目录、审计、备份和 loca
 
 ## 阶段 5：每日证据
 
-多图上传、OCR/AI 草稿、用户确认和正式记录联动。先用 Fake Provider 验证治理流程，再接真实模型。
+多图上传、OCR/AI 草稿、用户确认和正式记录联动。Fake Provider 已验证治理流程；DeepSeek 作为首个真实图片 Provider，百炼、硅基流动等通过 OpenAI-compatible 适配层保留接入口。PDF 转图/OCR 和真实模型黄金集评测仍待完成。
 
 ## 阶段 6：错题中心
 

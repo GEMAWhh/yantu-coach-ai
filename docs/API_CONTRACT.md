@@ -237,7 +237,9 @@ POST /api/v1/evidence/{record_id}/reject
 
 `/history` returns each record with its latest draft and ordered attachment metadata so the client can expose explicit detail and attachment actions. `DELETE /evidence/{record_id}` removes only `pending` or `rejected` records, their drafts/jobs, links, and unreferenced original files. Confirmed records return `409 EVIDENCE_RECORD_CONFIRMED` and remain auditable.
 
-`/analyze` uses the Fake Provider. `provider_mode=valid` creates a schema-valid draft; `provider_mode=invalid_schema` stores a failed `ai_job` and a `needs_correction` draft with validation errors. The draft schema id is `evidence-analysis-v1`.
+`/analyze` selects its provider from server environment variables. The default Fake Provider remains deterministic for local development and tests; `provider_mode=invalid_schema` is a Fake-only test path. `deepseek` uses the DeepSeek defaults, while `openai_compatible` accepts an explicitly configured compatible base URL and model for providers such as Bailian or SiliconFlow. Clients cannot select a provider or submit an API key.
+
+Real providers currently accept PNG and JPEG evidence. PDF upload and storage remain supported, but real analysis records `AI_EVIDENCE_TYPE_UNSUPPORTED` and a `needs_correction` draft until a reviewed PDF conversion/OCR pipeline exists. Provider timeout, authentication, rate-limit, invalid-response, and storage failures are stored as sanitized failed jobs; upstream bodies, API keys, and base64 file content are never persisted. The draft schema id is `evidence-analysis-v1`.
 
 Unconfirmed drafts must not write formal evidence fields, tasks, mastery evidence, or mastery snapshots. `/confirm` is idempotent: the first valid confirmation copies structured fields into `evidence_records` and writes one `evidence.confirmed` audit event; repeated confirmation returns `created=false`.
 
