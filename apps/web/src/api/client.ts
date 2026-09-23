@@ -292,7 +292,7 @@ export class ApiClient {
     if (this.shouldUseDemoApi()) {
       return demoApiRequest<TData>({ method: "GET", path });
     }
-    const response = await this.fetcher(this.url(path), {
+    const response = await this.fetcher.call(globalThis, this.url(path), {
       headers: {
         Accept: "application/json",
         ...this.authHeaders(),
@@ -342,7 +342,7 @@ export class ApiClient {
       requestHeaders["Content-Type"] = "application/json";
       init.body = JSON.stringify(body);
     }
-    const response = await this.fetcher(this.url(path), init);
+    const response = await this.fetcher.call(globalThis, this.url(path), init);
     const responseBody = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
 
     if (!response.ok) {
@@ -370,7 +370,7 @@ export class ApiClient {
     if (this.shouldUseDemoApi()) {
       return demoApiRequest<TData>({ method, path, body, headers });
     }
-    const response = await this.fetcher(this.url(path), {
+    const response = await this.fetcher.call(globalThis, this.url(path), {
       method,
       headers: {
         Accept: "application/json",
