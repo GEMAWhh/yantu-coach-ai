@@ -9,7 +9,11 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.files.storage import store_original_file
+from app.files.storage import (
+    delete_asset_file_if_unreferenced,
+    release_asset_reference,
+    store_original_file,
+)
 from app.models.asset import Asset
 from app.models.base import utc_now
 from app.models.evidence import AIJob, EvidenceAsset, EvidenceDraft, EvidenceRecord
@@ -63,6 +67,14 @@ class EvidenceConfirmation:
 class EvidenceHistoryItem:
     record: EvidenceRecord
     draft: EvidenceDraft | None
+    assets: list[tuple[Asset, int]]
+
+
+@dataclass(frozen=True)
+class EvidenceDeletion:
+    record_id: str
+    deleted_asset_ids: list[str]
+    retained_asset_ids: list[str]
 
 
 def upload_evidence_files(
@@ -205,8 +217,96 @@ def list_evidence_history(session: Session, *, limit: int = 20) -> list[Evidence
             .order_by(EvidenceDraft.created_at.desc(), EvidenceDraft.updated_at.desc())
             .limit(1)
         )
-        items.append(EvidenceHistoryItem(record=record, draft=draft))
+        linked_assets = list(
+            session.execute(
+                select(Asset, EvidenceAsset.page_order)
+                .join(EvidenceAsset, EvidenceAsset.asset_id == Asset.id)
+                .where(EvidenceAsset.evidence_record_id == record.id)
+                .order_by(EvidenceAsset.page_order)
+            ).all()
+        )
+        items.append(EvidenceHistoryItem(record=record, draft=draft, assets=linked_assets))
     return items
+
+
+def delete_evidence_record(
+    settings: RuntimeSettings,
+    session: Session,
+    record_id: str,
+    *,
+    request_id: str | None = None,
+    actor_type: str = "system",
+) -> EvidenceDeletion:
+    record = get_evidence_record(session, record_id)
+    if record.status == "confirmed":
+        raise EvidenceError(
+            "confirmed evidence record cannot be deleted",
+            code="EVIDENCE_RECORD_CONFIRMED",
+            status_code=HTTPStatus.CONFLICT,
+            details={"record_id": record.id},
+        )
+
+    links = list(
+        session.scalars(
+            select(EvidenceAsset)
+            .where(EvidenceAsset.evidence_record_id == record.id)
+            .order_by(EvidenceAsset.page_order)
+        ).all()
+    )
+    drafts = list(
+        session.scalars(
+            select(EvidenceDraft).where(EvidenceDraft.evidence_record_id == record.id)
+        ).all()
+    )
+    ai_job_ids = [draft.ai_job_id for draft in drafts]
+    before_json = {
+        "status": record.status,
+        "study_date": record.study_date.isoformat(),
+        "subject_id": record.subject_id,
+        "asset_ids": [link.asset_id for link in links],
+    }
+
+    for draft in drafts:
+        session.delete(draft)
+    for link in links:
+        session.delete(link)
+    session.flush()
+
+    for link in links:
+        release_asset_reference(session, link.asset_id)
+
+    deleted_asset_ids: list[str] = []
+    retained_asset_ids: list[str] = []
+    for asset_id in dict.fromkeys(link.asset_id for link in links):
+        asset = session.get(Asset, asset_id)
+        if asset is not None and asset.reference_count == 0:
+            delete_asset_file_if_unreferenced(settings, session, asset.id)
+            deleted_asset_ids.append(asset.id)
+            session.delete(asset)
+        elif asset is not None:
+            retained_asset_ids.append(asset.id)
+
+    for ai_job_id in ai_job_ids:
+        ai_job = session.get(AIJob, ai_job_id)
+        if ai_job is not None:
+            session.delete(ai_job)
+    session.delete(record)
+    write_audit_event(
+        session,
+        event_type="evidence.deleted",
+        actor_type=actor_type,
+        object_type="evidence_record",
+        object_id=record.id,
+        before_json=before_json,
+        reason="deleted unconfirmed evidence record",
+        request_id=request_id,
+    )
+    session.flush()
+    return EvidenceDeletion(
+        record_id=record.id,
+        deleted_asset_ids=deleted_asset_ids,
+        retained_asset_ids=retained_asset_ids,
+    )
 
 
 def update_evidence_draft(

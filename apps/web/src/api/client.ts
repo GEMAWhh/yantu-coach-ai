@@ -3,6 +3,7 @@ import type {
   ApiErrorResponse,
   ApiMetaPayload,
   ApiResponse,
+  AssetContentPayload,
   AuthStatusPayload,
   AnalyticsErrorsPayload,
   AnalyticsGoalRiskPayload,
@@ -13,6 +14,7 @@ import type {
   EvidenceAnalyzeCreatePayload,
   EvidenceAnalyzePayload,
   EvidenceConfirmPayload,
+  EvidenceDeletePayload,
   EvidenceDraftPayload,
   EvidenceHistoryPayload,
   EvidenceRejectCreatePayload,
@@ -216,6 +218,18 @@ export class ApiClient {
     return this.get<EvidenceHistoryPayload>(`/api/v1/evidence/history?limit=${limit}`);
   }
 
+  evidenceAssetContent(assetId: string): Promise<ApiResponse<AssetContentPayload>> {
+    return this.get<AssetContentPayload>(
+      `/api/v1/assets/${encodeURIComponent(assetId)}/content`,
+    );
+  }
+
+  deleteEvidence(recordId: string): Promise<ApiResponse<EvidenceDeletePayload>> {
+    return this.delete<EvidenceDeletePayload>(
+      `/api/v1/evidence/${encodeURIComponent(recordId)}`,
+    );
+  }
+
   analyzeEvidence(
     recordId: string,
     payload: EvidenceAnalyzeCreatePayload = {},
@@ -343,6 +357,27 @@ export class ApiClient {
       init.body = JSON.stringify(body);
     }
     const response = await this.fetcher.call(globalThis, this.url(path), init);
+    const responseBody = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
+
+    if (!response.ok) {
+      const errorBody = responseBody as ApiErrorResponse;
+      throw new ApiClientError(response.status, errorBody.error);
+    }
+
+    return responseBody as ApiResponse<TData>;
+  }
+
+  private async delete<TData>(path: string): Promise<ApiResponse<TData>> {
+    if (this.shouldUseDemoApi()) {
+      return demoApiRequest<TData>({ method: "DELETE", path });
+    }
+    const response = await this.fetcher.call(globalThis, this.url(path), {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...this.authHeaders(),
+      },
+    });
     const responseBody = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
 
     if (!response.ok) {

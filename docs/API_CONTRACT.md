@@ -120,6 +120,8 @@ POST /reviews/recalculate
 
 ```http
 POST /evidence/uploads
+GET  /evidence/history
+DELETE /evidence/{record_id}
 POST /evidence/{record_id}/analyze
 GET  /evidence/{record_id}/draft
 PATCH /evidence/{record_id}/draft
@@ -222,6 +224,8 @@ Current implemented evidence endpoints are JSON based, not multipart based:
 
 ```http
 POST /api/v1/evidence/uploads
+GET  /api/v1/evidence/history
+DELETE /api/v1/evidence/{record_id}
 POST /api/v1/evidence/{record_id}/analyze
 GET  /api/v1/evidence/{record_id}/draft
 PATCH /api/v1/evidence/{record_id}/draft
@@ -230,6 +234,8 @@ POST /api/v1/evidence/{record_id}/reject
 ```
 
 `/uploads` accepts `study_date`, optional `subject_id`, and `files[]` with `original_name`, `mime_type`, and `content_base64`. Supported MIME types are `image/png`, `image/jpeg`, and `application/pdf`.
+
+`/history` returns each record with its latest draft and ordered attachment metadata so the client can expose explicit detail and attachment actions. `DELETE /evidence/{record_id}` removes only `pending` or `rejected` records, their drafts/jobs, links, and unreferenced original files. Confirmed records return `409 EVIDENCE_RECORD_CONFIRMED` and remain auditable.
 
 `/analyze` uses the Fake Provider. `provider_mode=valid` creates a schema-valid draft; `provider_mode=invalid_schema` stores a failed `ai_job` and a `needs_correction` draft with validation errors. The draft schema id is `evidence-analysis-v1`.
 

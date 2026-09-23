@@ -573,6 +573,53 @@ h3 {
   text-align: left;
 }
 
+.evidence-history-item.selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.evidence-history-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.evidence-detail,
+.evidence-asset-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.evidence-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.evidence-asset-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-top: 1px solid var(--gray-200);
+  padding-top: var(--space-3);
+}
+
+.evidence-asset-row span,
+.evidence-asset-row strong,
+.evidence-asset-row small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.evidence-asset-row small {
+  margin-top: 2px;
+  color: var(--gray-600);
+  font-size: 12px;
+}
+
 .evidence-history-item span,
 .evidence-history-item strong,
 .evidence-history-item small,

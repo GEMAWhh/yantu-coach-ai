@@ -41,7 +41,7 @@ import type {
   WrongbookVerificationPayload,
 } from "./contracts";
 
-type DemoMethod = "GET" | "POST" | "PATCH";
+type DemoMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 type DemoRequest = {
   method: DemoMethod;
@@ -404,6 +404,9 @@ export async function demoApiRequest<TData>(request: DemoRequest): Promise<ApiRe
   }
   if (request.method === "POST") {
     return routeDemoPost<TData>(path, request.body, request.headers ?? {});
+  }
+  if (request.method === "DELETE") {
+    return routeDemoDelete<TData>(path);
   }
   return routeDemoPatch<TData>(path, request.body);
 }
@@ -879,12 +882,31 @@ function evidenceHistory(limit: number): EvidenceHistoryPayload {
     .slice(0, limit)
     .map((record) => ({
       record,
+      assets: [],
       draft:
         [...evidenceDrafts]
           .filter((draft) => draft.evidence_record_id === record.id)
           .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0] ?? null,
     }));
   return { items, total: items.length };
+}
+
+function routeDemoDelete<TData>(path: string): ApiResponse<TData> {
+  const evidenceMatch = path.match(/^\/api\/v1\/evidence\/([^/]+)$/);
+  if (!evidenceMatch) {
+    throw new Error(`Demo API route is not implemented: DELETE ${path}`);
+  }
+  const recordId = decodeURIComponent(evidenceMatch[1]);
+  const record = evidenceRecordFor(recordId);
+  if (record.status === "confirmed") {
+    throw new Error("Confirmed demo evidence cannot be deleted");
+  }
+  evidenceRecords = evidenceRecords.filter((item) => item.id !== recordId);
+  evidenceDrafts = evidenceDrafts.filter((item) => item.evidence_record_id !== recordId);
+  return respond<TData>(
+    { record_id: recordId, deleted_asset_ids: [], retained_asset_ids: [] },
+    "evidence-delete",
+  );
 }
 
 function wrongbookHistory(limit: number): WrongbookDraftHistoryPayload {

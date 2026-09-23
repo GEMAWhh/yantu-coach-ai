@@ -49,6 +49,15 @@ function evidenceHistoryWithDraftResponse(): Response {
             status: "pending",
             asset_count: 2,
           },
+          assets: [
+            {
+              id: "history-asset-1",
+              original_name: "proof.png",
+              mime_type: "image/png",
+              size_bytes: 1024,
+              page_order: 0,
+            },
+          ],
           draft: {
             id: "history-draft-1",
             evidence_record_id: "history-evidence-1",
@@ -59,6 +68,36 @@ function evidenceHistoryWithDraftResponse(): Response {
             },
             validation_errors: [],
           },
+        },
+      ],
+    },
+    meta: { request_id: "evidence-history" },
+  });
+}
+
+function evidenceHistoryWithoutDraftResponse(): Response {
+  return jsonResponse({
+    data: {
+      total: 1,
+      items: [
+        {
+          record: {
+            id: "history-evidence-1",
+            study_date: "2026-07-14",
+            subject_id: "math",
+            status: "pending",
+            asset_count: 1,
+          },
+          assets: [
+            {
+              id: "history-asset-1",
+              original_name: "proof.png",
+              mime_type: "image/png",
+              size_bytes: 1024,
+              page_order: 0,
+            },
+          ],
+          draft: null,
         },
       ],
     },
@@ -198,10 +237,96 @@ describe("App", () => {
     expect(wrapper.text()).toContain("2026-07-14");
     expect(wrapper.text()).toContain("english · 2 个附件");
 
-    await wrapper.get(".evidence-history-item").trigger("click");
+    await wrapper.get(".evidence-history-actions .task-action-button.secondary").trigger("click");
 
     expect(wrapper.text()).toContain("待确认证据草稿");
     expect(wrapper.text()).toContain("草稿已关联 2 个证据附件");
+    expect(wrapper.text()).toContain("proof.png");
+  });
+
+  it("shows explicit evidence history actions and deletes an unconfirmed record", async () => {
+    const calls: Array<{ path: string; method: string }> = [];
+    let deleted = false;
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        const method = init?.method ?? "GET";
+        calls.push({ path, method });
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return deleted ? emptyEvidenceHistoryResponse() : evidenceHistoryWithDraftResponse();
+        }
+        if (path === "/api/v1/evidence/history-evidence-1" && method === "DELETE") {
+          deleted = true;
+          return jsonResponse({
+            data: {
+              record_id: "history-evidence-1",
+              deleted_asset_ids: ["history-asset-1"],
+              retained_asset_ids: [],
+            },
+            meta: { request_id: "evidence-delete" },
+          });
+        }
+        return jsonResponse({ data: { date: "2026-07-15", tasks: [], total_tasks: 0, estimated_minutes: 0 }, meta: { request_id: "today" } });
+      }),
+    );
+
+    const wrapper = await mountApp("/today");
+    const actions = wrapper.findAll(".evidence-history-actions button");
+    expect(actions.map((button) => button.text())).toEqual(["查看", "删除"]);
+
+    await actions[1].trigger("click");
+    await flushPromises();
+
+    expect(calls).toContainEqual({ path: "/api/v1/evidence/history-evidence-1", method: "DELETE" });
+    expect(wrapper.text()).toContain("还没有历史证据草稿");
+  });
+
+  it("analyzes a previously uploaded evidence record from history", async () => {
+    const calls: string[] = [];
+    let analyzed = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        calls.push(path);
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return analyzed ? evidenceHistoryWithDraftResponse() : evidenceHistoryWithoutDraftResponse();
+        }
+        if (path === "/api/v1/evidence/history-evidence-1/analyze") {
+          analyzed = true;
+          return jsonResponse({
+            data: {
+              draft: {
+                id: "history-draft-1",
+                evidence_record_id: "history-evidence-1",
+                status: "draft",
+                structured_json: {
+                  confirmed_facts: { asset_count: 1 },
+                  suggested_actions: [{ type: "confirm_or_reject" }],
+                },
+                validation_errors: [],
+              },
+              ai_job: { id: "history-job-1", status: "succeeded" },
+            },
+            meta: { request_id: "evidence-analyze" },
+          });
+        }
+        return jsonResponse({ data: { date: "2026-07-15", tasks: [], total_tasks: 0, estimated_minutes: 0 }, meta: { request_id: "today" } });
+      }),
+    );
+
+    const wrapper = await mountApp("/today");
+    await wrapper.get(".evidence-history-actions .task-action-button.secondary").trigger("click");
+    expect(wrapper.text()).toContain("尚未分析");
+    expect(wrapper.text()).toContain("开始分析");
+
+    await wrapper.get(".evidence-detail > .task-actions .task-action-button").trigger("click");
+    await flushPromises();
+
+    expect(calls).toContain("/api/v1/evidence/history-evidence-1/analyze");
+    expect(wrapper.text()).toContain("待确认证据草稿");
   });
 
   it("starts a today task through the guarded task action API", async () => {
