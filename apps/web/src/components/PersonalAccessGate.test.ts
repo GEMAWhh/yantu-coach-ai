@@ -69,6 +69,37 @@ describe("PersonalAccessGate", () => {
     expect(window.sessionStorage.getItem("yantu.personalAccessKey")).toBeNull();
   });
 
+  it("shows the application validation message for a short key", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const wrapper = mount(PersonalAccessGate);
+
+    await wrapper.get("input").setValue("short-key");
+    await wrapper.get("form").trigger("submit");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(wrapper.get('[role="alert"]').text()).toContain("至少需要 32 个字符");
+  });
+
+  it("classifies a non-JSON 401 response as an invalid access key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response("unauthorized", {
+          status: 401,
+          headers: { "Content-Type": "text/plain" },
+        }),
+      ),
+    );
+    const wrapper = mount(PersonalAccessGate);
+
+    await wrapper.get("input").setValue("wrong-access-key-with-at-least-32-characters");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("访问密钥不正确");
+  });
+
   it("verifies with an in-memory key when session storage rejects writes", async () => {
     const accessKey = "personal-access-key-with-at-least-32-characters";
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {

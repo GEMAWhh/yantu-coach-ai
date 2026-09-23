@@ -75,6 +75,7 @@ onMounted(async () => {
 
       <form
         class="access-form"
+        novalidate
         @submit.prevent="submit"
       >
         <label for="personal-access-key">个人访问密钥</label>

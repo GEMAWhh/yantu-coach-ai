@@ -298,7 +298,20 @@ export class ApiClient {
         ...this.authHeaders(),
       },
     });
-    const body = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
+    let body: ApiResponse<TData> | ApiErrorResponse;
+    try {
+      body = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
+    } catch (error) {
+      if (!response.ok) {
+        throw new ApiClientError(response.status, {
+          code: "HTTP_ERROR",
+          message: `Request failed with status ${response.status}`,
+          details: null,
+          request_id: response.headers.get("x-request-id") ?? "unavailable",
+        });
+      }
+      throw error;
+    }
 
     if (!response.ok) {
       const errorBody = body as ApiErrorResponse;
