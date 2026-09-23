@@ -12,6 +12,7 @@ from app.db.database import get_session_factory
 from app.db.migrations import initialize_database
 from app.files.exceptions import PersistentStorageError
 from app.main import create_app
+from app.models.asset import Asset
 from app.models.audit import AuditEvent
 from app.models.evidence import AIJob, EvidenceAsset, EvidenceDraft, EvidenceRecord
 from app.models.mastery import MasteryEvidence, MasterySnapshot
@@ -242,6 +243,75 @@ def test_evidence_history_lists_records_with_latest_drafts(
     assert item["draft"]["evidence_record_id"] == second_id
     assert item["draft"]["status"] == "needs_correction"
     assert item["draft"]["validation_errors"]
+    assert [asset["page_order"] for asset in item["assets"]] == [0, 1]
+    assert [asset["original_name"] for asset in item["assets"]] == [
+        "proof-1.png",
+        "proof-2.jpg",
+    ]
+
+
+def test_delete_unconfirmed_evidence_removes_record_drafts_and_unreferenced_assets(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        upload = _upload(client)
+        upload_data = upload.json()["data"]
+        record_id = upload_data["record"]["id"]
+        asset_ids = [asset["id"] for asset in upload_data["assets"]]
+        asset_paths = [
+            test_settings.data_root / Path(asset["storage_path"]) for asset in upload_data["assets"]
+        ]
+        client.post(f"/api/v1/evidence/{record_id}/analyze", json={})
+        deleted = client.delete(
+            f"/api/v1/evidence/{record_id}",
+            headers={"X-Request-ID": "delete-evidence"},
+        )
+        history = client.get("/api/v1/evidence/history")
+
+    assert deleted.status_code == 200
+    assert deleted.json()["meta"] == {"request_id": "delete-evidence"}
+    assert deleted.json()["data"] == {
+        "record_id": record_id,
+        "deleted_asset_ids": asset_ids,
+        "retained_asset_ids": [],
+    }
+    assert history.json()["data"]["items"] == []
+    assert all(not path.exists() for path in asset_paths)
+
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        assert session.get(EvidenceRecord, record_id) is None
+        assert session.scalar(select(func.count(EvidenceAsset.id))) == 0
+        assert session.scalar(select(func.count(EvidenceDraft.id))) == 0
+        assert session.scalar(select(func.count(AIJob.id))) == 0
+        assert session.scalar(select(func.count(Asset.id))) == 0
+        audit = session.scalar(
+            select(AuditEvent).where(
+                AuditEvent.event_type == "evidence.deleted",
+                AuditEvent.object_id == record_id,
+            )
+        )
+    assert audit is not None
+    assert audit.before_json is not None
+    assert audit.before_json["asset_ids"] == asset_ids
+
+
+def test_delete_confirmed_evidence_is_blocked(test_settings: RuntimeSettings) -> None:
+    with TestClient(create_app()) as client:
+        upload = _upload(client)
+        record_id = upload.json()["data"]["record"]["id"]
+        client.post(f"/api/v1/evidence/{record_id}/analyze", json={})
+        client.post(f"/api/v1/evidence/{record_id}/confirm")
+        deleted = client.delete(f"/api/v1/evidence/{record_id}")
+
+    assert deleted.status_code == 409
+    assert deleted.json()["error"]["code"] == "EVIDENCE_RECORD_CONFIRMED"
+
+    session_factory = get_session_factory(test_settings.database_url)
+    with session_factory() as session:
+        record = session.get(EvidenceRecord, record_id)
+        assert record is not None
+        assert record.status == "confirmed"
 
 
 def _upload(client: TestClient) -> Any:

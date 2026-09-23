@@ -117,6 +117,7 @@ class EvidenceHistoryItemResponse(BaseModel):
 
     record: EvidenceRecordResponse
     draft: EvidenceDraftResponse | None
+    assets: list[EvidenceAssetResponse]
 
     @classmethod
     def from_item(cls, item: EvidenceHistoryItem) -> EvidenceHistoryItemResponse:
@@ -125,6 +126,10 @@ class EvidenceHistoryItemResponse(BaseModel):
             draft=(
                 EvidenceDraftResponse.from_model(item.draft) if item.draft is not None else None
             ),
+            assets=[
+                EvidenceAssetResponse.from_model(asset, page_order=page_order)
+                for asset, page_order in item.assets
+            ],
         )
 
 
@@ -133,6 +138,14 @@ class EvidenceHistoryResponse(BaseModel):
 
     items: list[EvidenceHistoryItemResponse]
     total: int
+
+
+class EvidenceDeleteResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    record_id: str
+    deleted_asset_ids: list[str]
+    retained_asset_ids: list[str]
 
 
 class AIJobResponse(BaseModel):

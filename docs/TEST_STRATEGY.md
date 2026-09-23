@@ -99,6 +99,7 @@ tests/fixtures/ai/
 - `EVID-003`: confirmation is idempotent and writes exactly one `evidence.confirmed` audit event.
 - `AI-003`: schema-invalid Fake Provider output becomes `failed`/`needs_correction`, then can be manually patched to `draft`.
 - `EVID-004`: rejected drafts mark the draft and record as rejected without confirmation side effects.
+- `EVID-005`: history returns ordered attachment metadata; deleting unconfirmed evidence removes drafts, jobs, links, and unreferenced files, while confirmed evidence returns a conflict.
 
 ## 8. Wrongbook domain acceptance coverage
 

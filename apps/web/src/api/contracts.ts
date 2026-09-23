@@ -211,6 +211,7 @@ export type EvidenceConfirmPayload = {
 export type EvidenceHistoryItemPayload = {
   record: EvidenceRecordPayload;
   draft: EvidenceDraftPayload | null;
+  assets: EvidenceAssetPayload[];
 };
 
 export type EvidenceHistoryPayload = {
@@ -220,6 +221,12 @@ export type EvidenceHistoryPayload = {
 
 export type EvidenceRejectCreatePayload = {
   reason: string;
+};
+
+export type EvidenceDeletePayload = {
+  record_id: string;
+  deleted_asset_ids: string[];
+  retained_asset_ids: string[];
 };
 
 export type GoalPayload = {
@@ -364,6 +371,11 @@ export type AssetPayload = {
   size_bytes: number;
   state: "inbox" | "organized" | "archived" | "deleted";
   reference_count: number;
+};
+
+export type AssetContentPayload = {
+  metadata: AssetPayload;
+  content_base64: string;
 };
 
 export type ResourcePayload = {

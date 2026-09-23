@@ -907,6 +907,7 @@ describe("ApiClient", () => {
               confirmed_at: null,
               rejected_at: null,
             },
+            assets: [],
             draft: {
               id: "draft-1",
               version: 1,
@@ -936,6 +937,50 @@ describe("ApiClient", () => {
 
     await expect(client.evidenceHistory(5)).resolves.toEqual(payload);
     expect(calls).toEqual(["/api/v1/evidence/history?limit=5"]);
+  });
+
+  it("loads evidence attachment content and deletes an evidence record", async () => {
+    const responses = [
+      {
+        data: {
+          metadata: {
+            id: "asset-1",
+            version: 1,
+            created_at: "2026-07-15T09:00:00Z",
+            updated_at: "2026-07-15T09:00:00Z",
+            sha256: "a".repeat(64),
+            original_name: "proof.png",
+            storage_path: "files/original/proof.png",
+            mime_type: "image/png",
+            size_bytes: 24,
+            state: "inbox",
+            reference_count: 1,
+          },
+          content_base64: "iVBORw0KGgo=",
+        },
+        meta: { request_id: "asset-content" },
+      },
+      {
+        data: {
+          record_id: "evidence-1",
+          deleted_asset_ids: ["asset-1"],
+          retained_asset_ids: [],
+        },
+        meta: { request_id: "evidence-delete" },
+      },
+    ];
+    const calls: Array<{ input: string; init?: RequestInit }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ input: String(input), init });
+      return jsonResponse(responses[calls.length - 1]);
+    });
+
+    await expect(client.evidenceAssetContent("asset-1")).resolves.toEqual(responses[0]);
+    await expect(client.deleteEvidence("evidence-1")).resolves.toEqual(responses[1]);
+
+    expect(calls[0].input).toBe("/api/v1/assets/asset-1/content");
+    expect(calls[1].input).toBe("/api/v1/evidence/evidence-1");
+    expect(calls[1].init?.method).toBe("DELETE");
   });
 
   it("submits task status actions with version protection", async () => {

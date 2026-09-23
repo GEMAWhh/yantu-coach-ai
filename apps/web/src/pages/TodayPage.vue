@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 
 import { ApiClient } from "../api/client";
 import type {
+  EvidenceAssetPayload,
   EvidenceDraftPayload,
   EvidenceFileUploadPayload,
   EvidenceHistoryItemPayload,
@@ -28,7 +29,9 @@ const evidenceFileInput = ref<HTMLInputElement | null>(null);
 const selectedEvidenceFiles = ref<File[]>([]);
 const evidenceSubjectId = ref("math");
 const evidenceHistory = ref<EvidenceHistoryItemPayload[] | null>(null);
-const evidenceActionInFlight = ref<"upload" | "confirm" | "reject" | null>(null);
+const evidenceAssets = ref<EvidenceAssetPayload[]>([]);
+const evidenceActionInFlight = ref<"upload" | "analyze" | "confirm" | "reject" | "delete" | null>(null);
+const openingEvidenceAssetId = ref<string | null>(null);
 const evidenceActionError = ref<string | null>(null);
 const evidenceHistoryError = ref<string | null>(null);
 const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
@@ -64,8 +67,8 @@ const todayMetrics = computed(() => [
     tone: "yellow" as Tone,
   },
 ]);
-const evidenceSourceLabel = computed(() => (evidenceRecord.value ? "正式草稿" : "原型草稿"));
-const evidenceSourceTone = computed<Tone>(() => (evidenceRecord.value ? "green" : "yellow"));
+const evidenceSourceLabel = computed(() => (evidenceRecord.value ? "记录详情" : "新建证据"));
+const evidenceSourceTone = computed<Tone>(() => (evidenceRecord.value ? "green" : "blue"));
 const pendingEvidenceDraftCount = computed(() =>
   evidenceHistory.value
     ? evidenceHistory.value.filter((item) => item.draft?.status === "draft").length
@@ -74,14 +77,21 @@ const pendingEvidenceDraftCount = computed(() =>
       : 0,
 );
 const evidenceCardTitle = computed(() =>
-  evidenceDraft.value ? evidenceDraftTitle(evidenceDraft.value) : "昨日复盘草稿",
+  evidenceDraft.value
+    ? evidenceDraftTitle(evidenceDraft.value)
+    : evidenceRecord.value
+      ? `${formatEvidenceHistoryDate(evidenceRecord.value.study_date)} 证据记录`
+      : "上传学习证据",
 );
 const evidenceCardBody = computed(() => {
   if (!evidenceDraft.value) {
+    if (evidenceRecord.value) {
+      return `已保存 ${evidenceRecord.value.asset_count} 个原始附件，尚未分析。`;
+    }
     if (selectedEvidenceFiles.value.length > 0) {
       return `已选择 ${selectedEvidenceFiles.value.length} 个证据文件，上传分析前不会写入正式学习记录。`;
     }
-    return "已识别 2 个高频错因：条件遗漏、符号方向误判。用户确认前，不更新掌握判定和后续计划。";
+    return "上传图片或 PDF 后生成待确认草稿；确认前不更新掌握判定和后续计划。";
   }
   return evidenceDraftSummary(evidenceDraft.value);
 });
@@ -326,6 +336,7 @@ async function createEvidenceDraft(): Promise<void> {
     });
     evidenceRecord.value = upload.data.record;
     evidenceDraft.value = analyzed.data.draft;
+    evidenceAssets.value = upload.data.assets;
     selectedEvidenceFiles.value = [];
     await loadEvidenceHistory();
   } catch {
@@ -335,6 +346,83 @@ async function createEvidenceDraft(): Promise<void> {
       evidenceActionInFlight.value = null;
     }
   }
+}
+
+async function analyzeSelectedEvidence(): Promise<void> {
+  if (!evidenceRecord.value) {
+    return;
+  }
+  evidenceActionInFlight.value = "analyze";
+  evidenceActionError.value = null;
+  try {
+    const analyzed = await new ApiClient().analyzeEvidence(evidenceRecord.value.id, {
+      provider_mode: "valid",
+    });
+    evidenceDraft.value = analyzed.data.draft;
+    await loadEvidenceHistory();
+  } catch {
+    evidenceActionError.value = "证据分析失败，请稍后重试。";
+  } finally {
+    if (evidenceActionInFlight.value === "analyze") {
+      evidenceActionInFlight.value = null;
+    }
+  }
+}
+
+async function openEvidenceAsset(asset: EvidenceAssetPayload): Promise<void> {
+  openingEvidenceAssetId.value = asset.id;
+  evidenceActionError.value = null;
+  try {
+    const response = await new ApiClient().evidenceAssetContent(asset.id);
+    const binary = atob(response.data.content_base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    const url = URL.createObjectURL(new Blob([bytes], { type: asset.mime_type }));
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      URL.revokeObjectURL(url);
+      evidenceActionError.value = "浏览器阻止了附件窗口，请允许弹出窗口后重试。";
+      return;
+    }
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch {
+    evidenceActionError.value = "附件读取失败，请稍后重试。";
+  } finally {
+    openingEvidenceAssetId.value = null;
+  }
+}
+
+async function deleteEvidenceHistory(item: EvidenceHistoryItemPayload): Promise<void> {
+  if (item.record.status === "confirmed") {
+    return;
+  }
+  if (!window.confirm("删除这条证据记录及其未被其他记录使用的附件？此操作无法撤销。")) {
+    return;
+  }
+  evidenceActionInFlight.value = "delete";
+  evidenceActionError.value = null;
+  try {
+    await new ApiClient().deleteEvidence(item.record.id);
+    if (evidenceRecord.value?.id === item.record.id) {
+      resetEvidenceSelection();
+    }
+    await loadEvidenceHistory();
+  } catch {
+    evidenceActionError.value = "证据记录删除失败，请刷新后重试。";
+  } finally {
+    if (evidenceActionInFlight.value === "delete") {
+      evidenceActionInFlight.value = null;
+    }
+  }
+}
+
+function resetEvidenceSelection(): void {
+  evidenceRecord.value = null;
+  evidenceDraft.value = null;
+  evidenceAssets.value = [];
+  evidenceActionError.value = null;
 }
 
 async function confirmEvidenceDraft(): Promise<void> {
@@ -432,6 +520,16 @@ async function loadEvidenceHistory(): Promise<void> {
   try {
     const history = await new ApiClient().evidenceHistory(10);
     evidenceHistory.value = history.data.items;
+    if (evidenceRecord.value) {
+      const selected = history.data.items.find(
+        (item) => item.record.id === evidenceRecord.value?.id,
+      );
+      if (selected) {
+        evidenceRecord.value = selected.record;
+        evidenceDraft.value = selected.draft;
+        evidenceAssets.value = selected.assets;
+      }
+    }
     evidenceHistoryError.value = null;
   } catch {
     evidenceHistory.value = null;
@@ -442,6 +540,7 @@ async function loadEvidenceHistory(): Promise<void> {
 function selectEvidenceHistory(item: EvidenceHistoryItemPayload): void {
   evidenceRecord.value = item.record;
   evidenceDraft.value = item.draft;
+  evidenceAssets.value = item.assets;
   evidenceActionError.value = null;
 }
 
@@ -765,7 +864,7 @@ onMounted(async () => {
             {{ evidenceActionError }}
           </p>
           <form
-            v-if="!evidenceDraft"
+            v-if="!evidenceRecord"
             class="evidence-upload-form"
             @submit.prevent="createEvidenceDraft"
           >
@@ -798,24 +897,74 @@ onMounted(async () => {
           </form>
           <div
             v-else
-            class="task-actions"
+            class="evidence-detail"
           >
-            <button
-              type="button"
-              class="task-action-button"
-              :disabled="!canConfirmEvidence() || evidenceActionInFlight === 'confirm'"
-              @click="confirmEvidenceDraft"
-            >
-              确认
-            </button>
-            <button
-              type="button"
-              class="task-action-button danger"
-              :disabled="!canRejectEvidence() || evidenceActionInFlight === 'reject'"
-              @click="rejectEvidenceDraft"
-            >
-              驳回
-            </button>
+            <dl class="evidence-detail-meta">
+              <div>
+                <dt>学科</dt>
+                <dd>{{ evidenceRecord.subject_id ?? "未分科" }}</dd>
+              </div>
+              <div>
+                <dt>记录状态</dt>
+                <dd>{{ evidenceRecordStatusLabel(evidenceRecord.status) }}</dd>
+              </div>
+            </dl>
+            <div class="evidence-asset-list">
+              <div
+                v-for="asset in evidenceAssets"
+                :key="asset.id"
+                class="evidence-asset-row"
+              >
+                <span>
+                  <strong>{{ asset.original_name }}</strong>
+                  <small>{{ Math.max(1, Math.round(asset.size_bytes / 1024)) }} KB</small>
+                </span>
+                <button
+                  type="button"
+                  class="task-action-button secondary"
+                  :disabled="openingEvidenceAssetId === asset.id"
+                  @click="openEvidenceAsset(asset)"
+                >
+                  {{ openingEvidenceAssetId === asset.id ? "读取中" : "打开附件" }}
+                </button>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button
+                v-if="!evidenceDraft"
+                type="button"
+                class="task-action-button"
+                :disabled="evidenceActionInFlight === 'analyze'"
+                @click="analyzeSelectedEvidence"
+              >
+                {{ evidenceActionInFlight === "analyze" ? "分析中" : "开始分析" }}
+              </button>
+              <button
+                v-if="evidenceDraft"
+                type="button"
+                class="task-action-button"
+                :disabled="!canConfirmEvidence() || evidenceActionInFlight === 'confirm'"
+                @click="confirmEvidenceDraft"
+              >
+                确认
+              </button>
+              <button
+                v-if="evidenceDraft"
+                type="button"
+                class="task-action-button danger"
+                :disabled="!canRejectEvidence() || evidenceActionInFlight === 'reject'"
+                @click="rejectEvidenceDraft"
+              >
+                驳回
+              </button>
+              <button
+                type="button"
+                class="task-action-button secondary"
+                @click="resetEvidenceSelection"
+              >
+                上传新证据
+              </button>
+            </div>
           </div>
         </section>
 
@@ -836,12 +985,11 @@ onMounted(async () => {
             v-if="evidenceHistory && evidenceHistory.length > 0"
             class="evidence-history-list"
           >
-            <button
+            <div
               v-for="item in evidenceHistory"
               :key="item.record.id"
-              type="button"
               class="evidence-history-item"
-              @click="selectEvidenceHistory(item)"
+              :class="{ selected: evidenceRecord?.id === item.record.id }"
             >
               <span>
                 <strong>{{ formatEvidenceHistoryDate(item.record.study_date) }}</strong>
@@ -853,7 +1001,25 @@ onMounted(async () => {
                 :label="evidenceDraftStatusLabel(item.draft)"
                 :tone="evidenceHistoryTone(item)"
               />
-            </button>
+              <div class="evidence-history-actions">
+                <button
+                  type="button"
+                  class="task-action-button secondary"
+                  @click="selectEvidenceHistory(item)"
+                >
+                  查看
+                </button>
+                <button
+                  type="button"
+                  class="task-action-button danger"
+                  :disabled="item.record.status === 'confirmed' || evidenceActionInFlight === 'delete'"
+                  :title="item.record.status === 'confirmed' ? '已确认记录需保留审计，不能删除' : '删除记录'"
+                  @click="deleteEvidenceHistory(item)"
+                >
+                  删除
+                </button>
+              </div>
+            </div>
           </div>
           <p v-else-if="evidenceHistory && evidenceHistory.length === 0">
             还没有历史证据草稿；上传并分析后会出现在这里。

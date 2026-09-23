@@ -11,6 +11,7 @@ from app.evidence.service import (
     EvidenceFileInput,
     analyze_evidence_record,
     confirm_evidence_draft,
+    delete_evidence_record,
     get_evidence_draft,
     list_evidence_history,
     reject_evidence_draft,
@@ -33,6 +34,7 @@ from app.schemas.evidence import (
     EvidenceAnalyzeResponse,
     EvidenceAssetResponse,
     EvidenceConfirmResponse,
+    EvidenceDeleteResponse,
     EvidenceDraftResponse,
     EvidenceDraftUpdate,
     EvidenceHistoryItemResponse,
@@ -102,6 +104,36 @@ def evidence_history(
             for item in list_evidence_history(session, limit=limit)
         ]
     return api_response(EvidenceHistoryResponse(items=items, total=len(items)), request)
+
+
+@router.delete("/{record_id}", response_model=ApiResponse[EvidenceDeleteResponse])
+def delete_evidence(request: Request, record_id: str) -> ApiResponse[EvidenceDeleteResponse]:
+    settings = get_settings()
+    require_persistent_cloud_capability(settings, "asset_storage")
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            deletion = delete_evidence_record(
+                settings,
+                session,
+                record_id,
+                request_id=get_request_id(request),
+            )
+            response = EvidenceDeleteResponse(
+                record_id=deletion.record_id,
+                deleted_asset_ids=deletion.deleted_asset_ids,
+                retained_asset_ids=deletion.retained_asset_ids,
+            )
+    except EvidenceError as exc:
+        raise _api_evidence_error(exc) from exc
+    except (
+        FileReferenceError,
+        PersistentStorageError,
+        UnsafeFileNameError,
+        UnsupportedFileTypeError,
+    ) as exc:
+        raise _api_file_error(exc) from exc
+    return api_response(response, request)
 
 
 @router.post("/{record_id}/analyze", response_model=ApiResponse[EvidenceAnalyzeResponse])
