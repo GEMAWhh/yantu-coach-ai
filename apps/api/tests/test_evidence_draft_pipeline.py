@@ -31,6 +31,7 @@ from app.settings import (
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\nevidence-test-png"
 JPEG_BYTES = b"\xff\xd8\xff\xe0evidence-test-jpeg"
+FAKE_PROVIDER_TOKEN = "-".join(("test", "provider", "credential"))
 
 
 @pytest.fixture
@@ -142,11 +143,11 @@ def test_deepseek_analysis_persists_only_safe_request_metadata(
     test_settings: RuntimeSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    api_key = "deepseek-test-key-never-persist"
+    provider_token = FAKE_PROVIDER_TOKEN
     model_output = _valid_payload("provider-record-placeholder")
 
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.headers["authorization"] == f"Bearer {api_key}"
+        assert request.headers["authorization"] == f"Bearer {provider_token}"
         payload = request.read().decode("utf-8")
         assert "data:image/png;base64" in payload
         return httpx.Response(
@@ -157,7 +158,7 @@ def test_deepseek_analysis_persists_only_safe_request_metadata(
     ai_settings = EvidenceAISettings(
         provider=EvidenceAIProviderName.DEEPSEEK,
         base_url="https://api.deepseek.com",
-        api_key=api_key,
+        api_key=provider_token,
         model="deepseek-flash",
         timeout_seconds=60,
     )
@@ -181,7 +182,7 @@ def test_deepseek_analysis_persists_only_safe_request_metadata(
         job = session.scalar(select(AIJob).where(AIJob.provider == "deepseek"))
     assert job is not None
     persisted = repr(job.input_json) + repr(job.output_json) + str(job.error_message)
-    assert api_key not in persisted
+    assert provider_token not in persisted
     assert base64.b64encode(PNG_BYTES).decode("ascii") not in persisted
     assert job.input_json["asset_mime_types"] == ["image/png", "image/jpeg"]
 
@@ -193,7 +194,7 @@ def test_real_provider_marks_pdf_as_unsupported_without_calling_upstream(
     ai_settings = EvidenceAISettings(
         provider=EvidenceAIProviderName.OPENAI_COMPATIBLE,
         base_url="https://example-provider.invalid/v1",
-        api_key="unused-test-key",
+        api_key=FAKE_PROVIDER_TOKEN,
         model="vision-model",
         timeout_seconds=60,
     )

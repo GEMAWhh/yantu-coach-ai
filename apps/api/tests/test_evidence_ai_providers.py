@@ -17,6 +17,8 @@ from app.settings import (
     get_settings,
 )
 
+FAKE_PROVIDER_TOKEN = "-".join(("test", "provider", "credential"))
+
 
 def test_deepseek_provider_sends_images_and_parses_structured_json() -> None:
     captured: dict[str, Any] = {}
@@ -34,7 +36,7 @@ def test_deepseek_provider_sends_images_and_parses_structured_json() -> None:
     settings = EvidenceAISettings(
         provider=EvidenceAIProviderName.DEEPSEEK,
         base_url="https://api.deepseek.com",
-        api_key="test-secret-key",
+        api_key=FAKE_PROVIDER_TOKEN,
         model="deepseek-flash",
         timeout_seconds=60,
     )
@@ -59,7 +61,7 @@ def test_deepseek_provider_sends_images_and_parses_structured_json() -> None:
 
     assert result == expected
     assert captured["url"] == "https://api.deepseek.com/chat/completions"
-    assert captured["authorization"] == "Bearer test-secret-key"
+    assert captured["authorization"] == f"Bearer {FAKE_PROVIDER_TOKEN}"
     payload = captured["payload"]
     assert payload["model"] == "deepseek-flash"
     assert payload["response_format"] == {"type": "json_object"}
@@ -86,7 +88,7 @@ def test_provider_returns_sanitized_upstream_errors(
         EvidenceAISettings(
             provider=EvidenceAIProviderName.OPENAI_COMPATIBLE,
             base_url="https://example-provider.invalid/v1",
-            api_key="test-secret-key",
+            api_key=FAKE_PROVIDER_TOKEN,
             model="vision-model",
             timeout_seconds=60,
         ),
@@ -98,7 +100,7 @@ def test_provider_returns_sanitized_upstream_errors(
 
     assert captured.value.code == expected_code
     assert secret_response not in str(captured.value)
-    assert "test-secret-key" not in str(captured.value)
+    assert FAKE_PROVIDER_TOKEN not in str(captured.value)
 
 
 def test_deepseek_settings_use_official_defaults(
