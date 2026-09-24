@@ -102,6 +102,7 @@ tests/fixtures/ai/
 - `AI-006`: a PDF sent to a real Provider fails closed as `AI_EVIDENCE_TYPE_UNSUPPORTED`.
 - `EVID-004`: rejected drafts mark the draft and record as rejected without confirmation side effects.
 - `EVID-005`: history returns ordered attachment metadata; deleting unconfirmed evidence removes drafts, jobs, links, and unreferenced files, while confirmed evidence returns a conflict.
+- `EVID-006`: the Today UI renders all five structured analysis sections and translates provider failures into actionable, sanitized messages.
 
 ## 8. Wrongbook domain acceptance coverage
 

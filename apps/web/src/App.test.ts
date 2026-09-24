@@ -63,8 +63,17 @@ function evidenceHistoryWithDraftResponse(): Response {
             evidence_record_id: "history-evidence-1",
             status: "draft",
             structured_json: {
-              confirmed_facts: { asset_count: 2 },
-              suggested_actions: [{ type: "confirm_or_reject" }],
+              confirmed_facts: { asset_count: 2, visible_text: "二次函数求最值" },
+              inferences: { topic: "二次函数" },
+              uncertain_fields: [
+                { field: "answer", reason: "图片右侧被裁切", confidence: 0.4 },
+              ],
+              teaching_judgment: {
+                diagnosis: "配方法步骤需要复核",
+                evidence_basis: ["草稿第 2 行"],
+                risk: "符号可能抄错",
+              },
+              suggested_actions: [{ type: "redo_without_hints", priority: "high" }],
             },
             validation_errors: [],
           },
@@ -98,6 +107,42 @@ function evidenceHistoryWithoutDraftResponse(): Response {
             },
           ],
           draft: null,
+        },
+      ],
+    },
+    meta: { request_id: "evidence-history" },
+  });
+}
+
+function evidenceHistoryWithProviderFailureResponse(): Response {
+  return jsonResponse({
+    data: {
+      total: 1,
+      items: [
+        {
+          record: {
+            id: "failed-evidence-1",
+            study_date: "2026-09-24",
+            subject_id: "math",
+            status: "pending",
+            asset_count: 1,
+          },
+          assets: [
+            {
+              id: "failed-asset-1",
+              original_name: "proof.png",
+              mime_type: "image/png",
+              size_bytes: 1024,
+              page_order: 0,
+            },
+          ],
+          draft: {
+            id: "failed-draft-1",
+            evidence_record_id: "failed-evidence-1",
+            status: "needs_correction",
+            structured_json: {},
+            validation_errors: ["provider:AI_PROVIDER_AUTH_FAILED"],
+          },
         },
       ],
     },
@@ -242,6 +287,11 @@ describe("App", () => {
     expect(wrapper.text()).toContain("待确认证据草稿");
     expect(wrapper.text()).toContain("草稿已关联 2 个证据附件");
     expect(wrapper.text()).toContain("proof.png");
+    expect(wrapper.text()).toContain("分析结果");
+    expect(wrapper.text()).toContain("二次函数求最值");
+    expect(wrapper.text()).toContain("图片右侧被裁切");
+    expect(wrapper.text()).toContain("配方法步骤需要复核");
+    expect(wrapper.text()).toContain("redo_without_hints");
   });
 
   it("shows explicit evidence history actions and deletes an unconfirmed record", async () => {
@@ -281,6 +331,30 @@ describe("App", () => {
 
     expect(calls).toContainEqual({ path: "/api/v1/evidence/history-evidence-1", method: "DELETE" });
     expect(wrapper.text()).toContain("还没有历史证据草稿");
+  });
+
+  it("shows a sanitized provider failure instead of an empty analysis", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return evidenceHistoryWithProviderFailureResponse();
+        }
+        return jsonResponse({
+          data: { date: "2026-09-24", tasks: [], total_tasks: 0, estimated_minutes: 0 },
+          meta: { request_id: "today" },
+        });
+      }),
+    );
+
+    const wrapper = await mountApp("/today");
+    await wrapper.get(".evidence-history-actions .task-action-button.secondary").trigger("click");
+
+    expect(wrapper.text()).toContain("DeepSeek API Key 无效、已过期或没有当前模型权限");
+    expect(wrapper.text()).toContain("provider:AI_PROVIDER_AUTH_FAILED");
+    expect(wrapper.text()).toContain("可见事实");
+    expect(wrapper.text()).toContain("暂无内容");
   });
 
   it("analyzes a previously uploaded evidence record from history", async () => {
