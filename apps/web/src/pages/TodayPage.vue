@@ -95,6 +95,50 @@ const evidenceCardBody = computed(() => {
   }
   return evidenceDraftSummary(evidenceDraft.value);
 });
+const evidenceAnalysisSections = computed(() => {
+  if (!evidenceDraft.value) {
+    return [];
+  }
+  const structured = evidenceDraft.value.structured_json;
+  return [
+    {
+      key: "confirmed_facts",
+      title: "可见事实",
+      description: "模型从原始证据中直接读取的内容，确认前仍不是正式记录。",
+      items: evidenceObjectItems(structured.confirmed_facts),
+    },
+    {
+      key: "inferences",
+      title: "推断",
+      description: "模型的解释或归纳，可能需要你修正。",
+      items: evidenceObjectItems(structured.inferences),
+    },
+    {
+      key: "uncertain_fields",
+      title: "不确定项",
+      description: "图片遮挡、内容冲突或置信度不足的字段。",
+      items: evidenceListItems(structured.uncertain_fields),
+    },
+    {
+      key: "teaching_judgment",
+      title: "教学判断",
+      description: "基于证据形成的诊断、依据与风险。",
+      items: evidenceObjectItems(structured.teaching_judgment),
+    },
+    {
+      key: "suggested_actions",
+      title: "建议动作",
+      description: "仅供确认，不会自动修改计划或掌握状态。",
+      items: evidenceListItems(structured.suggested_actions),
+    },
+  ];
+});
+const evidenceValidationMessages = computed(() =>
+  (evidenceDraft.value?.validation_errors ?? []).map((error) => ({
+    code: error,
+    message: evidenceValidationMessage(error),
+  })),
+);
 
 type TodayTaskView = TodayTask & {
   version: number | null;
@@ -516,6 +560,93 @@ function evidenceDraftSummary(draft: EvidenceDraftPayload): string {
   return `草稿已关联 ${assetCount} 个证据附件，生成 ${actionCount} 条建议动作；确认前不写入正式学习记录。`;
 }
 
+type EvidenceResultItem = {
+  label: string;
+  value: string;
+};
+
+function evidenceObjectItems(value: unknown): EvidenceResultItem[] {
+  if (!isPlainRecord(value)) {
+    return [];
+  }
+  return Object.entries(value).map(([key, item]) => ({
+    label: evidenceFieldLabel(key),
+    value: formatEvidenceValue(item),
+  }));
+}
+
+function evidenceListItems(value: unknown): EvidenceResultItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((item, index) => ({
+    label: `第 ${index + 1} 项`,
+    value: formatEvidenceValue(item),
+  }));
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function formatEvidenceValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") {
+    return "未提供";
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.map(formatEvidenceValue).join("；") : "无";
+  }
+  if (isPlainRecord(value)) {
+    const entries = Object.entries(value);
+    return entries.length > 0
+      ? entries
+          .map(([key, item]) => `${evidenceFieldLabel(key)}：${formatEvidenceValue(item)}`)
+          .join("；")
+      : "无";
+  }
+  if (typeof value === "boolean") {
+    return value ? "是" : "否";
+  }
+  return String(value);
+}
+
+function evidenceFieldLabel(key: string): string {
+  const labels: Record<string, string> = {
+    asset_count: "附件数",
+    study_date: "学习日期",
+    visible_text: "识别文字",
+    ocr_text: "识别文字",
+    ocr_performed: "已执行图像识别",
+    provider: "模型服务",
+    topic: "主题",
+    field: "字段",
+    reason: "原因",
+    confidence: "置信度",
+    diagnosis: "诊断",
+    evidence_basis: "证据依据",
+    risk: "风险",
+    type: "动作",
+    priority: "优先级",
+  };
+  return labels[key] ?? key.replaceAll("_", " ");
+}
+
+function evidenceValidationMessage(error: string): string {
+  const code = error.startsWith("provider:") ? error.slice("provider:".length) : error;
+  const messages: Record<string, string> = {
+    AI_PROVIDER_AUTH_FAILED: "DeepSeek API Key 无效、已过期或没有当前模型权限。",
+    AI_PROVIDER_RATE_LIMITED: "模型服务当前限流，请稍后重新分析。",
+    AI_PROVIDER_TIMEOUT: "模型服务响应超时，请稍后重试。",
+    AI_PROVIDER_UNAVAILABLE: "模型服务暂时不可用，请稍后重试。",
+    AI_PROVIDER_RESPONSE_INVALID: "模型返回的内容格式不符合证据草稿要求。",
+    AI_EVIDENCE_TYPE_UNSUPPORTED: "真实模型当前只支持 PNG 和 JPEG，暂不分析 PDF。",
+    AI_EVIDENCE_ASSET_UNAVAILABLE: "后端无法读取证据原件，请检查存储服务。",
+    AI_IMAGE_REQUIRED: "没有可供模型分析的图片。",
+    AI_PROVIDER_MODE_INVALID: "当前模型不支持测试分析模式。",
+  };
+  return messages[code] ?? "模型输出结构不完整，需要重新分析或人工修正。";
+}
+
 async function loadEvidenceHistory(): Promise<void> {
   try {
     const history = await new ApiClient().evidenceHistory(10);
@@ -929,6 +1060,57 @@ onMounted(async () => {
                 </button>
               </div>
             </div>
+            <section
+              v-if="evidenceDraft"
+              class="evidence-analysis"
+              aria-label="证据分析结果"
+            >
+              <div class="evidence-analysis-heading">
+                <h3>分析结果</h3>
+                <StatusTag
+                  :label="evidenceDraftStatusLabel(evidenceDraft)"
+                  :tone="evidenceDraft.status === 'needs_correction' ? 'yellow' : 'blue'"
+                />
+              </div>
+              <div
+                v-if="evidenceValidationMessages.length > 0"
+                class="evidence-analysis-errors"
+                role="status"
+              >
+                <div
+                  v-for="error in evidenceValidationMessages"
+                  :key="error.code"
+                >
+                  <strong>{{ error.message }}</strong>
+                  <code>{{ error.code }}</code>
+                </div>
+              </div>
+              <section
+                v-for="section in evidenceAnalysisSections"
+                :key="section.key"
+                class="evidence-analysis-section"
+              >
+                <div>
+                  <h4>{{ section.title }}</h4>
+                  <p>{{ section.description }}</p>
+                </div>
+                <dl v-if="section.items.length > 0">
+                  <div
+                    v-for="item in section.items"
+                    :key="`${section.key}-${item.label}`"
+                  >
+                    <dt>{{ item.label }}</dt>
+                    <dd>{{ item.value }}</dd>
+                  </div>
+                </dl>
+                <p
+                  v-else
+                  class="evidence-analysis-empty"
+                >
+                  暂无内容
+                </p>
+              </section>
+            </section>
             <div class="task-actions">
               <button
                 v-if="!evidenceDraft"
