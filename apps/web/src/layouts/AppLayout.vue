@@ -3,12 +3,14 @@ import { computed } from "vue";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 
 import { primaryNavItems } from "../app/navigation";
+import { isDemoApiEnabled } from "../api/demoClient";
 
 const route = useRoute();
 
 const currentLabel = computed(() => {
   return primaryNavItems.find((item) => item.name === route.name)?.label ?? "今日";
 });
+const systemLabel = isDemoApiEnabled() ? "本地预览" : "云端个人版";
 </script>
 
 <template>
@@ -59,7 +61,7 @@ const currentLabel = computed(() => {
           <span class="topbar-label">当前页面</span>
           <strong>{{ currentLabel }}</strong>
         </div>
-        <span class="system-pill">本地数据 · 演示壳</span>
+        <span class="system-pill">{{ systemLabel }}</span>
       </header>
 
       <main

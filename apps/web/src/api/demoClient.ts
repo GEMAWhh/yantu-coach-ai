@@ -16,15 +16,23 @@ import type {
   EvidenceRecordPayload,
   EvidenceUploadCreatePayload,
   EvidenceUploadPayload,
+  GoalCreatePayload,
+  GoalPayload,
+  GoalTreePayload,
   GoalTreeListPayload,
+  GoalUpdatePayload,
   HealthPayload,
   KnowledgeNodeListPayload,
   ResourceListPayload,
   ReviewResultCreatePayload,
   ReviewResultSubmitPayload,
   SettingsProfilePayload,
+  SettingsProfileUpdatePayload,
   SettingsRulesPayload,
+  TaskCreatePayload,
+  TaskListPayload,
   TaskPayload,
+  TaskUpdatePayload,
   TaskResultCreatePayload,
   TaskResultSubmitPayload,
   TodayPayload,
@@ -52,6 +60,7 @@ type DemoRequest = {
 
 const now = "2026-07-15T09:00:00Z";
 const tomorrow = "2026-07-16T09:00:00Z";
+let demoSequence = 100;
 
 let demoTasks: TaskPayload[] = [
   {
@@ -441,6 +450,15 @@ function routeDemoGet<TData>(path: string, params: URLSearchParams): ApiResponse
   if (path === "/api/v1/goals/tree") {
     return respond<TData>(goalTree(), "goals-tree");
   }
+  if (path === "/api/v1/tasks") {
+    return respond<TData>(
+      {
+        items: demoTasks,
+        total: demoTasks.length,
+      } satisfies TaskListPayload,
+      "tasks",
+    );
+  }
   if (path === "/api/v1/settings/profile") {
     return respond<TData>(settingsProfile, "settings-profile");
   }
@@ -586,6 +604,12 @@ function routeDemoPost<TData>(
   body: unknown,
   headers: Record<string, string>,
 ): ApiResponse<TData> {
+  if (path === "/api/v1/tasks") {
+    return respond<TData>(createDemoTask(body as TaskCreatePayload), "task-create");
+  }
+  if (path === "/api/v1/goals") {
+    return respond<TData>(createDemoGoal(body as GoalCreatePayload), "goal-create");
+  }
   const taskActionMatch = path.match(/^\/api\/v1\/tasks\/([^/]+)\/(start|skip|withdraw)$/);
   if (taskActionMatch) {
     const [, rawTaskId, action] = taskActionMatch;
@@ -654,14 +678,28 @@ function routeDemoPost<TData>(
 }
 
 function routeDemoPatch<TData>(path: string, body: unknown): ApiResponse<TData> {
+  if (path === "/api/v1/settings/profile") {
+    Object.assign(settingsProfile, body as SettingsProfileUpdatePayload, {
+      updated_at: new Date().toISOString(),
+    });
+    return respond<TData>(settingsProfile, "settings-profile-update");
+  }
+
+  const goalMatch = path.match(/^\/api\/v1\/goals\/([^/]+)$/);
+  if (goalMatch) {
+    return respond<TData>(
+      updateDemoGoal(decodeURIComponent(goalMatch[1]), body as GoalUpdatePayload),
+      "goal-update",
+    );
+  }
+
   const taskMatch = path.match(/^\/api\/v1\/tasks\/([^/]+)$/);
   if (taskMatch) {
     const [, rawTaskId] = taskMatch;
-    const status = (body as { status?: TaskPayload["status"] }).status;
-    if (!status) {
-      throw new Error("Demo task patch requires status");
-    }
-    return respond<TData>(setTaskStatus(decodeURIComponent(rawTaskId), status), "task-patch");
+    return respond<TData>(
+      updateDemoTask(decodeURIComponent(rawTaskId), body as TaskUpdatePayload),
+      "task-patch",
+    );
   }
 
   throw new Error(`Demo API route is not implemented: PATCH ${path}`);
@@ -676,7 +714,7 @@ function todayPayload(date: string): TodayPayload {
   };
 }
 
-function goalTree(): GoalTreeListPayload {
+function initialGoalTree(): GoalTreeListPayload {
   return {
     total: 1,
     items: [
@@ -781,6 +819,12 @@ function goalTree(): GoalTreeListPayload {
       },
     ],
   };
+}
+
+let demoGoals = initialGoalTree().items;
+
+function goalTree(): GoalTreeListPayload {
+  return { items: demoGoals, total: demoGoals.length };
 }
 
 function analyticsOverview(): AnalyticsOverviewPayload {
@@ -892,6 +936,24 @@ function evidenceHistory(limit: number): EvidenceHistoryPayload {
 }
 
 function routeDemoDelete<TData>(path: string): ApiResponse<TData> {
+  const taskMatch = path.match(/^\/api\/v1\/tasks\/([^/]+)$/);
+  if (taskMatch) {
+    const taskId = decodeURIComponent(taskMatch[1]);
+    const task = demoTasks.find((item) => item.id === taskId);
+    if (!task) {
+      throw new Error(`Demo task not found: ${taskId}`);
+    }
+    demoTasks = demoTasks.filter((item) => item.id !== taskId);
+    return respond<TData>({ ...task, status: "withdrawn" }, "task-delete");
+  }
+
+  const goalMatch = path.match(/^\/api\/v1\/goals\/([^/]+)$/);
+  if (goalMatch) {
+    const goalId = decodeURIComponent(goalMatch[1]);
+    const removed = deleteDemoGoal(goalId);
+    return respond<TData>({ ...removed, status: "cancelled" }, "goal-delete");
+  }
+
   const evidenceMatch = path.match(/^\/api\/v1\/evidence\/([^/]+)$/);
   if (!evidenceMatch) {
     throw new Error(`Demo API route is not implemented: DELETE ${path}`);
@@ -1248,6 +1310,118 @@ function updateTaskStatus(taskId: string, action: string): TaskPayload {
     withdraw: "withdrawn",
   };
   return setTaskStatus(taskId, statusByAction[action] ?? "pending");
+}
+
+function createDemoTask(payload: TaskCreatePayload): TaskPayload {
+  const task: TaskPayload = {
+    id: `demo-task-${++demoSequence}`,
+    version: 1,
+    goal_id: payload.goal_id ?? null,
+    subject_id: payload.subject_id ?? null,
+    knowledge_node_id: null,
+    title: payload.title,
+    task_type: payload.task_type ?? "study",
+    priority: payload.priority ?? "normal",
+    source_type: payload.source_type,
+    source_id: payload.source_id ?? null,
+    planned_date: payload.planned_date,
+    estimated_minutes: payload.estimated_minutes,
+    current_stage: null,
+    target_stage: null,
+    reason: payload.reason ?? null,
+    completion_standard: payload.completion_standard ?? null,
+    prerequisite_status: payload.prerequisite_status ?? "unknown",
+    status: "pending",
+  };
+  demoTasks = [...demoTasks, task];
+  return task;
+}
+
+function updateDemoTask(taskId: string, payload: TaskUpdatePayload): TaskPayload {
+  let updated: TaskPayload | null = null;
+  demoTasks = demoTasks.map((task) => {
+    if (task.id !== taskId) return task;
+    updated = { ...task, ...payload, version: task.version + 1 };
+    return updated;
+  });
+  if (!updated) throw new Error(`Demo task not found: ${taskId}`);
+  return updated;
+}
+
+function createDemoGoal(payload: GoalCreatePayload): GoalPayload {
+  const goal: GoalTreePayload = {
+    id: `demo-goal-${++demoSequence}`,
+    version: 1,
+    parent_id: payload.parent_id ?? null,
+    level: payload.level,
+    subject_id: payload.subject_id ?? null,
+    title: payload.title,
+    description: payload.description ?? null,
+    start_date: payload.start_date ?? null,
+    end_date: payload.end_date ?? null,
+    estimated_minutes: payload.estimated_minutes ?? 0,
+    actual_minutes: 0,
+    completion_standard: payload.completion_standard ?? null,
+    progress: 0,
+    risk_status: "normal",
+    status: "active",
+    adjustment_reason: null,
+    children: [],
+  };
+  if (!goal.parent_id || !appendDemoGoal(demoGoals, goal.parent_id, goal)) {
+    demoGoals = [...demoGoals, goal];
+  }
+  return goal;
+}
+
+function appendDemoGoal(
+  goals: GoalTreePayload[],
+  parentId: string,
+  child: GoalTreePayload,
+): boolean {
+  for (const goal of goals) {
+    if (goal.id === parentId) {
+      goal.children = [...goal.children, child];
+      return true;
+    }
+    if (appendDemoGoal(goal.children, parentId, child)) return true;
+  }
+  return false;
+}
+
+function updateDemoGoal(goalId: string, payload: GoalUpdatePayload): GoalPayload {
+  const goal = findDemoGoal(demoGoals, goalId);
+  if (!goal) throw new Error(`Demo goal not found: ${goalId}`);
+  Object.assign(goal, payload, { version: goal.version + 1 });
+  return goal;
+}
+
+function findDemoGoal(goals: GoalTreePayload[], goalId: string): GoalTreePayload | null {
+  for (const goal of goals) {
+    if (goal.id === goalId) return goal;
+    const nested = findDemoGoal(goal.children, goalId);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+function deleteDemoGoal(goalId: string): GoalTreePayload {
+  const removed = findDemoGoal(demoGoals, goalId);
+  if (!removed) throw new Error(`Demo goal not found: ${goalId}`);
+  const removedIds = new Set(flattenDemoGoalIds(removed));
+  demoGoals = removeDemoGoal(demoGoals, goalId);
+  demoTasks = demoTasks.filter((task) => !task.goal_id || !removedIds.has(task.goal_id));
+  return removed;
+}
+
+function removeDemoGoal(goals: GoalTreePayload[], goalId: string): GoalTreePayload[] {
+  return goals
+    .filter((goal) => goal.id !== goalId)
+    .map((goal) => ({ ...goal, children: removeDemoGoal(goal.children, goalId) }));
+}
+
+function flattenDemoGoalIds(goal: GoalTreePayload): string[] {
+  return [goal.id, ...goal.children.flatMap(flattenDemoGoalIds)];
 }
 
 function setTaskStatus(taskId: string, status: TaskPayload["status"]): TaskPayload {

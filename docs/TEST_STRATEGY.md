@@ -115,7 +115,13 @@ tests/fixtures/ai/
 - Wrongbook history returns current record state, verification flags, ordered attempts, request ids, and no duplicate idempotency attempts.
 - Regressed or unresolved wrong records appear as `wrong_record` planning candidates linked to their knowledge node subject.
 
-## 9. Goal recalculation acceptance coverage
+## 9. Editable core-loop coverage
+
+- `apps/api/tests/test_goals_tasks.py` verifies that pending tasks are soft deleted while started tasks return `TASK_DELETE_NOT_ALLOWED` and remain visible.
+- `apps/web/src/App.test.ts` verifies profile PATCH persistence, task creation from the planning empty state, and removal of dead page-header actions.
+- Desktop and mobile E2E must cover profile editing, goal/task creation, and the Today empty-state entry before release.
+
+## 10. Goal recalculation acceptance coverage
 
 `apps/api/tests/test_goal_recalculation_history.py` covers stage 4 planning rollup:
 

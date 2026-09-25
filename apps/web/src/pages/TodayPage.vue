@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 
 import { ApiClient } from "../api/client";
 import type {
@@ -15,10 +15,20 @@ import type {
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
-import { useMockStudyStore, type TodayTask, type Tone } from "../stores/mockStudy";
+import type { TodayTask, Tone } from "../stores/mockStudy";
 
-const study = useMockStudyStore();
 const apiToday = ref<TodayPayload | null>(null);
+const todayLoading = ref(true);
+const taskEditorOpen = ref(false);
+const editingTaskId = ref<string | null>(null);
+const taskEditor = reactive({
+  title: "",
+  subjectId: "",
+  estimatedMinutes: 30,
+  priority: "normal",
+  reason: "",
+  completionStandard: "",
+});
 const actionInFlight = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const openResultTaskId = ref<string | null>(null);
@@ -34,27 +44,21 @@ const evidenceActionInFlight = ref<"upload" | "analyze" | "confirm" | "reject" |
 const openingEvidenceAssetId = ref<string | null>(null);
 const evidenceActionError = ref<string | null>(null);
 const evidenceHistoryError = ref<string | null>(null);
-const taskSourceLabel = computed(() => (apiToday.value ? "正式数据" : "模拟数据"));
-const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "cyan"));
+const taskSourceLabel = computed(() => (apiToday.value ? "已同步" : "读取失败"));
+const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "red"));
 const todayTasks = computed<TodayTaskView[]>(() =>
-  apiToday.value
-    ? apiToday.value.tasks.map(mapTask)
-    : study.todayTasks.map((task) => ({
-        ...task,
-        version: null,
-        apiBacked: false,
-      })),
+  apiToday.value ? apiToday.value.tasks.map(mapTask) : [],
 );
 const todayMetrics = computed(() => [
   {
     label: "今日任务",
-    value: `${apiToday.value?.total_tasks ?? 4} 项`,
-    detail: `预计 ${apiToday.value?.estimated_minutes ?? 125} 分钟`,
+    value: `${apiToday.value?.total_tasks ?? 0} 项`,
+    detail: `预计 ${apiToday.value?.estimated_minutes ?? 0} 分钟`,
     tone: "blue" as Tone,
   },
   {
     label: "机动时间",
-    value: apiToday.value ? "按计划规则保留" : "35 分钟",
+    value: "按计划规则保留",
     detail: "计划不排满全天",
     tone: "green" as Tone,
   },
@@ -206,7 +210,7 @@ function isResultFormOpen(task: TodayTaskView): boolean {
   return openResultTaskId.value === task.id;
 }
 
-function updateTask(updatedTask: TaskPayload): void {
+function replaceTask(updatedTask: TaskPayload): void {
   if (!apiToday.value) {
     return;
   }
@@ -229,14 +233,14 @@ async function runTaskAction(
   actionError.value = null;
   try {
     if (action === "start") {
-      updateTask((await client.startTask(task.id, task.version)).data);
+      replaceTask((await client.startTask(task.id, task.version)).data);
     } else if (action === "skip") {
-      updateTask((await client.skipTask(task.id, task.version)).data);
+      replaceTask((await client.skipTask(task.id, task.version)).data);
     } else if (action === "withdraw") {
-      updateTask((await client.withdrawTask(task.id, task.version)).data);
+      replaceTask((await client.withdrawTask(task.id, task.version)).data);
     } else {
       await client.submitTaskResult(task.id, taskResultPayload(task), resultIdempotencyKey(task));
-      updateTask((await client.completeTask(task.id, task.version)).data);
+      replaceTask((await client.completeTask(task.id, task.version)).data);
       openResultTaskId.value = null;
     }
   } catch {
@@ -246,6 +250,87 @@ async function runTaskAction(
       actionInFlight.value = null;
     }
   }
+}
+
+function openTaskEditor(task?: TodayTaskView): void {
+  const source = apiToday.value?.tasks.find((item) => item.id === task?.id);
+  editingTaskId.value = task?.id ?? null;
+  taskEditor.title = task?.title ?? "";
+  taskEditor.subjectId = source?.subject_id ?? "";
+  taskEditor.estimatedMinutes = task?.estimateMinutes ?? 30;
+  taskEditor.priority = source?.priority ?? "normal";
+  taskEditor.reason = task?.reason === "待补充执行理由" ? "" : task?.reason ?? "";
+  taskEditor.completionStandard = source?.completion_standard ?? "";
+  taskEditorOpen.value = true;
+  actionError.value = null;
+}
+
+function closeTaskEditor(): void {
+  taskEditorOpen.value = false;
+  editingTaskId.value = null;
+}
+
+async function saveTaskEditor(): Promise<void> {
+  if (!taskEditor.title.trim()) {
+    actionError.value = "请填写任务名称。";
+    return;
+  }
+  actionInFlight.value = "task:save";
+  actionError.value = null;
+  try {
+    const client = new ApiClient();
+    const existing = apiToday.value?.tasks.find((task) => task.id === editingTaskId.value);
+    if (existing) {
+      await client.updateTask(existing.id, existing.version, {
+        title: taskEditor.title.trim(),
+        estimated_minutes: Math.max(0, taskEditor.estimatedMinutes),
+        priority: taskEditor.priority,
+        reason: taskEditor.reason.trim() || null,
+        completion_standard: taskEditor.completionStandard.trim() || null,
+      });
+    } else {
+      await client.createTask({
+        title: taskEditor.title.trim(),
+        planned_date: todayString(),
+        estimated_minutes: Math.max(0, taskEditor.estimatedMinutes),
+        source_type: "manual",
+        subject_id: taskEditor.subjectId.trim() || null,
+        priority: taskEditor.priority,
+        reason: taskEditor.reason.trim() || null,
+        completion_standard: taskEditor.completionStandard.trim() || null,
+      });
+    }
+    await loadToday();
+    closeTaskEditor();
+  } catch {
+    actionError.value = "任务保存失败，请刷新后重试。";
+  } finally {
+    actionInFlight.value = null;
+  }
+}
+
+async function deleteTodayTask(task: TodayTaskView): Promise<void> {
+  if (!task.apiBacked || task.status !== "pending") return;
+  if (!window.confirm(`删除待执行任务“${task.title}”？`)) return;
+  actionInFlight.value = `${task.id}:delete`;
+  actionError.value = null;
+  try {
+    await new ApiClient().deleteTask(task.id);
+    await loadToday();
+  } catch {
+    actionError.value = "只有尚未开始且没有结果的任务可以删除。";
+  } finally {
+    actionInFlight.value = null;
+  }
+}
+
+async function runHeaderAction(): Promise<void> {
+  const first = todayTasks.value.find((task) => canStart(task));
+  if (first) {
+    await runTaskAction(first, "start");
+    return;
+  }
+  openTaskEditor();
 }
 
 function openResultForm(task: TodayTaskView): void {
@@ -737,14 +822,22 @@ function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-onMounted(async () => {
-  void loadEvidenceHistory();
+async function loadToday(): Promise<void> {
+  todayLoading.value = true;
   try {
     const response = await new ApiClient().today(todayString());
     apiToday.value = response.data;
   } catch {
     apiToday.value = null;
+    actionError.value = "今日任务读取失败，请刷新后重试。";
+  } finally {
+    todayLoading.value = false;
   }
+}
+
+onMounted(async () => {
+  void loadEvidenceHistory();
+  await loadToday();
 });
 </script>
 
@@ -756,8 +849,9 @@ onMounted(async () => {
     <PageHeader
       kicker="今日"
       title="今日行动"
-      description="把周目标压到今天可执行的任务、证据确认和复盘动作；API 不可用时保留原型数据。"
-      action-label="开始第一项"
+      description="创建今天真正要完成的任务，记录执行结果并保留复盘依据。"
+      :action-label="todayTasks.some(canStart) ? '开始第一项' : '新建今日任务'"
+      @action="runHeaderAction"
     />
 
     <div class="metric-grid">
@@ -793,7 +887,76 @@ onMounted(async () => {
           {{ actionError }}
         </p>
 
-        <div class="task-list">
+        <form
+          v-if="taskEditorOpen"
+          class="editor-form inline-task-editor"
+          @submit.prevent="saveTaskEditor"
+        >
+          <label><span>任务名称</span><input
+            v-model="taskEditor.title"
+            required
+            maxlength="240"
+          ></label>
+          <label><span>科目</span><input
+            v-model="taskEditor.subjectId"
+            :disabled="Boolean(editingTaskId)"
+            placeholder="例如 math"
+          ></label>
+          <label><span>预计分钟</span><input
+            v-model.number="taskEditor.estimatedMinutes"
+            type="number"
+            min="0"
+          ></label>
+          <label><span>优先级</span><select v-model="taskEditor.priority"><option value="low">低</option><option value="normal">普通</option><option value="high">高</option></select></label>
+          <label class="full-width"><span>安排原因</span><textarea
+            v-model="taskEditor.reason"
+            rows="2"
+          /></label>
+          <label class="full-width"><span>完成标准</span><textarea
+            v-model="taskEditor.completionStandard"
+            rows="2"
+          /></label>
+          <div class="form-actions">
+            <button
+              class="task-action-button"
+              type="submit"
+              :disabled="actionInFlight === 'task:save'"
+            >
+              保存任务
+            </button><button
+              class="task-action-button secondary"
+              type="button"
+              @click="closeTaskEditor"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+
+        <p
+          v-if="todayLoading"
+          class="empty-copy"
+        >
+          正在读取今日任务...
+        </p>
+        <div
+          v-else-if="todayTasks.length === 0"
+          class="empty-action"
+        >
+          <h3>今天还没有任务</h3>
+          <p>先添加一项最重要的任务，避免面对空白页面不知道从哪里开始。</p>
+          <button
+            class="task-action-button"
+            type="button"
+            @click="openTaskEditor()"
+          >
+            添加第一项任务
+          </button>
+        </div>
+        <div
+          v-else
+          class="task-list"
+        >
           <article
             v-for="task in todayTasks"
             :key="task.id"
@@ -854,6 +1017,22 @@ onMounted(async () => {
                 @click="runTaskAction(task, 'withdraw')"
               >
                 撤回
+              </button>
+              <button
+                type="button"
+                class="task-action-button secondary"
+                :disabled="task.status === 'completed'"
+                @click="openTaskEditor(task)"
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                class="task-action-button danger"
+                :disabled="task.status !== 'pending' || isActionRunning(task, 'delete')"
+                @click="deleteTodayTask(task)"
+              >
+                删除
               </button>
             </div>
             <form

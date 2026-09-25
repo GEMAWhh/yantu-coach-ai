@@ -3,8 +3,10 @@ defineProps<{
   kicker: string;
   title: string;
   description: string;
-  actionLabel: string;
+  actionLabel?: string;
 }>();
+
+defineEmits<{ action: [] }>();
 </script>
 
 <template>
@@ -21,8 +23,10 @@ defineProps<{
       </p>
     </div>
     <button
+      v-if="actionLabel"
       class="primary-action"
       type="button"
+      @click="$emit('action')"
     >
       {{ actionLabel }}
     </button>

@@ -666,7 +666,6 @@ onMounted(async () => {
       kicker="学习"
       title="资料与知识单元"
       description="集中展示资料、题库、错题、复习卡片和知识图谱入口，保留原型交互语义。"
-      action-label="查看下一知识点"
     />
 
     <div class="content-grid two-columns">

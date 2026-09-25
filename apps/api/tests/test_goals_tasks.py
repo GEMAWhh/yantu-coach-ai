@@ -13,7 +13,7 @@ from app.db.migrations import initialize_database
 from app.knowledge.service import create_knowledge_node
 from app.main import create_app
 from app.models.mastery import MasterySnapshot
-from app.models.planning import Goal, TaskResult
+from app.models.planning import Goal, Task, TaskResult
 from app.planning.service import (
     create_goal,
     create_task,
@@ -314,5 +314,54 @@ def test_planning_api_version_conflict_and_today_flow(
     assert conflict.status_code == 409
     assert conflict.json()["error"]["code"] == "VERSION_CONFLICT"
     assert conflict.json()["error"]["request_id"] == "stale-task"
+
+    get_settings.cache_clear()
+
+
+def test_pending_task_can_be_deleted_but_started_task_is_preserved(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("YANTU_APP_ENV", "test")
+    monkeypatch.setenv("YANTU_DATA_ROOT", str(tmp_path / "data" / "test"))
+    get_settings.cache_clear()
+
+    with TestClient(create_app()) as client:
+        pending = client.post(
+            "/api/v1/tasks",
+            json={
+                "title": "Delete pending task",
+                "planned_date": "2026-07-14",
+                "estimated_minutes": 20,
+                "source_type": "manual",
+            },
+        ).json()["data"]
+        started = client.post(
+            "/api/v1/tasks",
+            json={
+                "title": "Keep started task",
+                "planned_date": "2026-07-14",
+                "estimated_minutes": 20,
+                "source_type": "manual",
+                "status": "in_progress",
+            },
+        ).json()["data"]
+
+        deleted = client.delete(f"/api/v1/tasks/{pending['id']}")
+        blocked = client.delete(f"/api/v1/tasks/{started['id']}")
+        today = client.get("/api/v1/today?date=2026-07-14")
+
+    assert deleted.status_code == 200
+    assert deleted.json()["data"]["is_deleted"] is True
+    assert deleted.json()["data"]["status"] == "withdrawn"
+    assert blocked.status_code == 409
+    assert blocked.json()["error"]["code"] == "TASK_DELETE_NOT_ALLOWED"
+    assert [item["id"] for item in today.json()["data"]["tasks"]] == [started["id"]]
+
+    session_factory = get_session_factory(get_settings().database_url)
+    with session_factory() as session:
+        stored = session.get(Task, pending["id"])
+        assert stored is not None
+        assert stored.is_deleted is True
 
     get_settings.cache_clear()

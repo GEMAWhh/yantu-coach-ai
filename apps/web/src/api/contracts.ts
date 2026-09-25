@@ -54,11 +54,40 @@ export type TaskPayload = {
   status: "pending" | "in_progress" | "completed" | "skipped" | "withdrawn";
 };
 
+export type TaskCreatePayload = {
+  title: string;
+  planned_date: string;
+  estimated_minutes: number;
+  source_type: "manual" | "goal";
+  goal_id?: string | null;
+  subject_id?: string | null;
+  task_type?: string;
+  priority?: string;
+  source_id?: string | null;
+  reason?: string | null;
+  completion_standard?: string | null;
+  prerequisite_status?: string;
+};
+
+export type TaskUpdatePayload = {
+  title?: string;
+  planned_date?: string;
+  estimated_minutes?: number;
+  priority?: string;
+  reason?: string | null;
+  completion_standard?: string | null;
+};
+
 export type TodayPayload = {
   date: string;
   tasks: TaskPayload[];
   total_tasks: number;
   estimated_minutes: number;
+};
+
+export type TaskListPayload = {
+  items: TaskPayload[];
+  total: number;
 };
 
 export type TaskResultType = "completed" | "partial" | "wrong" | "unknown";
@@ -257,6 +286,27 @@ export type GoalTreeListPayload = {
   total: number;
 };
 
+export type GoalCreatePayload = {
+  level: GoalPayload["level"];
+  title: string;
+  parent_id?: string | null;
+  subject_id?: string | null;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  estimated_minutes?: number;
+  completion_standard?: string | null;
+};
+
+export type GoalUpdatePayload = {
+  title?: string;
+  description?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  estimated_minutes?: number;
+  completion_standard?: string | null;
+};
+
 export type SettingsProfilePayload = {
   name: string;
   target_school: string | null;
@@ -266,6 +316,16 @@ export type SettingsProfilePayload = {
   coach_style: string;
   timezone: string;
   updated_at: string;
+};
+
+export type SettingsProfileUpdatePayload = {
+  name?: string;
+  target_school?: string | null;
+  target_major?: string | null;
+  exam_date?: string | null;
+  current_phase?: string | null;
+  coach_style?: string;
+  timezone?: string;
 };
 
 export type SettingsRulePayload = {

@@ -235,7 +235,6 @@ onMounted(async () => {
       kicker="进度"
       title="掌握与风险"
       description="按证据展示掌握阶段、正确率、错因和计划偏差，避免把任务完成等同于掌握。"
-      action-label="查看风险来源"
     />
 
     <div class="metric-grid">

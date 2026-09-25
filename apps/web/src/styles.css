@@ -421,6 +421,7 @@ h3 {
 
 .task-action-button {
   display: inline-flex;
+  min-width: 64px;
   min-height: 34px;
   align-items: center;
   justify-content: center;
@@ -501,6 +502,107 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.editor-panel {
+  border-color: var(--blue);
+}
+
+.editor-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.editor-form label {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.editor-form input,
+.editor-form select,
+.editor-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-small);
+  padding: var(--space-2) var(--space-3);
+  color: var(--gray-900);
+  background: var(--white);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.editor-form textarea {
+  resize: vertical;
+}
+
+.editor-form .full-width,
+.editor-form .form-actions {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.inline-task-editor {
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--blue-soft);
+  border-radius: var(--radius-small);
+  padding: var(--space-4);
+  background: var(--gray-50);
+}
+
+.form-message {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 750;
+}
+
+.form-message.error {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.form-message.success {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.empty-action {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-small);
+  padding: var(--space-5);
+  background: var(--gray-50);
+}
+
+.empty-action p,
+.empty-copy {
+  color: var(--gray-700);
+  line-height: 1.6;
+}
+
+.timeline-content {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.planning-task-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .evidence-upload-form {
@@ -1102,6 +1204,11 @@ dd {
 
   .metric-grid,
   .knowledge-map {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-form,
+  .planning-task-list {
     grid-template-columns: 1fr;
   }
 
