@@ -42,8 +42,10 @@
 GET    /today?date=YYYY-MM-DD
 POST   /today/generate
 POST   /tasks
+GET    /tasks
 GET    /tasks/{task_id}
 PATCH  /tasks/{task_id}
+DELETE /tasks/{task_id}
 POST   /tasks/{task_id}/start
 POST   /tasks/{task_id}/results
 POST   /tasks/{task_id}/skip
@@ -59,6 +61,8 @@ POST   /tasks/{task_id}/withdraw
 `POST /tasks/{task_id}/results` 必须支持 `Idempotency-Key`，重复提交同一 key
 返回同一结果；任务状态与任务结果分离，结果不得直接推动掌握阶段。
 首次写入的任务结果会进入 `time-calibration-v1.0.0` 用时校准，重复幂等提交不得重复调整系数。
+`DELETE /tasks/{task_id}` 只允许软删除尚未开始且没有结果的任务；其他状态返回
+`409 TASK_DELETE_NOT_ALLOWED`，避免执行历史被用户界面误删。
 
 ## 3. 规划
 

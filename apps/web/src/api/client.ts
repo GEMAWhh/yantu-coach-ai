@@ -21,14 +21,21 @@ import type {
   EvidenceUploadCreatePayload,
   EvidenceUploadPayload,
   GoalTreeListPayload,
+  GoalCreatePayload,
+  GoalPayload,
+  GoalUpdatePayload,
   HealthPayload,
   KnowledgeNodeListPayload,
   ResourceListPayload,
   ReviewResultCreatePayload,
   ReviewResultSubmitPayload,
   SettingsProfilePayload,
+  SettingsProfileUpdatePayload,
   SettingsRulesPayload,
   TaskPayload,
+  TaskCreatePayload,
+  TaskListPayload,
+  TaskUpdatePayload,
   TaskResultCreatePayload,
   TaskResultSubmitPayload,
   TodayPayload,
@@ -98,8 +105,61 @@ export class ApiClient {
     return this.get<GoalTreeListPayload>("/api/v1/goals/tree");
   }
 
+  tasks(): Promise<ApiResponse<TaskListPayload>> {
+    return this.get<TaskListPayload>("/api/v1/tasks");
+  }
+
   settingsProfile(): Promise<ApiResponse<SettingsProfilePayload>> {
     return this.get<SettingsProfilePayload>("/api/v1/settings/profile");
+  }
+
+  updateSettingsProfile(
+    payload: SettingsProfileUpdatePayload,
+  ): Promise<ApiResponse<SettingsProfilePayload>> {
+    return this.patch<SettingsProfilePayload, SettingsProfileUpdatePayload>(
+      "/api/v1/settings/profile",
+      payload,
+    );
+  }
+
+  createGoal(payload: GoalCreatePayload): Promise<ApiResponse<GoalPayload>> {
+    return this.post<GoalPayload, GoalCreatePayload>("/api/v1/goals", payload);
+  }
+
+  updateGoal(
+    goalId: string,
+    version: number,
+    payload: GoalUpdatePayload,
+  ): Promise<ApiResponse<GoalPayload>> {
+    return this.patch<GoalPayload, GoalUpdatePayload>(
+      `/api/v1/goals/${encodeURIComponent(goalId)}`,
+      payload,
+      { "If-Match": String(version) },
+    );
+  }
+
+  deleteGoal(goalId: string): Promise<ApiResponse<GoalPayload>> {
+    return this.delete<GoalPayload>(`/api/v1/goals/${encodeURIComponent(goalId)}`);
+  }
+
+  createTask(payload: TaskCreatePayload): Promise<ApiResponse<TaskPayload>> {
+    return this.post<TaskPayload, TaskCreatePayload>("/api/v1/tasks", payload);
+  }
+
+  updateTask(
+    taskId: string,
+    version: number,
+    payload: TaskUpdatePayload,
+  ): Promise<ApiResponse<TaskPayload>> {
+    return this.patch<TaskPayload, TaskUpdatePayload>(
+      `/api/v1/tasks/${encodeURIComponent(taskId)}`,
+      payload,
+      { "If-Match": String(version) },
+    );
+  }
+
+  deleteTask(taskId: string): Promise<ApiResponse<TaskPayload>> {
+    return this.delete<TaskPayload>(`/api/v1/tasks/${encodeURIComponent(taskId)}`);
   }
 
   settingsRules(): Promise<ApiResponse<SettingsRulesPayload>> {

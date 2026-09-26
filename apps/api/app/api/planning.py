@@ -19,6 +19,7 @@ from app.planning.service import (
     recalculate_goal_tree,
     set_task_status,
     soft_delete_goal,
+    soft_delete_task,
     submit_task_result,
     update_goal,
     update_task,
@@ -270,6 +271,17 @@ def update_task_endpoint(
                 **payload.model_dump(exclude_unset=True),
             )
             response = TaskResponse.from_model(task)
+    except PlanningError as exc:
+        raise _api_planning_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.delete("/tasks/{task_id}", response_model=ApiResponse[TaskResponse])
+def delete_task_endpoint(request: Request, task_id: str) -> ApiResponse[TaskResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            response = TaskResponse.from_model(soft_delete_task(session, task_id))
     except PlanningError as exc:
         raise _api_planning_error(exc) from exc
     return api_response(response, request)

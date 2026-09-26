@@ -226,7 +226,7 @@ describe("App", () => {
   it("renders route content for a non-default page", async () => {
     const wrapper = await mountApp("/planning");
 
-    expect(wrapper.get('[data-testid="page-title"]').text()).toBe("五层规划");
+    expect(wrapper.get('[data-testid="page-title"]').text()).toBe("目标与任务");
   });
 
   it("renders today's tasks and metrics from the API when available", async () => {
@@ -882,7 +882,9 @@ describe("App", () => {
     const wrapper = await mountApp("/planning");
 
     expect(wrapper.text()).toContain("API 学期目标");
-    expect(wrapper.text()).toContain("25% · 250/1000 min");
+    expect(wrapper.text()).toContain("25% · 250/1000 分钟");
+    expect(wrapper.text()).toContain("新建目标");
+    expect(wrapper.text()).toContain("新建任务");
   });
 
   it("renders settings profile and rules from the API when available", async () => {
@@ -933,6 +935,110 @@ describe("App", () => {
     expect(wrapper.text()).toContain("DUT");
     expect(wrapper.text()).toContain("control");
     expect(wrapper.text()).toContain("mastery-v1.0.0");
+  });
+
+  it("edits and saves the learning profile", async () => {
+    const requests: Array<{ path: string; method: string; body?: string }> = [];
+    const profile = {
+      name: "hvv",
+      target_school: "DUT",
+      target_major: "control",
+      exam_date: "2026-12-20",
+      current_phase: "强化",
+      coach_style: "strict",
+      timezone: "Asia/Shanghai",
+      updated_at: "2026-07-15T00:00:00Z",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        requests.push({ path, method: init?.method ?? "GET", body: init?.body?.toString() });
+        if (path === "/api/v1/settings/rules") {
+          return jsonResponse({ data: { total: 0, items: [] }, meta: { request_id: "rules" } });
+        }
+        if (init?.method === "PATCH") {
+          const update = JSON.parse(String(init.body)) as { target_school: string };
+          return jsonResponse({
+            data: { ...profile, target_school: update.target_school },
+            meta: { request_id: "profile-update" },
+          });
+        }
+        return jsonResponse({ data: profile, meta: { request_id: "profile" } });
+      }),
+    );
+    const wrapper = await mountApp("/settings");
+
+    await wrapper.get(".primary-action").trigger("click");
+    const schoolInput = wrapper.findAll(".editor-form input")[1];
+    await schoolInput.setValue("新目标院校");
+    await wrapper.get(".editor-form").trigger("submit");
+    await flushPromises();
+
+    const patchRequest = requests.find((request) => request.method === "PATCH");
+    expect(patchRequest?.path).toBe("/api/v1/settings/profile");
+    expect(JSON.parse(patchRequest?.body ?? "{}").target_school).toBe("新目标院校");
+    expect(wrapper.text()).toContain("学习画像已保存");
+    expect(wrapper.text()).toContain("新目标院校");
+  });
+
+  it("creates a task from the planning empty state", async () => {
+    const requests: Array<{ path: string; method: string; body?: string }> = [];
+    let created = false;
+    const task = {
+      id: "task-new",
+      version: 1,
+      goal_id: null,
+      subject_id: "math",
+      knowledge_node_id: null,
+      title: "高数练习",
+      task_type: "study",
+      priority: "normal",
+      source_type: "manual",
+      source_id: null,
+      planned_date: "2026-09-25",
+      estimated_minutes: 30,
+      current_stage: null,
+      target_stage: null,
+      reason: null,
+      completion_standard: null,
+      prerequisite_status: "unknown",
+      status: "pending",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        requests.push({ path, method: init?.method ?? "GET", body: init?.body?.toString() });
+        if (path === "/api/v1/goals/tree") {
+          return jsonResponse({ data: { total: 0, items: [] }, meta: { request_id: "goals" } });
+        }
+        if (path === "/api/v1/tasks" && init?.method === "POST") {
+          created = true;
+          return jsonResponse({ data: task, meta: { request_id: "task-create" } });
+        }
+        if (path === "/api/v1/tasks") {
+          return jsonResponse({
+            data: { total: created ? 1 : 0, items: created ? [task] : [] },
+            meta: { request_id: "tasks" },
+          });
+        }
+        throw new Error(`unexpected request: ${path}`);
+      }),
+    );
+    const wrapper = await mountApp("/planning");
+
+    const addButton = wrapper.findAll("button").find((button) => button.text() === "添加第一项任务");
+    await addButton?.trigger("click");
+    await wrapper.get(".editor-form input").setValue("高数练习");
+    await wrapper.get(".editor-form").trigger("submit");
+    await flushPromises();
+
+    const createRequest = requests.find((request) => request.method === "POST");
+    expect(createRequest?.path).toBe("/api/v1/tasks");
+    expect(JSON.parse(createRequest?.body ?? "{}").title).toBe("高数练习");
+    expect(wrapper.text()).toContain("任务已创建");
+    expect(wrapper.text()).toContain("高数练习");
   });
 
   it("renders progress analytics from the API when available", async () => {

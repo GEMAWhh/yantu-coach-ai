@@ -374,6 +374,30 @@ def update_task(
     return task
 
 
+def soft_delete_task(session: Session, task_id: str) -> Task:
+    task = get_task(session, task_id)
+    if task.status != "pending":
+        raise PlanningError(
+            "only pending tasks can be deleted",
+            code="TASK_DELETE_NOT_ALLOWED",
+            status_code=HTTPStatus.CONFLICT,
+            details={"task_id": task_id, "status": task.status},
+        )
+    has_result = session.scalar(select(TaskResult.id).where(TaskResult.task_id == task.id).limit(1))
+    if has_result is not None:
+        raise PlanningError(
+            "tasks with results cannot be deleted",
+            code="TASK_DELETE_NOT_ALLOWED",
+            status_code=HTTPStatus.CONFLICT,
+            details={"task_id": task_id, "reason": "result_exists"},
+        )
+    task.is_deleted = True
+    task.deleted_at = utc_now()
+    task.status = "withdrawn"
+    session.flush()
+    return task
+
+
 def set_task_status(
     session: Session,
     task_id: str,
