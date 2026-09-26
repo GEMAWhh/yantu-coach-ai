@@ -71,4 +71,43 @@ test.describe("Vue prototype shell", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);
   });
+
+  test("builds, copies, restores, and clears a study prompt on mobile", async (
+    { context, page },
+    testInfo,
+  ) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], {
+      origin: "http://127.0.0.1:5173",
+    });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/learning");
+    await page.getByRole("tab", { name: /错因诊断/ }).click();
+    await page.getByLabel("科目或主题").fill("数学一 · 导数");
+    await page
+      .getByLabel("题目或学习材料")
+      .fill("含参数函数求极值，标准答案要求分类讨论。");
+    await page
+      .getByLabel("我的作答或当前情况")
+      .fill("我直接令导数为零，没有讨论参数范围。");
+    await page.getByRole("button", { name: "生成 Prompt" }).click();
+
+    const finalPrompt = page.getByLabel("最终 Prompt（可继续修改）");
+    await expect(finalPrompt).toHaveValue(/当前任务是：错因诊断/);
+    await page.getByRole("button", { name: "复制 Prompt" }).click();
+    await expect(page.getByText("Prompt 已复制到剪贴板。")).toBeVisible();
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toContain("不得补造题干、公式、答案或学习事实");
+
+    await page.getByRole("button", { name: "复制 Prompt" }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("prompt-toolbox-mobile.png") });
+    await page.reload();
+    await expect(page.getByLabel("题目或学习材料")).toHaveValue(
+      "含参数函数求极值，标准答案要求分类讨论。",
+    );
+    await page.getByRole("button", { name: "清空草稿" }).click();
+    await page.reload();
+    await expect(page.getByLabel("题目或学习材料")).toHaveValue("");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow).toBe(false);
+  });
 });

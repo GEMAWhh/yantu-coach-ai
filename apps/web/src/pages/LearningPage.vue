@@ -16,6 +16,7 @@ import type {
   WrongbookVerificationPayload,
 } from "../api/contracts";
 import PageHeader from "../components/PageHeader.vue";
+import PromptToolbox from "../components/PromptToolbox.vue";
 import StatusTag from "../components/StatusTag.vue";
 import { useMockStudyStore, type LearningResource, type Tone } from "../stores/mockStudy";
 
@@ -665,8 +666,10 @@ onMounted(async () => {
     <PageHeader
       kicker="学习"
       title="资料与知识单元"
-      description="集中展示资料、题库、错题、复习卡片和知识图谱入口，保留原型交互语义。"
+      description="使用固定学习 Prompt 辅助对话，并管理资料、错题、复习卡片和知识图谱。"
     />
+
+    <PromptToolbox />
 
     <div class="content-grid two-columns">
       <section class="panel">
