@@ -1207,6 +1207,26 @@ dd {
   font-size: 18px;
 }
 
+.remediation-editor {
+  margin-bottom: var(--space-4);
+}
+
+.remediation-context,
+.remediation-success {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.remediation-context span {
+  color: var(--gray-700);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.remediation-success .form-actions {
+  margin-top: var(--space-1);
+}
+
 .risk-grid,
 .rule-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1333,6 +1353,15 @@ dd {
   .learning-manager-form {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .mastery-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mastery-meta {
+    justify-items: start;
   }
 
   .access-gate {
