@@ -10,6 +10,8 @@ import type {
   AnalyticsMasteryPayload,
   AnalyticsOverviewPayload,
   AnalyticsTimePayload,
+  AssetPayload,
+  AssetUploadCreatePayload,
   DueReviewListPayload,
   EvidenceAnalyzeCreatePayload,
   EvidenceAnalyzePayload,
@@ -26,6 +28,11 @@ import type {
   GoalUpdatePayload,
   HealthPayload,
   KnowledgeNodeListPayload,
+  KnowledgeNodeCreatePayload,
+  KnowledgeNodePayload,
+  KnowledgeNodeUpdatePayload,
+  ResourceCreatePayload,
+  ResourcePayload,
   ResourceListPayload,
   ReviewResultCreatePayload,
   ReviewResultSubmitPayload,
@@ -194,8 +201,45 @@ export class ApiClient {
     return this.get<ResourceListPayload>("/api/v1/resources");
   }
 
+  uploadAsset(payload: AssetUploadCreatePayload): Promise<ApiResponse<AssetPayload>> {
+    return this.post<AssetPayload, AssetUploadCreatePayload>("/api/v1/assets", payload);
+  }
+
+  createResource(payload: ResourceCreatePayload): Promise<ApiResponse<ResourcePayload>> {
+    return this.post<ResourcePayload, ResourceCreatePayload>("/api/v1/resources", payload);
+  }
+
+  deleteAsset(assetId: string): Promise<ApiResponse<AssetPayload>> {
+    return this.delete<AssetPayload>(`/api/v1/assets/${encodeURIComponent(assetId)}`);
+  }
+
   knowledgeNodes(): Promise<ApiResponse<KnowledgeNodeListPayload>> {
     return this.get<KnowledgeNodeListPayload>("/api/v1/knowledge/nodes");
+  }
+
+  createKnowledgeNode(
+    payload: KnowledgeNodeCreatePayload,
+  ): Promise<ApiResponse<KnowledgeNodePayload>> {
+    return this.post<KnowledgeNodePayload, KnowledgeNodeCreatePayload>(
+      "/api/v1/knowledge/nodes",
+      payload,
+    );
+  }
+
+  updateKnowledgeNode(
+    nodeId: string,
+    payload: KnowledgeNodeUpdatePayload,
+  ): Promise<ApiResponse<KnowledgeNodePayload>> {
+    return this.patch<KnowledgeNodePayload, KnowledgeNodeUpdatePayload>(
+      `/api/v1/knowledge/nodes/${encodeURIComponent(nodeId)}`,
+      payload,
+    );
+  }
+
+  deleteKnowledgeNode(nodeId: string): Promise<ApiResponse<KnowledgeNodePayload>> {
+    return this.delete<KnowledgeNodePayload>(
+      `/api/v1/knowledge/nodes/${encodeURIComponent(nodeId)}`,
+    );
   }
 
   wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {

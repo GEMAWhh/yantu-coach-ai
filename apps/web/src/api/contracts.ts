@@ -438,6 +438,17 @@ export type AssetContentPayload = {
   content_base64: string;
 };
 
+export type AssetUploadCreatePayload = {
+  original_name: string;
+  mime_type: AssetPayload["mime_type"];
+  content_base64: string;
+  state?: "inbox" | "organized" | "archived";
+};
+
+export type ResourceCreatePayload = {
+  asset_id: string;
+};
+
 export type ResourcePayload = {
   id: string;
   resource_type: "asset";
@@ -471,6 +482,26 @@ export type KnowledgeNodePayload = {
 export type KnowledgeNodeListPayload = {
   items: KnowledgeNodePayload[];
   total: number;
+};
+
+export type KnowledgeNodeCreatePayload = {
+  code: string;
+  name: string;
+  node_type: KnowledgeNodePayload["node_type"];
+  parent_id?: string | null;
+  subject_id?: string | null;
+  importance?: number | null;
+  exam_frequency?: number | null;
+  description?: string | null;
+  status?: string;
+};
+
+export type KnowledgeNodeUpdatePayload = {
+  name?: string;
+  importance?: number | null;
+  exam_frequency?: number | null;
+  description?: string | null;
+  status?: string;
 };
 
 export type WrongbookCandidatePayload = {

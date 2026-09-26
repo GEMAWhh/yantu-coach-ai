@@ -110,4 +110,43 @@ test.describe("Vue prototype shell", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);
   });
+
+  test("manages learning resources and knowledge nodes on mobile", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/learning");
+
+    await page.getByLabel("添加资料").setInputFiles({
+      name: "极限笔记.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("demo-pdf"),
+    });
+    await page.getByRole("button", { name: "上传资料" }).click();
+    await expect(page.getByText("资料已上传，当前状态为待整理。")).toBeVisible();
+    const resourceRow = page.locator(".resource-row").filter({ hasText: "极限笔记.pdf" });
+    await expect(resourceRow).toBeVisible();
+
+    await page.getByLabel("名称", { exact: true }).fill("函数极限");
+    await page.getByLabel("科目", { exact: true }).fill("数学一");
+    await page.getByLabel("编码", { exact: true }).fill("MATH-LIMIT-01");
+    await page.getByLabel("说明", { exact: true }).fill("定义、性质与计算方法");
+    await page.getByRole("button", { name: "添加知识点" }).click();
+    await expect(page.getByText("知识点已添加。")).toBeVisible();
+
+    const node = page.locator(".knowledge-node").filter({ hasText: "函数极限" });
+    await node.getByRole("button", { name: "编辑" }).click();
+    await page.getByLabel("名称", { exact: true }).fill("函数极限与连续");
+    await page.getByRole("button", { name: "保存修改" }).click();
+    await expect(page.getByText("知识点已更新。")).toBeVisible();
+
+    await page.getByText("函数极限与连续").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("learning-management-mobile.png") });
+    const updatedNode = page.locator(".knowledge-node").filter({ hasText: "函数极限与连续" });
+    await updatedNode.getByRole("button", { name: "删除" }).click();
+    await expect(page.getByText("知识点已删除。")).toBeVisible();
+    await resourceRow.getByRole("button", { name: "删除" }).click();
+    await expect(page.getByText("已删除 极限笔记.pdf。")).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow).toBe(false);
+  });
 });

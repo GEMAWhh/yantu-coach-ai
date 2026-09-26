@@ -6,6 +6,9 @@ import type {
   AnalyticsTimePayload,
   ApiMetaPayload,
   ApiResponse,
+  AssetContentPayload,
+  AssetPayload,
+  AssetUploadCreatePayload,
   DueReviewListPayload,
   EvidenceAIJobPayload,
   EvidenceAnalyzePayload,
@@ -23,6 +26,11 @@ import type {
   GoalUpdatePayload,
   HealthPayload,
   KnowledgeNodeListPayload,
+  KnowledgeNodeCreatePayload,
+  KnowledgeNodePayload,
+  KnowledgeNodeUpdatePayload,
+  ResourceCreatePayload,
+  ResourcePayload,
   ResourceListPayload,
   ReviewResultCreatePayload,
   ReviewResultSubmitPayload,
@@ -244,7 +252,7 @@ let wrongDrafts: WrongbookDraftPayload[] = [
   },
 ];
 
-const knowledgeNodes: KnowledgeNodeListPayload = {
+let knowledgeNodes: KnowledgeNodeListPayload = {
   total: 4,
   items: [
     {
@@ -322,7 +330,7 @@ const knowledgeNodes: KnowledgeNodeListPayload = {
   ],
 };
 
-const resources: ResourceListPayload = {
+let resources: ResourceListPayload = {
   total: 2,
   items: [
     {
@@ -361,6 +369,8 @@ const resources: ResourceListPayload = {
     },
   ],
 };
+
+const demoAssetContent = new Map<string, string>();
 
 const settingsProfile: SettingsProfilePayload = {
   name: "研途用户",
@@ -580,6 +590,16 @@ function routeDemoGet<TData>(path: string, params: URLSearchParams): ApiResponse
   if (path === "/api/v1/resources") {
     return respond<TData>(resources, "resources");
   }
+  const assetContentMatch = path.match(/^\/api\/v1\/assets\/([^/]+)\/content$/);
+  if (assetContentMatch) {
+    const assetId = decodeURIComponent(assetContentMatch[1]);
+    const resource = resources.items.find((item) => item.asset.id === assetId);
+    if (!resource) throw new Error(`Demo asset not found: ${assetId}`);
+    return respond<TData>(
+      { metadata: resource.asset, content_base64: demoAssetContent.get(assetId) ?? "" } satisfies AssetContentPayload,
+      "asset-content",
+    );
+  }
   if (path === "/api/v1/knowledge/nodes") {
     return respond<TData>(knowledgeNodes, "knowledge-nodes");
   }
@@ -609,6 +629,39 @@ function routeDemoPost<TData>(
   }
   if (path === "/api/v1/goals") {
     return respond<TData>(createDemoGoal(body as GoalCreatePayload), "goal-create");
+  }
+  if (path === "/api/v1/assets") {
+    const payload = body as AssetUploadCreatePayload;
+    const asset: AssetPayload = {
+      id: `asset-demo-${++demoSequence}`, version: 1, created_at: now, updated_at: now,
+      sha256: "d".repeat(64), original_name: payload.original_name,
+      storage_path: `files/original/${payload.original_name}`, mime_type: payload.mime_type,
+      size_bytes: Math.max(1, Math.round(payload.content_base64.length * 0.75)),
+      state: payload.state ?? "inbox", reference_count: 0,
+    };
+    demoAssetContent.set(asset.id, payload.content_base64);
+    resources = { ...resources, items: [...resources.items, { id: asset.id, resource_type: "asset", asset }], total: resources.total + 1 };
+    return respond<TData>(asset, "asset-upload");
+  }
+  if (path === "/api/v1/resources") {
+    const payload = body as ResourceCreatePayload;
+    const resource = resources.items.find((item) => item.asset.id === payload.asset_id);
+    if (!resource) throw new Error(`Demo asset not found: ${payload.asset_id}`);
+    resource.asset.reference_count = Math.max(1, resource.asset.reference_count);
+    return respond<TData>(resource satisfies ResourcePayload, "resource-create");
+  }
+  if (path === "/api/v1/knowledge/nodes") {
+    const payload = body as KnowledgeNodeCreatePayload;
+    const node: KnowledgeNodePayload = {
+      id: `node-demo-${++demoSequence}`, version: 1, created_at: now, updated_at: now,
+      created_by: "user", is_deleted: false, deleted_at: null,
+      subject_id: payload.subject_id ?? `node-demo-${demoSequence}`, parent_id: payload.parent_id ?? null,
+      code: payload.code, name: payload.name, node_type: payload.node_type,
+      importance: payload.importance ?? null, exam_frequency: payload.exam_frequency ?? null,
+      description: payload.description ?? null, status: payload.status ?? "active",
+    };
+    knowledgeNodes = { items: [...knowledgeNodes.items, node], total: knowledgeNodes.total + 1 };
+    return respond<TData>(node, "knowledge-node-create");
   }
   const taskActionMatch = path.match(/^\/api\/v1\/tasks\/([^/]+)\/(start|skip|withdraw)$/);
   if (taskActionMatch) {
@@ -700,6 +753,23 @@ function routeDemoPatch<TData>(path: string, body: unknown): ApiResponse<TData> 
       updateDemoTask(decodeURIComponent(rawTaskId), body as TaskUpdatePayload),
       "task-patch",
     );
+  }
+
+  const knowledgeMatch = path.match(/^\/api\/v1\/knowledge\/nodes\/([^/]+)$/);
+  if (knowledgeMatch) {
+    const nodeId = decodeURIComponent(knowledgeMatch[1]);
+    const payload = body as KnowledgeNodeUpdatePayload;
+    let updated: KnowledgeNodePayload | null = null;
+    knowledgeNodes = {
+      ...knowledgeNodes,
+      items: knowledgeNodes.items.map((node) => {
+        if (node.id !== nodeId) return node;
+        updated = { ...node, ...payload, version: node.version + 1, updated_at: now };
+        return updated;
+      }),
+    };
+    if (!updated) throw new Error(`Demo knowledge node not found: ${nodeId}`);
+    return respond<TData>(updated, "knowledge-node-update");
   }
 
   throw new Error(`Demo API route is not implemented: PATCH ${path}`);
@@ -936,6 +1006,25 @@ function evidenceHistory(limit: number): EvidenceHistoryPayload {
 }
 
 function routeDemoDelete<TData>(path: string): ApiResponse<TData> {
+  const assetMatch = path.match(/^\/api\/v1\/assets\/([^/]+)$/);
+  if (assetMatch) {
+    const assetId = decodeURIComponent(assetMatch[1]);
+    const resource = resources.items.find((item) => item.asset.id === assetId);
+    if (!resource) throw new Error(`Demo asset not found: ${assetId}`);
+    resources = { items: resources.items.filter((item) => item.asset.id !== assetId), total: resources.total - 1 };
+    demoAssetContent.delete(assetId);
+    return respond<TData>({ ...resource.asset, state: "deleted" }, "asset-delete");
+  }
+
+  const knowledgeMatch = path.match(/^\/api\/v1\/knowledge\/nodes\/([^/]+)$/);
+  if (knowledgeMatch) {
+    const nodeId = decodeURIComponent(knowledgeMatch[1]);
+    const node = knowledgeNodes.items.find((item) => item.id === nodeId);
+    if (!node) throw new Error(`Demo knowledge node not found: ${nodeId}`);
+    knowledgeNodes = { items: knowledgeNodes.items.filter((item) => item.id !== nodeId), total: knowledgeNodes.total - 1 };
+    return respond<TData>({ ...node, is_deleted: true, deleted_at: now }, "knowledge-node-delete");
+  }
+
   const taskMatch = path.match(/^\/api\/v1\/tasks\/([^/]+)$/);
   if (taskMatch) {
     const taskId = decodeURIComponent(taskMatch[1]);

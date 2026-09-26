@@ -199,3 +199,10 @@ tests/fixtures/ai/
 - Invalid drafts return `AI_DRAFT_NOT_CONFIRMED` on confirmation and keep the wrong record unchanged.
 - `PATCH /wrongbook/{wrong_id}/draft` revalidates structured JSON and can repair a failed draft.
 - `POST /wrongbook/{wrong_id}/confirm` is idempotent after first confirmation and writes one audit event.
+
+## 16. Learning management UI coverage
+
+- Client unit tests verify the asset upload/resource creation boundary and knowledge-node write routes.
+- Learning-page unit tests reject unsupported file types and incomplete knowledge-node forms before API writes.
+- Mobile Playwright coverage uploads and deletes a resource, then creates, edits, and deletes a knowledge node.
+- The flow asserts that the 360px viewport has no horizontal overflow.

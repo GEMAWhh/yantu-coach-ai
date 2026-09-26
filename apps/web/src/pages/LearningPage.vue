@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { ApiClient } from "../api/client";
+import { ApiClient, ApiClientError } from "../api/client";
 import type {
   DueReviewPayload,
   KnowledgeNodePayload,
+  KnowledgeNodeCreatePayload,
   ResourcePayload,
   ReviewResultSubmitPayload,
   ReviewResultType,
@@ -36,10 +37,30 @@ const wrongbookDraftHistoryError = ref<string | null>(null);
 const selectedWrongbookRecord = ref<WrongbookRecordPayload | null>(null);
 const selectedWrongbookVerification = ref<WrongbookVerificationPayload | null>(null);
 const selectedWrongbookDraft = ref<WrongbookDraftPayload | null>(null);
+const resourceActionInFlight = ref(false);
+const resourceMessage = ref<{ tone: "error" | "success"; text: string } | null>(null);
+const selectedResourceFile = ref<File | null>(null);
+const resourceFileInput = ref<HTMLInputElement | null>(null);
+const knowledgeActionInFlight = ref(false);
+const knowledgeMessage = ref<{ tone: "error" | "success"; text: string } | null>(null);
+const editingKnowledgeNodeId = ref<string | null>(null);
+const knowledgeForm = ref({
+  code: "",
+  name: "",
+  subject_id: "",
+  importance: 50,
+  exam_frequency: 50,
+  description: "",
+});
 
 type KnowledgeChip = {
+  id: string | null;
   label: string;
   className: "strong" | "active" | "weak" | "danger";
+};
+
+type ResourceRow = LearningResource & {
+  asset: ResourcePayload["asset"] | null;
 };
 
 type LoopCard = {
@@ -94,9 +115,9 @@ const pendingWrongbookDraftCount = computed(() =>
 const reviewSourceLabel = computed(() => (apiDueReviews.value ? "正式复习" : "原型复习"));
 const reviewSourceTone = computed<Tone>(() => (apiDueReviews.value ? "green" : "yellow"));
 
-const resourceRows = computed<LearningResource[]>(() => {
+const resourceRows = computed<ResourceRow[]>(() => {
   if (!apiResources.value) {
-    return study.resources;
+    return study.resources.map((resource) => ({ ...resource, asset: null }));
   }
   if (apiResources.value.length === 0) {
     return [
@@ -105,6 +126,7 @@ const resourceRows = computed<LearningResource[]>(() => {
         meta: "后端资源队列为空，可先上传讲义、题目截图或解析文件。",
         status: "空队列",
         tone: "neutral",
+        asset: null,
       },
     ];
   }
@@ -113,29 +135,187 @@ const resourceRows = computed<LearningResource[]>(() => {
     meta: `${resource.asset.mime_type} · ${formatBytes(resource.asset.size_bytes)} · 引用 ${resource.asset.reference_count}`,
     status: stateLabel(resource.asset.state),
     tone: toneForAssetState(resource.asset.state),
+    asset: resource.asset,
   }));
 });
 
 const knowledgeChips = computed<KnowledgeChip[]>(() => {
   if (!apiKnowledgeNodes.value) {
     return [
-      { label: "稳定掌握", className: "strong" },
-      { label: "基础应用", className: "active" },
-      { label: "待巩固", className: "weak" },
-      { label: "薄弱/衰退", className: "danger" },
+      { id: null, label: "稳定掌握", className: "strong" },
+      { id: null, label: "基础应用", className: "active" },
+      { id: null, label: "待巩固", className: "weak" },
+      { id: null, label: "薄弱/衰退", className: "danger" },
     ];
   }
   if (apiKnowledgeNodes.value.length === 0) {
-    return [{ label: "暂无知识点", className: "weak" }];
+    return [{ id: null, label: "暂无知识点", className: "weak" }];
   }
   return [...apiKnowledgeNodes.value]
     .sort((left, right) => scoreNode(right) - scoreNode(left))
     .slice(0, 6)
     .map((node) => ({
+      id: node.id,
       label: node.name,
       className: classForNode(node),
     }));
 });
+
+function errorText(error: unknown, fallback: string): string {
+  if (error instanceof ApiClientError) return error.error.message;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+async function reloadResources(): Promise<void> {
+  const response = await new ApiClient().resources();
+  apiResources.value = response.data.items;
+}
+
+function selectResourceFile(event: Event): void {
+  selectedResourceFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
+  resourceMessage.value = null;
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+  }
+  return btoa(binary);
+}
+
+async function uploadLearningResource(): Promise<void> {
+  const file = selectedResourceFile.value;
+  if (!file) {
+    resourceMessage.value = { tone: "error", text: "请先选择 PNG、JPEG 或 PDF 文件。" };
+    return;
+  }
+  if (!["image/png", "image/jpeg", "application/pdf"].includes(file.type)) {
+    resourceMessage.value = { tone: "error", text: "仅支持 PNG、JPEG 和 PDF 文件。" };
+    return;
+  }
+  resourceActionInFlight.value = true;
+  resourceMessage.value = null;
+  try {
+    const client = new ApiClient();
+    const uploaded = await client.uploadAsset({
+      original_name: file.name,
+      mime_type: file.type as ResourcePayload["asset"]["mime_type"],
+      content_base64: await fileToBase64(file),
+      state: "inbox",
+    });
+    await client.createResource({ asset_id: uploaded.data.id });
+    await reloadResources();
+    selectedResourceFile.value = null;
+    if (resourceFileInput.value) resourceFileInput.value.value = "";
+    resourceMessage.value = { tone: "success", text: "资料已上传，当前状态为待整理。" };
+  } catch (error) {
+    resourceMessage.value = { tone: "error", text: errorText(error, "资料上传失败。") };
+  } finally {
+    resourceActionInFlight.value = false;
+  }
+}
+
+async function openLearningResource(asset: ResourcePayload["asset"]): Promise<void> {
+  resourceMessage.value = null;
+  try {
+    const response = await new ApiClient().evidenceAssetContent(asset.id);
+    const source = `data:${asset.mime_type};base64,${response.data.content_base64}`;
+    const opened = window.open(source, "_blank", "noopener,noreferrer");
+    if (!opened) resourceMessage.value = { tone: "error", text: "浏览器阻止了新窗口，请允许弹窗后重试。" };
+  } catch (error) {
+    resourceMessage.value = { tone: "error", text: errorText(error, "资料打开失败。") };
+  }
+}
+
+async function deleteLearningResource(asset: ResourcePayload["asset"]): Promise<void> {
+  resourceActionInFlight.value = true;
+  resourceMessage.value = null;
+  try {
+    await new ApiClient().deleteAsset(asset.id);
+    await reloadResources();
+    resourceMessage.value = { tone: "success", text: `已删除 ${asset.original_name}。` };
+  } catch (error) {
+    resourceMessage.value = { tone: "error", text: errorText(error, "资料删除失败。") };
+  } finally {
+    resourceActionInFlight.value = false;
+  }
+}
+
+function resetKnowledgeForm(): void {
+  editingKnowledgeNodeId.value = null;
+  knowledgeForm.value = { code: "", name: "", subject_id: "", importance: 50, exam_frequency: 50, description: "" };
+}
+
+function editKnowledgeNode(nodeId: string | null): void {
+  const node = apiKnowledgeNodes.value?.find((item) => item.id === nodeId);
+  if (!node) return;
+  editingKnowledgeNodeId.value = node.id;
+  knowledgeForm.value = {
+    code: node.code,
+    name: node.name,
+    subject_id: node.subject_id,
+    importance: node.importance ?? 50,
+    exam_frequency: node.exam_frequency ?? 50,
+    description: node.description ?? "",
+  };
+  knowledgeMessage.value = null;
+}
+
+async function saveKnowledgeNode(): Promise<void> {
+  const form = knowledgeForm.value;
+  if (!form.name.trim() || (!editingKnowledgeNodeId.value && (!form.code.trim() || !form.subject_id.trim()))) {
+    knowledgeMessage.value = { tone: "error", text: "名称、编码和科目不能为空。" };
+    return;
+  }
+  knowledgeActionInFlight.value = true;
+  knowledgeMessage.value = null;
+  try {
+    const client = new ApiClient();
+    if (editingKnowledgeNodeId.value) {
+      await client.updateKnowledgeNode(editingKnowledgeNodeId.value, {
+        name: form.name.trim(),
+        importance: form.importance,
+        exam_frequency: form.exam_frequency,
+        description: form.description.trim() || null,
+      });
+    } else {
+      const payload: KnowledgeNodeCreatePayload = {
+        code: form.code.trim(), name: form.name.trim(), node_type: "knowledge",
+        subject_id: form.subject_id.trim(), importance: form.importance,
+        exam_frequency: form.exam_frequency, description: form.description.trim() || null,
+      };
+      await client.createKnowledgeNode(payload);
+    }
+    const nodes = await client.knowledgeNodes();
+    apiKnowledgeNodes.value = nodes.data.items;
+    knowledgeMessage.value = { tone: "success", text: editingKnowledgeNodeId.value ? "知识点已更新。" : "知识点已添加。" };
+    resetKnowledgeForm();
+  } catch (error) {
+    knowledgeMessage.value = { tone: "error", text: errorText(error, "知识点保存失败。") };
+  } finally {
+    knowledgeActionInFlight.value = false;
+  }
+}
+
+async function deleteKnowledgeNode(nodeId: string | null): Promise<void> {
+  if (!nodeId) return;
+  knowledgeActionInFlight.value = true;
+  knowledgeMessage.value = null;
+  try {
+    await new ApiClient().deleteKnowledgeNode(nodeId);
+    apiKnowledgeNodes.value = apiKnowledgeNodes.value?.filter((node) => node.id !== nodeId) ?? [];
+    if (editingKnowledgeNodeId.value === nodeId) resetKnowledgeForm();
+    knowledgeMessage.value = { tone: "success", text: "知识点已删除。" };
+  } catch (error) {
+    knowledgeMessage.value = { tone: "error", text: errorText(error, "知识点删除失败。") };
+  } finally {
+    knowledgeActionInFlight.value = false;
+  }
+}
 
 const reviewCards = computed<ReviewCard[]>(() => {
   if (!apiDueReviews.value) {
@@ -686,6 +866,37 @@ onMounted(async () => {
           />
         </div>
 
+        <form
+          class="learning-manager-form"
+          @submit.prevent="uploadLearningResource"
+        >
+          <label>
+            添加资料
+            <input
+              ref="resourceFileInput"
+              type="file"
+              accept="image/png,image/jpeg,application/pdf"
+              :disabled="resourceActionInFlight"
+              @change="selectResourceFile"
+            >
+          </label>
+          <button
+            type="submit"
+            class="task-action-button"
+            :disabled="resourceActionInFlight"
+          >
+            {{ resourceActionInFlight ? "处理中" : "上传资料" }}
+          </button>
+        </form>
+        <p
+          v-if="resourceMessage"
+          class="form-message"
+          :class="resourceMessage.tone"
+          role="status"
+        >
+          {{ resourceMessage.text }}
+        </p>
+
         <div class="resource-list">
           <article
             v-for="resource in resourceRows"
@@ -700,6 +911,26 @@ onMounted(async () => {
               :label="resource.status"
               :tone="resource.tone"
             />
+            <div
+              v-if="resource.asset"
+              class="resource-actions"
+            >
+              <button
+                type="button"
+                class="task-action-button secondary"
+                @click="openLearningResource(resource.asset)"
+              >
+                打开
+              </button>
+              <button
+                type="button"
+                class="task-action-button danger"
+                :disabled="resourceActionInFlight"
+                @click="deleteLearningResource(resource.asset)"
+              >
+                删除
+              </button>
+            </div>
           </article>
         </div>
       </section>
@@ -718,16 +949,115 @@ onMounted(async () => {
           />
         </div>
 
+        <form
+          class="editor-form knowledge-editor"
+          @submit.prevent="saveKnowledgeNode"
+        >
+          <label>
+            名称
+            <input
+              v-model="knowledgeForm.name"
+              required
+              maxlength="200"
+            >
+          </label>
+          <label>
+            科目
+            <input
+              v-model="knowledgeForm.subject_id"
+              :disabled="Boolean(editingKnowledgeNodeId)"
+              required
+              maxlength="120"
+            >
+          </label>
+          <label>
+            编码
+            <input
+              v-model="knowledgeForm.code"
+              :disabled="Boolean(editingKnowledgeNodeId)"
+              required
+              maxlength="120"
+            >
+          </label>
+          <label>
+            重要度
+            <input
+              v-model.number="knowledgeForm.importance"
+              type="number"
+              min="0"
+              max="100"
+            >
+          </label>
+          <label>
+            考频
+            <input
+              v-model.number="knowledgeForm.exam_frequency"
+              type="number"
+              min="0"
+              max="100"
+            >
+          </label>
+          <label class="full-width">
+            说明
+            <textarea
+              v-model="knowledgeForm.description"
+              rows="2"
+            />
+          </label>
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="task-action-button"
+              :disabled="knowledgeActionInFlight"
+            >
+              {{ editingKnowledgeNodeId ? "保存修改" : "添加知识点" }}
+            </button>
+            <button
+              v-if="editingKnowledgeNodeId"
+              type="button"
+              class="task-action-button secondary"
+              @click="resetKnowledgeForm"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+        <p
+          v-if="knowledgeMessage"
+          class="form-message"
+          :class="knowledgeMessage.tone"
+          role="status"
+        >
+          {{ knowledgeMessage.text }}
+        </p>
+
         <div class="knowledge-map">
-          <button
+          <article
             v-for="node in knowledgeChips"
             :key="node.label"
-            type="button"
             class="knowledge-node"
             :class="node.className"
           >
-            {{ node.label }}
-          </button>
+            <strong>{{ node.label }}</strong>
+            <div
+              v-if="node.id"
+              class="knowledge-node-actions"
+            >
+              <button
+                type="button"
+                @click="editKnowledgeNode(node.id)"
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                :disabled="knowledgeActionInFlight"
+                @click="deleteKnowledgeNode(node.id)"
+              >
+                删除
+              </button>
+            </div>
+          </article>
         </div>
       </section>
     </div>

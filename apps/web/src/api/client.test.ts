@@ -366,6 +366,55 @@ describe("ApiClient", () => {
     ]);
   });
 
+  it("writes and removes learning resources through the asset boundary", async () => {
+    const calls: Array<{ url: string; method: string; body: unknown }> = [];
+    const asset = {
+      id: "asset-new", version: 1, created_at: "2026-07-15T00:00:00Z",
+      updated_at: "2026-07-15T00:00:00Z", sha256: "a".repeat(64),
+      original_name: "notes.pdf", storage_path: "files/original/notes.pdf",
+      mime_type: "application/pdf" as const, size_bytes: 12, state: "inbox" as const,
+      reference_count: 0,
+    };
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({
+        url: String(input),
+        method: init?.method ?? "GET",
+        body: init?.body ? JSON.parse(String(init.body)) : null,
+      });
+      if (calls.length === 1) return jsonResponse({ data: asset, meta: { request_id: "upload" } });
+      if (calls.length === 2) return jsonResponse({ data: { id: asset.id, resource_type: "asset", asset }, meta: { request_id: "resource" } });
+      return jsonResponse({ data: { ...asset, state: "deleted" }, meta: { request_id: "delete" } });
+    });
+
+    await client.uploadAsset({ original_name: "notes.pdf", mime_type: "application/pdf", content_base64: "YWJj" });
+    await client.createResource({ asset_id: asset.id });
+    await client.deleteAsset(asset.id);
+
+    expect(calls).toEqual([
+      { url: "/api/v1/assets", method: "POST", body: { original_name: "notes.pdf", mime_type: "application/pdf", content_base64: "YWJj" } },
+      { url: "/api/v1/resources", method: "POST", body: { asset_id: "asset-new" } },
+      { url: "/api/v1/assets/asset-new", method: "DELETE", body: null },
+    ]);
+  });
+
+  it("creates, updates, and removes knowledge nodes", async () => {
+    const calls: Array<{ url: string; method: string }> = [];
+    const client = new ApiClient("", async (input, init) => {
+      calls.push({ url: String(input), method: init?.method ?? "GET" });
+      return jsonResponse({ data: {}, meta: { request_id: "knowledge-write" } });
+    });
+
+    await client.createKnowledgeNode({ code: "M-1", name: "极限", node_type: "knowledge", subject_id: "math" });
+    await client.updateKnowledgeNode("node 1", { name: "函数极限", importance: 80 });
+    await client.deleteKnowledgeNode("node 1");
+
+    expect(calls).toEqual([
+      { url: "/api/v1/knowledge/nodes", method: "POST" },
+      { url: "/api/v1/knowledge/nodes/node%201", method: "PATCH" },
+      { url: "/api/v1/knowledge/nodes/node%201", method: "DELETE" },
+    ]);
+  });
+
   it("loads due reviews and submits review results with an idempotency key", async () => {
     const dueReviews: ApiResponse<DueReviewListPayload> = {
       data: {
