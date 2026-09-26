@@ -61,6 +61,7 @@ export type TaskCreatePayload = {
   source_type: "manual" | "goal";
   goal_id?: string | null;
   subject_id?: string | null;
+  knowledge_node_id?: string | null;
   task_type?: string;
   priority?: string;
   source_id?: string | null;

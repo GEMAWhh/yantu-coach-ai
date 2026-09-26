@@ -206,3 +206,9 @@ tests/fixtures/ai/
 - Learning-page unit tests reject unsupported file types and incomplete knowledge-node forms before API writes.
 - Mobile Playwright coverage uploads and deletes a resource, then creates, edits, and deletes a knowledge node.
 - The flow asserts that the 360px viewport has no horizontal overflow.
+
+## 17. Progress remediation workflow coverage
+
+- Pure unit tests cover deterministic prefill, knowledge-node traceability, past-date rejection, and duration boundaries.
+- Mobile Playwright coverage creates a task from a formal weak node and verifies it through in-app Planning and Today navigation.
+- The workflow keeps API failures editable and never mutates mastery or evidence records.

@@ -1407,7 +1407,7 @@ function createDemoTask(payload: TaskCreatePayload): TaskPayload {
     version: 1,
     goal_id: payload.goal_id ?? null,
     subject_id: payload.subject_id ?? null,
-    knowledge_node_id: null,
+    knowledge_node_id: payload.knowledge_node_id ?? null,
     title: payload.title,
     task_type: payload.task_type ?? "study",
     priority: payload.priority ?? "normal",

@@ -1,18 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { ApiClient } from "../api/client";
+import { ApiClient, ApiClientError } from "../api/client";
 import type {
   AnalyticsErrorsPayload,
   AnalyticsGoalRiskPayload,
   AnalyticsMasteryPayload,
   AnalyticsTimePayload,
   CountBucketPayload,
+  TaskPayload,
   WeakNodePayload,
 } from "../api/contracts";
 import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
+import {
+  remediationDraft,
+  remediationTaskPayload,
+  validateRemediationDraft,
+  type RemediationDraft,
+} from "../features/progress/remediation";
 import { useMockStudyStore, type MasteryItem, type Tone } from "../stores/mockStudy";
 
 const study = useMockStudyStore();
@@ -21,6 +28,11 @@ const apiErrors = ref<AnalyticsErrorsPayload | null>(null);
 const apiTime = ref<AnalyticsTimePayload | null>(null);
 const apiGoalRisk = ref<AnalyticsGoalRiskPayload | null>(null);
 const apiWeakNodes = ref<WeakNodePayload[] | null>(null);
+const selectedWeakNode = ref<WeakNodePayload | null>(null);
+const remediationForm = ref<RemediationDraft | null>(null);
+const remediationSaving = ref(false);
+const remediationError = ref<string | null>(null);
+const createdRemediationTask = ref<TaskPayload | null>(null);
 
 type MetricItem = {
   label: string;
@@ -32,6 +44,10 @@ type MetricItem = {
 type RiskItem = {
   title: string;
   body: string;
+};
+
+type ProgressMasteryItem = MasteryItem & {
+  weakNode: WeakNodePayload | null;
 };
 
 const hasAnalytics = computed(
@@ -94,9 +110,9 @@ const progressMetrics = computed<MetricItem[]>(() => {
   ];
 });
 
-const masteryRows = computed<MasteryItem[]>(() => {
+const masteryRows = computed<ProgressMasteryItem[]>(() => {
   if (!apiWeakNodes.value) {
-    return study.mastery;
+    return study.mastery.map((item) => ({ ...item, weakNode: null }));
   }
   if (apiWeakNodes.value.length === 0) {
     return [
@@ -106,6 +122,7 @@ const masteryRows = computed<MasteryItem[]>(() => {
         accuracy: "0 阻塞",
         evidence: "后端薄弱图谱没有返回待处理节点。",
         tone: "green",
+        weakNode: null,
       },
     ];
   }
@@ -116,8 +133,55 @@ const masteryRows = computed<MasteryItem[]>(() => {
       node.repeat_error_rate === null ? `${node.evidence_count} 条证据` : `错因率 ${node.repeat_error_rate}%`,
     evidence: evidenceLabel(node),
     tone: toneForStage(node.latest_stage, node.blocking_reasons),
+    weakNode: node,
   }));
 });
+
+function localDateString(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function openRemediationEditor(node: WeakNodePayload): void {
+  selectedWeakNode.value = node;
+  remediationForm.value = remediationDraft(node, localDateString());
+  remediationError.value = null;
+  createdRemediationTask.value = null;
+}
+
+function closeRemediationEditor(): void {
+  selectedWeakNode.value = null;
+  remediationForm.value = null;
+  remediationError.value = null;
+}
+
+async function createRemediationTask(): Promise<void> {
+  if (!selectedWeakNode.value || !remediationForm.value) return;
+  const validationError = validateRemediationDraft(remediationForm.value, localDateString());
+  if (validationError) {
+    remediationError.value = validationError;
+    return;
+  }
+  remediationSaving.value = true;
+  remediationError.value = null;
+  try {
+    const response = await new ApiClient().createTask(
+      remediationTaskPayload(selectedWeakNode.value, remediationForm.value),
+    );
+    createdRemediationTask.value = response.data;
+    selectedWeakNode.value = null;
+    remediationForm.value = null;
+  } catch (error) {
+    remediationError.value =
+      error instanceof ApiClientError
+        ? error.error.message
+        : "补救任务创建失败，请保留当前内容并重试。";
+  } finally {
+    remediationSaving.value = false;
+  }
+}
 
 const riskItems = computed<RiskItem[]>(() => {
   if (!apiErrors.value || !apiGoalRisk.value || !apiTime.value || !apiMastery.value) {
@@ -262,6 +326,121 @@ onMounted(async () => {
         />
       </div>
 
+      <div
+        v-if="createdRemediationTask"
+        class="form-message success remediation-success"
+        role="status"
+      >
+        <span>
+          已创建「{{ createdRemediationTask.title }}」，计划日期
+          {{ createdRemediationTask.planned_date }}。
+        </span>
+        <div class="form-actions">
+          <RouterLink
+            class="task-action-button secondary"
+            to="/planning"
+          >
+            查看规划
+          </RouterLink>
+          <RouterLink
+            class="task-action-button secondary"
+            to="/today"
+          >
+            查看今日
+          </RouterLink>
+        </div>
+      </div>
+
+      <form
+        v-if="selectedWeakNode && remediationForm"
+        class="editor-form inline-task-editor remediation-editor"
+        @submit.prevent="createRemediationTask"
+      >
+        <div class="full-width remediation-context">
+          <strong>{{ selectedWeakNode.label }}</strong>
+          <span>
+            {{ stageLabel(selectedWeakNode.latest_stage) }} ·
+            {{ selectedWeakNode.evidence_count }} 条证据 ·
+            {{ selectedWeakNode.blocking_reasons.join(" / ") || "等待更多证据" }}
+          </span>
+        </div>
+        <label>
+          <span>任务名称</span>
+          <input
+            v-model="remediationForm.title"
+            maxlength="240"
+            required
+          >
+        </label>
+        <label>
+          <span>计划日期</span>
+          <input
+            v-model="remediationForm.plannedDate"
+            type="date"
+            :min="localDateString()"
+            required
+          >
+        </label>
+        <label>
+          <span>预计分钟</span>
+          <input
+            v-model.number="remediationForm.estimatedMinutes"
+            type="number"
+            min="5"
+            max="240"
+            required
+          >
+        </label>
+        <label>
+          <span>优先级</span>
+          <select v-model="remediationForm.priority">
+            <option value="normal">普通</option>
+            <option value="high">高</option>
+            <option value="must">必须</option>
+          </select>
+        </label>
+        <label class="full-width">
+          <span>补救原因</span>
+          <textarea
+            v-model="remediationForm.reason"
+            rows="3"
+            required
+          />
+        </label>
+        <label class="full-width">
+          <span>完成标准</span>
+          <textarea
+            v-model="remediationForm.completionStandard"
+            rows="3"
+            required
+          />
+        </label>
+        <p
+          v-if="remediationError"
+          class="form-message error full-width"
+          role="alert"
+        >
+          {{ remediationError }}
+        </p>
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="task-action-button"
+            :disabled="remediationSaving"
+          >
+            {{ remediationSaving ? "创建中" : "确认创建任务" }}
+          </button>
+          <button
+            type="button"
+            class="task-action-button secondary"
+            :disabled="remediationSaving"
+            @click="closeRemediationEditor"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+
       <div class="mastery-list">
         <article
           v-for="item in masteryRows"
@@ -278,6 +457,14 @@ onMounted(async () => {
               :tone="item.tone"
             />
             <strong>{{ item.accuracy }}</strong>
+            <button
+              v-if="item.weakNode"
+              type="button"
+              class="task-action-button"
+              @click="openRemediationEditor(item.weakNode)"
+            >
+              创建补救任务
+            </button>
           </div>
         </article>
       </div>

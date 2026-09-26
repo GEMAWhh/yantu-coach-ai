@@ -149,4 +149,30 @@ test.describe("Vue prototype shell", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);
   });
+
+  test("creates a remediation task from a weak progress node on mobile", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/progress");
+
+    await page.getByRole("button", { name: "创建补救任务" }).first().click();
+    await expect(page.getByText(/条证据/).first()).toBeVisible();
+    await page.getByLabel("任务名称").fill("E2E 函数薄弱补救");
+    await page.getByLabel("预计分钟").fill("35");
+    await page.getByLabel("完成标准").fill("完成两道无提示练习并提交真实结果。");
+    await page.getByRole("button", { name: "确认创建任务" }).scrollIntoViewIfNeeded();
+    await page.setViewportSize({ width: 360, height: 1100 });
+    await page.screenshot({
+      path: testInfo.outputPath("progress-remediation-editor-mobile.png"),
+    });
+    await page.getByRole("button", { name: "确认创建任务" }).click();
+
+    await expect(page.getByText(/已创建「E2E 函数薄弱补救」/)).toBeVisible();
+    await page.getByRole("link", { name: "查看规划" }).click();
+    await expect(page.getByRole("heading", { name: "E2E 函数薄弱补救" })).toBeVisible();
+    await page.locator('.bottom-nav-link[href="/today"]').click();
+    await expect(page.getByRole("heading", { name: "E2E 函数薄弱补救" })).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow).toBe(false);
+  });
 });
