@@ -128,6 +128,12 @@ tests/fixtures/ai/
 - Task result submission recalculates the child goal and root ancestor goal.
 - Goal progress and actual minutes roll up from task results into parent goals.
 - `goal.recalculated` history events preserve request id and task-result source.
+
+## 11. Prompt toolbox acceptance coverage
+
+- `apps/web/src/components/PromptToolbox.test.ts` covers template generation, clipboard success/failure, local draft restore/clear, and blocked external windows.
+- Playwright covers the 360px workflow from template selection through generation, clipboard copy, reload recovery, and clearing the draft.
+- External Chat shortcuts only open a new window and never append the Prompt or personal data to a URL.
 - Manual recalculate marks overdue unfinished goals high risk and delayed.
 - Goal history API returns the emitted recalculation evidence.
 
