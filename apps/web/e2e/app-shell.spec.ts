@@ -43,6 +43,19 @@ test.describe("Vue prototype shell", () => {
     await expect(page).toHaveURL(/\/today$/);
   });
 
+  test("returns to the top of a long page without manual swiping", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/today");
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+    const scrollTopButton = page.getByRole("button", { name: "回到页面顶部" });
+    await expect(scrollTopButton).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("scroll-top-mobile.png") });
+    await scrollTopButton.click();
+
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10);
+  });
+
   test("records a today outcome without requiring text input", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/today");
