@@ -419,6 +419,105 @@ h3 {
   gap: var(--space-2);
 }
 
+.quick-task-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.primary-task-action {
+  grid-column: 1 / -1;
+  min-height: 44px;
+}
+
+.outcome-complete {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.outcome-blocked {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: var(--yellow-soft);
+}
+
+.task-brief {
+  margin: 0;
+  font-size: 14px;
+}
+
+.task-more-actions,
+.optional-fields,
+.optional-workflow {
+  border: 0;
+}
+
+.task-more-actions > summary,
+.optional-fields > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--gray-600);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.task-more-actions[open] > summary,
+.optional-fields[open] > summary {
+  margin-bottom: var(--space-3);
+}
+
+.optional-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.today-optional-column {
+  min-width: 0;
+}
+
+.optional-workflow {
+  padding: 0;
+  overflow: hidden;
+}
+
+.optional-workflow > summary {
+  display: flex;
+  min-height: 88px;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.optional-workflow > summary::-webkit-details-marker {
+  display: none;
+}
+
+.optional-workflow > summary span {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.optional-workflow > summary strong {
+  color: var(--gray-900);
+  font-size: 17px;
+}
+
+.optional-workflow > summary small {
+  color: var(--gray-600);
+  line-height: 1.45;
+}
+
+.optional-workflow-body {
+  display: grid;
+  gap: var(--space-3);
+  border-top: 1px solid var(--gray-200);
+  padding: var(--space-4);
+}
+
 .task-action-button {
   display: inline-flex;
   min-width: 64px;
@@ -1427,9 +1526,19 @@ dd {
   }
 
   .editor-form,
+  .optional-fields-grid,
   .planning-task-list,
   .prompt-fields {
     grid-template-columns: 1fr;
+  }
+
+  .quick-task-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .optional-workflow > summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .prompt-template-tabs {

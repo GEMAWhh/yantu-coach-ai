@@ -36,6 +36,29 @@ function emptyEvidenceHistoryResponse(): Response {
   });
 }
 
+function quickFlowTask(status: "in_progress" | "skipped", version = 1) {
+  return {
+    id: "task-quick-1",
+    version,
+    goal_id: "goal-week",
+    subject_id: "math",
+    knowledge_node_id: "node-1",
+    title: "快速执行任务",
+    task_type: "practice",
+    priority: "high",
+    source_type: "goal",
+    source_id: "goal-week",
+    planned_date: "2026-07-15",
+    estimated_minutes: 30,
+    current_stage: 2,
+    target_stage: 3,
+    reason: "后端计划生成",
+    completion_standard: "完成练习",
+    prerequisite_status: "satisfied",
+    status,
+  };
+}
+
 function evidenceHistoryWithDraftResponse(): Response {
   return jsonResponse({
     data: {
@@ -488,10 +511,10 @@ describe("App", () => {
       "/api/v1/tasks/task-api-1/start",
     ]);
     expect(calls[2].init?.headers).toMatchObject({ "If-Match": "1" });
-    expect(wrapper.text()).toContain("in_progress");
+    expect(wrapper.text()).toContain("进行中");
   });
 
-  it("submits a filled result form and marks a today task completed", async () => {
+  it("records completion with one click and no required typing", async () => {
     const calls: Array<{ path: string; init?: RequestInit }> = [];
     vi.stubGlobal(
       "fetch",
@@ -527,7 +550,7 @@ describe("App", () => {
                     reason: "后端计划生成",
                     completion_standard: "提交练习结果",
                     prerequisite_status: "satisfied",
-                    status: "pending",
+                    status: "in_progress",
                   },
                 ],
               },
@@ -547,17 +570,17 @@ describe("App", () => {
                   created_at: "2026-07-15T00:00:00Z",
                   updated_at: "2026-07-15T00:00:00Z",
                   task_id: "task-api-1",
-                  result_type: "partial",
-                  completion_ratio: 80,
-                  actual_minutes: 40,
-                  question_count: 5,
-                  correct_count: 4,
-                  accuracy: 80,
-                  confidence: 70,
+                  result_type: "completed",
+                  completion_ratio: 100,
+                  actual_minutes: 0,
+                  question_count: null,
+                  correct_count: null,
+                  accuracy: null,
+                  confidence: null,
                   hint_level: null,
                   focus_level: null,
                   difficulty_rating: null,
-                  problem_description: "漏看条件",
+                  problem_description: null,
                   confirmed_at: "2026-07-15T00:00:00Z",
                 },
               },
@@ -598,14 +621,6 @@ describe("App", () => {
     const completeButton = wrapper.findAll("button").find((button) => button.text() === "完成");
 
     await completeButton?.trigger("click");
-    const inputs = wrapper.findAll(".task-result-form input");
-    await inputs[0].setValue("40");
-    await inputs[1].setValue("80");
-    await inputs[2].setValue("5");
-    await inputs[3].setValue("4");
-    await inputs[4].setValue("70");
-    await wrapper.find(".task-result-form textarea").setValue("漏看条件");
-    await wrapper.find(".task-result-form").trigger("submit");
     await flushPromises();
 
     expect(calls.map((call) => call.path)).toEqual([
@@ -615,21 +630,69 @@ describe("App", () => {
       "/api/v1/tasks/task-api-1",
     ]);
     expect(calls[2].init?.headers).toMatchObject({
-      "Idempotency-Key": "task-api-1:complete:1:80:40:5:4",
+      "Idempotency-Key": "task-api-1:quick:1:completed",
     });
     expect(JSON.parse(String(calls[2].init?.body))).toMatchObject({
-      result_type: "partial",
-      completion_ratio: 80,
-      actual_minutes: 40,
-      question_count: 5,
-      correct_count: 4,
-      accuracy: 80,
-      confidence: 70,
-      problem_description: "漏看条件",
+      result_type: "completed",
+      completion_ratio: 100,
+      actual_minutes: 0,
     });
     expect(calls[3].init?.method).toBe("PATCH");
     expect(calls[3].init?.headers).toMatchObject({ "If-Match": "1" });
-    expect(wrapper.text()).toContain("completed");
+    expect(wrapper.text()).toContain("已完成");
+  });
+
+  it("records a blocked outcome without opening the detailed form", async () => {
+    const calls: Array<{ path: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        calls.push({ path, init });
+        if (path === "/api/v1/evidence/history?limit=10") {
+          return emptyEvidenceHistoryResponse();
+        }
+        if (path.startsWith("/api/v1/today")) {
+          return jsonResponse({
+            data: {
+              date: "2026-07-15",
+              total_tasks: 1,
+              estimated_minutes: 30,
+              tasks: [quickFlowTask("in_progress")],
+            },
+            meta: { request_id: "today" },
+          });
+        }
+        if (path === "/api/v1/tasks/task-quick-1/results") {
+          return jsonResponse({ data: { created: true, result: {} }, meta: { request_id: "result" } });
+        }
+        return jsonResponse({
+          data: quickFlowTask("skipped", 2),
+          meta: { request_id: "task-skip" },
+        });
+      }),
+    );
+
+    const wrapper = await mountApp("/today");
+    const blockedButton = wrapper.findAll("button").find((button) => button.text() === "遇到困难");
+
+    await blockedButton?.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".task-result-form").exists()).toBe(false);
+    expect(calls.map((call) => call.path)).toEqual([
+      "/api/v1/evidence/history?limit=10",
+      expect.stringMatching(/^\/api\/v1\/today\?date=/),
+      "/api/v1/tasks/task-quick-1/results",
+      "/api/v1/tasks/task-quick-1/skip",
+    ]);
+    expect(JSON.parse(String(calls[2].init?.body))).toMatchObject({
+      result_type: "partial",
+      completion_ratio: 50,
+      actual_minutes: 0,
+      problem_description: "遇到困难（快速记录）",
+    });
+    expect(wrapper.text()).toContain("未完成");
   });
 
   it("generates and confirms an evidence draft from the today page", async () => {
@@ -839,7 +902,7 @@ describe("App", () => {
     expect(calls[5].init?.body).toBeUndefined();
     expect(calls[6].path).toBe("/api/v1/evidence/history?limit=10");
     expect(wrapper.text()).toContain("证据草稿已确认");
-    expect(wrapper.text()).toContain("证据记录 已确认");
+    expect(wrapper.text()).toContain("记录状态已确认");
   });
 
   it("renders planning goal tree from the API when available", async () => {

@@ -43,6 +43,18 @@ test.describe("Vue prototype shell", () => {
     await expect(page).toHaveURL(/\/today$/);
   });
 
+  test("records a today outcome without requiring text input", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/today");
+    const task = page.locator(".task-card").filter({ hasText: "阅读长难句证据整理" });
+
+    await task.getByRole("button", { name: "完成", exact: true }).click();
+
+    await expect(task.getByText("已完成", { exact: true })).toBeVisible();
+    await expect(task.locator(".task-result-form")).toHaveCount(0);
+    await task.screenshot({ path: testInfo.outputPath("today-quick-complete-mobile.png") });
+  });
+
   test("exposes editable planning and profile actions on mobile", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/planning");
