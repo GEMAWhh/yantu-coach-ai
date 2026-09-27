@@ -12,7 +12,6 @@ import type {
   TaskResultCreatePayload,
   TodayPayload,
 } from "../api/contracts";
-import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
 import type { TodayTask, Tone } from "../stores/mockStudy";
@@ -49,28 +48,6 @@ const taskSourceTone = computed<Tone>(() => (apiToday.value ? "green" : "red"));
 const todayTasks = computed<TodayTaskView[]>(() =>
   apiToday.value ? apiToday.value.tasks.map(mapTask) : [],
 );
-const todayMetrics = computed(() => [
-  {
-    label: "今日任务",
-    value: `${apiToday.value?.total_tasks ?? 0} 项`,
-    detail: `预计 ${apiToday.value?.estimated_minutes ?? 0} 分钟`,
-    tone: "blue" as Tone,
-  },
-  {
-    label: "机动时间",
-    value: "按计划规则保留",
-    detail: "计划不排满全天",
-    tone: "green" as Tone,
-  },
-  {
-    label: "待确认草稿",
-    value: `${pendingEvidenceDraftCount.value} 份`,
-    detail: evidenceRecord.value
-      ? `证据记录 ${evidenceRecordStatusLabel(evidenceRecord.value.status)}`
-      : "确认前不写正式记录",
-    tone: "yellow" as Tone,
-  },
-]);
 const evidenceSourceLabel = computed(() => (evidenceRecord.value ? "记录详情" : "新建证据"));
 const evidenceSourceTone = computed<Tone>(() => (evidenceRecord.value ? "green" : "blue"));
 const pendingEvidenceDraftCount = computed(() =>
@@ -158,6 +135,8 @@ type TaskResultDraft = {
   problemDescription: string;
 };
 
+type QuickOutcome = "completed" | "blocked" | "unfinished";
+
 function toneForStatus(status: TaskPayload["status"]): Tone {
   if (status === "completed") {
     return "green";
@@ -169,6 +148,17 @@ function toneForStatus(status: TaskPayload["status"]): Tone {
     return "blue";
   }
   return "neutral";
+}
+
+function taskStatusLabel(status: string): string {
+  const labels: Record<TaskPayload["status"], string> = {
+    pending: "待开始",
+    in_progress: "进行中",
+    completed: "已完成",
+    skipped: "未完成",
+    withdrawn: "已撤回",
+  };
+  return labels[status as TaskPayload["status"]] ?? status;
 }
 
 function mapTask(task: TaskPayload): TodayTaskView {
@@ -192,10 +182,6 @@ function isActionRunning(task: TodayTaskView, action: string): boolean {
 
 function canStart(task: TodayTaskView): boolean {
   return task.apiBacked && task.status === "pending";
-}
-
-function canSkip(task: TodayTaskView): boolean {
-  return task.apiBacked && (task.status === "pending" || task.status === "in_progress");
 }
 
 function canWithdraw(task: TodayTaskView): boolean {
@@ -245,6 +231,57 @@ async function runTaskAction(
     }
   } catch {
     actionError.value = "任务状态更新失败，请刷新后重试。";
+  } finally {
+    if (actionInFlight.value === actionKey) {
+      actionInFlight.value = null;
+    }
+  }
+}
+
+async function submitQuickOutcome(task: TodayTaskView, outcome: QuickOutcome): Promise<void> {
+  if (!task.apiBacked || task.version === null || !canComplete(task)) {
+    return;
+  }
+  const actionKey = `${task.id}:quick-${outcome}`;
+  const client = new ApiClient();
+  actionInFlight.value = actionKey;
+  actionError.value = null;
+  const outcomePayload: Record<QuickOutcome, TaskResultCreatePayload> = {
+    completed: {
+      result_type: "completed",
+      completion_ratio: 100,
+      actual_minutes: 0,
+      confirmed_at: new Date().toISOString(),
+    },
+    blocked: {
+      result_type: "partial",
+      completion_ratio: 50,
+      actual_minutes: 0,
+      problem_description: "遇到困难（快速记录）",
+      confirmed_at: new Date().toISOString(),
+    },
+    unfinished: {
+      result_type: "partial",
+      completion_ratio: 0,
+      actual_minutes: 0,
+      problem_description: "未完成（快速记录）",
+      confirmed_at: new Date().toISOString(),
+    },
+  };
+  try {
+    await client.submitTaskResult(
+      task.id,
+      outcomePayload[outcome],
+      `${task.id}:quick:${task.version}:${outcome}`,
+    );
+    const updated =
+      outcome === "completed"
+        ? await client.completeTask(task.id, task.version)
+        : await client.skipTask(task.id, task.version);
+    replaceTask(updated.data);
+    openResultTaskId.value = null;
+  } catch {
+    actionError.value = "结果保存失败，请刷新后重试。";
   } finally {
     if (actionInFlight.value === actionKey) {
       actionInFlight.value = null;
@@ -849,28 +886,17 @@ onMounted(async () => {
     <PageHeader
       kicker="今日"
       title="今日行动"
-      description="创建今天真正要完成的任务，记录执行结果并保留复盘依据。"
+      description="先做最重要的一项。开始后只需点一次记录结果，详细信息全部可选。"
       :action-label="todayTasks.some(canStart) ? '开始第一项' : '新建今日任务'"
       @action="runHeaderAction"
     />
-
-    <div class="metric-grid">
-      <MetricCard
-        v-for="metric in todayMetrics"
-        :key="metric.label"
-        :label="metric.label"
-        :value="metric.value"
-        :detail="metric.detail"
-        :tone="metric.tone"
-      />
-    </div>
 
     <div class="content-grid two-columns">
       <section class="panel">
         <div class="section-heading">
           <div>
             <p class="eyebrow">
-              学习闭环
+              {{ apiToday?.total_tasks ?? 0 }} 项 · 预计 {{ apiToday?.estimated_minutes ?? 0 }} 分钟
             </p>
             <h2>今日任务</h2>
           </div>
@@ -892,30 +918,37 @@ onMounted(async () => {
           class="editor-form inline-task-editor"
           @submit.prevent="saveTaskEditor"
         >
-          <label><span>任务名称</span><input
+          <label class="full-width"><span>今天要做什么</span><input
             v-model="taskEditor.title"
             required
             maxlength="240"
+            autofocus
+            placeholder="例如：闭卷重做昨天的错题"
           ></label>
-          <label><span>科目</span><input
-            v-model="taskEditor.subjectId"
-            :disabled="Boolean(editingTaskId)"
-            placeholder="例如 math"
-          ></label>
-          <label><span>预计分钟</span><input
-            v-model.number="taskEditor.estimatedMinutes"
-            type="number"
-            min="0"
-          ></label>
-          <label><span>优先级</span><select v-model="taskEditor.priority"><option value="low">低</option><option value="normal">普通</option><option value="high">高</option></select></label>
-          <label class="full-width"><span>安排原因</span><textarea
-            v-model="taskEditor.reason"
-            rows="2"
-          /></label>
-          <label class="full-width"><span>完成标准</span><textarea
-            v-model="taskEditor.completionStandard"
-            rows="2"
-          /></label>
+          <details class="optional-fields full-width">
+            <summary>更多设置（可选）</summary>
+            <div class="optional-fields-grid">
+              <label><span>科目</span><input
+                v-model="taskEditor.subjectId"
+                :disabled="Boolean(editingTaskId)"
+                placeholder="例如 math"
+              ></label>
+              <label><span>预计分钟</span><input
+                v-model.number="taskEditor.estimatedMinutes"
+                type="number"
+                min="0"
+              ></label>
+              <label><span>优先级</span><select v-model="taskEditor.priority"><option value="low">低</option><option value="normal">普通</option><option value="high">高</option></select></label>
+              <label class="full-width"><span>安排原因</span><textarea
+                v-model="taskEditor.reason"
+                rows="2"
+              /></label>
+              <label class="full-width"><span>完成标准</span><textarea
+                v-model="taskEditor.completionStandard"
+                rows="2"
+              /></label>
+            </div>
+          </details>
           <div class="form-actions">
             <button
               class="task-action-button"
@@ -965,76 +998,102 @@ onMounted(async () => {
             <div class="task-card-header">
               <span class="subject-chip">{{ task.subject }}</span>
               <StatusTag
-                :label="task.status"
+                :label="taskStatusLabel(task.status)"
                 :tone="task.tone"
               />
             </div>
             <h3>{{ task.title }}</h3>
-            <p>{{ task.reason }}</p>
-            <dl class="detail-list">
-              <div>
-                <dt>来源</dt>
-                <dd>{{ task.source }}</dd>
-              </div>
-              <div>
-                <dt>预计</dt>
-                <dd>{{ task.estimateMinutes }} 分钟</dd>
-              </div>
-            </dl>
+            <p class="task-brief">
+              预计 {{ task.estimateMinutes }} 分钟
+            </p>
             <div
               v-if="task.apiBacked"
-              class="task-actions"
+              class="task-actions quick-task-actions"
               aria-label="任务操作"
             >
               <button
+                v-if="task.status === 'pending'"
                 type="button"
-                class="task-action-button"
+                class="task-action-button primary-task-action"
                 :disabled="!canStart(task) || isActionRunning(task, 'start')"
                 @click="runTaskAction(task, 'start')"
               >
                 开始
               </button>
               <button
+                v-if="task.status === 'in_progress'"
                 type="button"
-                class="task-action-button"
-                :disabled="!canComplete(task)"
-                @click="openResultForm(task)"
+                class="task-action-button outcome-complete"
+                :disabled="Boolean(actionInFlight)"
+                @click="submitQuickOutcome(task, 'completed')"
               >
                 完成
               </button>
               <button
+                v-if="task.status === 'in_progress'"
+                type="button"
+                class="task-action-button outcome-blocked"
+                :disabled="Boolean(actionInFlight)"
+                @click="submitQuickOutcome(task, 'blocked')"
+              >
+                遇到困难
+              </button>
+              <button
+                v-if="task.status === 'in_progress'"
                 type="button"
                 class="task-action-button secondary"
-                :disabled="!canSkip(task) || isActionRunning(task, 'skip')"
-                @click="runTaskAction(task, 'skip')"
+                :disabled="Boolean(actionInFlight)"
+                @click="submitQuickOutcome(task, 'unfinished')"
               >
-                跳过
-              </button>
-              <button
-                type="button"
-                class="task-action-button danger"
-                :disabled="!canWithdraw(task) || isActionRunning(task, 'withdraw')"
-                @click="runTaskAction(task, 'withdraw')"
-              >
-                撤回
-              </button>
-              <button
-                type="button"
-                class="task-action-button secondary"
-                :disabled="task.status === 'completed'"
-                @click="openTaskEditor(task)"
-              >
-                编辑
-              </button>
-              <button
-                type="button"
-                class="task-action-button danger"
-                :disabled="task.status !== 'pending' || isActionRunning(task, 'delete')"
-                @click="deleteTodayTask(task)"
-              >
-                删除
+                没完成
               </button>
             </div>
+            <details
+              v-if="task.apiBacked && task.status !== 'completed' && task.status !== 'withdrawn'"
+              class="task-more-actions"
+            >
+              <summary>补充详情或管理任务</summary>
+              <p>{{ task.reason }}</p>
+              <dl class="detail-list">
+                <div><dt>来源</dt><dd>{{ task.source }}</dd></div>
+                <div><dt>预计</dt><dd>{{ task.estimateMinutes }} 分钟</dd></div>
+              </dl>
+              <div class="task-actions">
+                <button
+                  v-if="canComplete(task)"
+                  type="button"
+                  class="task-action-button secondary"
+                  @click="openResultForm(task)"
+                >
+                  记录详细结果
+                </button>
+                <button
+                  type="button"
+                  class="task-action-button secondary"
+                  @click="openTaskEditor(task)"
+                >
+                  编辑
+                </button>
+                <button
+                  v-if="canWithdraw(task)"
+                  type="button"
+                  class="task-action-button danger"
+                  :disabled="isActionRunning(task, 'withdraw')"
+                  @click="runTaskAction(task, 'withdraw')"
+                >
+                  撤回
+                </button>
+                <button
+                  v-if="task.status === 'pending'"
+                  type="button"
+                  class="task-action-button danger"
+                  :disabled="isActionRunning(task, 'delete')"
+                  @click="deleteTodayTask(task)"
+                >
+                  删除
+                </button>
+              </div>
+            </details>
             <form
               v-if="task.apiBacked && isResultFormOpen(task)"
               class="task-result-form"
@@ -1158,259 +1217,251 @@ onMounted(async () => {
         </div>
       </section>
 
-      <aside class="panel stacked-panel">
-        <section class="notice-card ai-draft">
-          <StatusTag
-            :label="evidenceSourceLabel"
-            :tone="evidenceSourceTone"
-          />
-          <h2>{{ evidenceCardTitle }}</h2>
-          <p>{{ evidenceCardBody }}</p>
-          <p
-            v-if="evidenceActionError"
-            class="task-action-error"
-            role="status"
-          >
-            {{ evidenceActionError }}
-          </p>
-          <form
-            v-if="!evidenceRecord"
-            class="evidence-upload-form"
-            @submit.prevent="createEvidenceDraft"
-          >
-            <label>
-              <span>学科</span>
-              <input
-                :value="evidenceSubjectId"
-                type="text"
-                maxlength="80"
-                @input="evidenceSubjectId = ($event.target as HTMLInputElement).value"
-              >
-            </label>
-            <label>
-              <span>证据文件</span>
-              <input
-                ref="evidenceFileInput"
-                type="file"
-                multiple
-                accept="image/png,image/jpeg,application/pdf"
-                @change="selectEvidenceFiles"
-              >
-            </label>
-            <button
-              type="submit"
-              class="task-action-button"
-              :disabled="evidenceActionInFlight === 'upload'"
-            >
-              上传并分析
-            </button>
-          </form>
-          <div
-            v-else
-            class="evidence-detail"
-          >
-            <dl class="evidence-detail-meta">
-              <div>
-                <dt>学科</dt>
-                <dd>{{ evidenceRecord.subject_id ?? "未分科" }}</dd>
-              </div>
-              <div>
-                <dt>记录状态</dt>
-                <dd>{{ evidenceRecordStatusLabel(evidenceRecord.status) }}</dd>
-              </div>
-            </dl>
-            <div class="evidence-asset-list">
-              <div
-                v-for="asset in evidenceAssets"
-                :key="asset.id"
-                class="evidence-asset-row"
-              >
-                <span>
-                  <strong>{{ asset.original_name }}</strong>
-                  <small>{{ Math.max(1, Math.round(asset.size_bytes / 1024)) }} KB</small>
-                </span>
-                <button
-                  type="button"
-                  class="task-action-button secondary"
-                  :disabled="openingEvidenceAssetId === asset.id"
-                  @click="openEvidenceAsset(asset)"
-                >
-                  {{ openingEvidenceAssetId === asset.id ? "读取中" : "打开附件" }}
-                </button>
-              </div>
-            </div>
-            <section
-              v-if="evidenceDraft"
-              class="evidence-analysis"
-              aria-label="证据分析结果"
-            >
-              <div class="evidence-analysis-heading">
-                <h3>分析结果</h3>
-                <StatusTag
-                  :label="evidenceDraftStatusLabel(evidenceDraft)"
-                  :tone="evidenceDraft.status === 'needs_correction' ? 'yellow' : 'blue'"
-                />
-              </div>
-              <div
-                v-if="evidenceValidationMessages.length > 0"
-                class="evidence-analysis-errors"
+      <aside class="today-optional-column">
+        <details class="panel optional-workflow">
+          <summary>
+            <span>
+              <strong>学习证据（可选）</strong>
+              <small>需要保留图片、PDF 或查看历史时再打开</small>
+            </span>
+            <StatusTag
+              :label="pendingEvidenceDraftCount > 0 ? `${pendingEvidenceDraftCount} 份待确认` : '无需填写'"
+              :tone="pendingEvidenceDraftCount > 0 ? 'yellow' : 'green'"
+            />
+          </summary>
+          <div class="optional-workflow-body">
+            <section class="notice-card ai-draft">
+              <StatusTag
+                :label="evidenceSourceLabel"
+                :tone="evidenceSourceTone"
+              />
+              <h2>{{ evidenceCardTitle }}</h2>
+              <p>{{ evidenceCardBody }}</p>
+              <p
+                v-if="evidenceActionError"
+                class="task-action-error"
                 role="status"
               >
-                <div
-                  v-for="error in evidenceValidationMessages"
-                  :key="error.code"
-                >
-                  <strong>{{ error.message }}</strong>
-                  <code>{{ error.code }}</code>
-                </div>
-              </div>
-              <section
-                v-for="section in evidenceAnalysisSections"
-                :key="section.key"
-                class="evidence-analysis-section"
+                {{ evidenceActionError }}
+              </p>
+              <form
+                v-if="!evidenceRecord"
+                class="evidence-upload-form"
+                @submit.prevent="createEvidenceDraft"
               >
-                <div>
-                  <h4>{{ section.title }}</h4>
-                  <p>{{ section.description }}</p>
-                </div>
-                <dl v-if="section.items.length > 0">
-                  <div
-                    v-for="item in section.items"
-                    :key="`${section.key}-${item.label}`"
+                <label>
+                  <span>学科</span>
+                  <input
+                    :value="evidenceSubjectId"
+                    type="text"
+                    maxlength="80"
+                    @input="evidenceSubjectId = ($event.target as HTMLInputElement).value"
                   >
-                    <dt>{{ item.label }}</dt>
-                    <dd>{{ item.value }}</dd>
+                </label>
+                <label>
+                  <span>证据文件</span>
+                  <input
+                    ref="evidenceFileInput"
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,application/pdf"
+                    @change="selectEvidenceFiles"
+                  >
+                </label>
+                <button
+                  type="submit"
+                  class="task-action-button"
+                  :disabled="evidenceActionInFlight === 'upload'"
+                >
+                  上传并分析
+                </button>
+              </form>
+              <div
+                v-else
+                class="evidence-detail"
+              >
+                <dl class="evidence-detail-meta">
+                  <div>
+                    <dt>学科</dt>
+                    <dd>{{ evidenceRecord.subject_id ?? "未分科" }}</dd>
+                  </div>
+                  <div>
+                    <dt>记录状态</dt>
+                    <dd>{{ evidenceRecordStatusLabel(evidenceRecord.status) }}</dd>
                   </div>
                 </dl>
-                <p
-                  v-else
-                  class="evidence-analysis-empty"
+                <div class="evidence-asset-list">
+                  <div
+                    v-for="asset in evidenceAssets"
+                    :key="asset.id"
+                    class="evidence-asset-row"
+                  >
+                    <span>
+                      <strong>{{ asset.original_name }}</strong>
+                      <small>{{ Math.max(1, Math.round(asset.size_bytes / 1024)) }} KB</small>
+                    </span>
+                    <button
+                      type="button"
+                      class="task-action-button secondary"
+                      :disabled="openingEvidenceAssetId === asset.id"
+                      @click="openEvidenceAsset(asset)"
+                    >
+                      {{ openingEvidenceAssetId === asset.id ? "读取中" : "打开附件" }}
+                    </button>
+                  </div>
+                </div>
+                <section
+                  v-if="evidenceDraft"
+                  class="evidence-analysis"
+                  aria-label="证据分析结果"
                 >
-                  暂无内容
-                </p>
-              </section>
-            </section>
-            <div class="task-actions">
-              <button
-                v-if="!evidenceDraft"
-                type="button"
-                class="task-action-button"
-                :disabled="evidenceActionInFlight === 'analyze'"
-                @click="analyzeSelectedEvidence"
-              >
-                {{ evidenceActionInFlight === "analyze" ? "分析中" : "开始分析" }}
-              </button>
-              <button
-                v-if="evidenceDraft"
-                type="button"
-                class="task-action-button"
-                :disabled="!canConfirmEvidence() || evidenceActionInFlight === 'confirm'"
-                @click="confirmEvidenceDraft"
-              >
-                确认
-              </button>
-              <button
-                v-if="evidenceDraft"
-                type="button"
-                class="task-action-button danger"
-                :disabled="!canRejectEvidence() || evidenceActionInFlight === 'reject'"
-                @click="rejectEvidenceDraft"
-              >
-                驳回
-              </button>
-              <button
-                type="button"
-                class="task-action-button secondary"
-                @click="resetEvidenceSelection"
-              >
-                上传新证据
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="notice-card">
-          <StatusTag
-            label="历史入口"
-            tone="blue"
-          />
-          <h2>证据草稿历史</h2>
-          <p
-            v-if="evidenceHistoryError"
-            class="task-action-error"
-            role="status"
-          >
-            {{ evidenceHistoryError }}
-          </p>
-          <div
-            v-if="evidenceHistory && evidenceHistory.length > 0"
-            class="evidence-history-list"
-          >
-            <div
-              v-for="item in evidenceHistory"
-              :key="item.record.id"
-              class="evidence-history-item"
-              :class="{ selected: evidenceRecord?.id === item.record.id }"
-            >
-              <span>
-                <strong>{{ formatEvidenceHistoryDate(item.record.study_date) }}</strong>
-                <small>
-                  {{ item.record.subject_id ?? "未分科" }} · {{ item.record.asset_count }} 个附件
-                </small>
-              </span>
-              <StatusTag
-                :label="evidenceDraftStatusLabel(item.draft)"
-                :tone="evidenceHistoryTone(item)"
-              />
-              <div class="evidence-history-actions">
-                <button
-                  type="button"
-                  class="task-action-button secondary"
-                  @click="selectEvidenceHistory(item)"
-                >
-                  查看
-                </button>
-                <button
-                  type="button"
-                  class="task-action-button danger"
-                  :disabled="item.record.status === 'confirmed' || evidenceActionInFlight === 'delete'"
-                  :title="item.record.status === 'confirmed' ? '已确认记录需保留审计，不能删除' : '删除记录'"
-                  @click="deleteEvidenceHistory(item)"
-                >
-                  删除
-                </button>
+                  <div class="evidence-analysis-heading">
+                    <h3>分析结果</h3>
+                    <StatusTag
+                      :label="evidenceDraftStatusLabel(evidenceDraft)"
+                      :tone="evidenceDraft.status === 'needs_correction' ? 'yellow' : 'blue'"
+                    />
+                  </div>
+                  <div
+                    v-if="evidenceValidationMessages.length > 0"
+                    class="evidence-analysis-errors"
+                    role="status"
+                  >
+                    <div
+                      v-for="error in evidenceValidationMessages"
+                      :key="error.code"
+                    >
+                      <strong>{{ error.message }}</strong>
+                      <code>{{ error.code }}</code>
+                    </div>
+                  </div>
+                  <section
+                    v-for="section in evidenceAnalysisSections"
+                    :key="section.key"
+                    class="evidence-analysis-section"
+                  >
+                    <div>
+                      <h4>{{ section.title }}</h4>
+                      <p>{{ section.description }}</p>
+                    </div>
+                    <dl v-if="section.items.length > 0">
+                      <div
+                        v-for="item in section.items"
+                        :key="`${section.key}-${item.label}`"
+                      >
+                        <dt>{{ item.label }}</dt>
+                        <dd>{{ item.value }}</dd>
+                      </div>
+                    </dl>
+                    <p
+                      v-else
+                      class="evidence-analysis-empty"
+                    >
+                      暂无内容
+                    </p>
+                  </section>
+                </section>
+                <div class="task-actions">
+                  <button
+                    v-if="!evidenceDraft"
+                    type="button"
+                    class="task-action-button"
+                    :disabled="evidenceActionInFlight === 'analyze'"
+                    @click="analyzeSelectedEvidence"
+                  >
+                    {{ evidenceActionInFlight === "analyze" ? "分析中" : "开始分析" }}
+                  </button>
+                  <button
+                    v-if="evidenceDraft"
+                    type="button"
+                    class="task-action-button"
+                    :disabled="!canConfirmEvidence() || evidenceActionInFlight === 'confirm'"
+                    @click="confirmEvidenceDraft"
+                  >
+                    确认
+                  </button>
+                  <button
+                    v-if="evidenceDraft"
+                    type="button"
+                    class="task-action-button danger"
+                    :disabled="!canRejectEvidence() || evidenceActionInFlight === 'reject'"
+                    @click="rejectEvidenceDraft"
+                  >
+                    驳回
+                  </button>
+                  <button
+                    type="button"
+                    class="task-action-button secondary"
+                    @click="resetEvidenceSelection"
+                  >
+                    上传新证据
+                  </button>
+                </div>
               </div>
-            </div>
+            </section>
+
+            <section class="notice-card">
+              <StatusTag
+                label="历史入口"
+                tone="blue"
+              />
+              <h2>证据草稿历史</h2>
+              <p
+                v-if="evidenceHistoryError"
+                class="task-action-error"
+                role="status"
+              >
+                {{ evidenceHistoryError }}
+              </p>
+              <div
+                v-if="evidenceHistory && evidenceHistory.length > 0"
+                class="evidence-history-list"
+              >
+                <div
+                  v-for="item in evidenceHistory"
+                  :key="item.record.id"
+                  class="evidence-history-item"
+                  :class="{ selected: evidenceRecord?.id === item.record.id }"
+                >
+                  <span>
+                    <strong>{{ formatEvidenceHistoryDate(item.record.study_date) }}</strong>
+                    <small>
+                      {{ item.record.subject_id ?? "未分科" }} · {{ item.record.asset_count }} 个附件
+                    </small>
+                  </span>
+                  <StatusTag
+                    :label="evidenceDraftStatusLabel(item.draft)"
+                    :tone="evidenceHistoryTone(item)"
+                  />
+                  <div class="evidence-history-actions">
+                    <button
+                      type="button"
+                      class="task-action-button secondary"
+                      @click="selectEvidenceHistory(item)"
+                    >
+                      查看
+                    </button>
+                    <button
+                      type="button"
+                      class="task-action-button danger"
+                      :disabled="item.record.status === 'confirmed' || evidenceActionInFlight === 'delete'"
+                      :title="item.record.status === 'confirmed' ? '已确认记录需保留审计，不能删除' : '删除记录'"
+                      @click="deleteEvidenceHistory(item)"
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p v-else-if="evidenceHistory && evidenceHistory.length === 0">
+                还没有历史证据草稿；上传并分析后会出现在这里。
+              </p>
+              <p v-else-if="!evidenceHistoryError">
+                正在加载证据历史。
+              </p>
+            </section>
           </div>
-          <p v-else-if="evidenceHistory && evidenceHistory.length === 0">
-            还没有历史证据草稿；上传并分析后会出现在这里。
-          </p>
-          <p v-else-if="!evidenceHistoryError">
-            正在加载证据历史。
-          </p>
-        </section>
-
-        <section class="notice-card risk">
-          <StatusTag
-            label="风险提示"
-            tone="red"
-          />
-          <h2>重复错因</h2>
-          <p>
-            “条件遗漏”连续两天出现，建议今天先完成无提示重做，再进入同类变式。
-          </p>
-        </section>
-
-        <section class="notice-card">
-          <StatusTag
-            label="证据边界"
-            tone="blue"
-          />
-          <h2>阅读不等于掌握</h2>
-          <p>
-            阅读、听课和拍照最多进入“已接触”；闭卷回忆和练习结果才支持继续推进。
-          </p>
-        </section>
+        </details>
       </aside>
     </div>
   </section>
