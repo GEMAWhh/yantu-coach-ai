@@ -1425,6 +1425,33 @@ dd {
   display: none;
 }
 
+.scroll-top-button {
+  position: fixed;
+  z-index: 11;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--blue);
+  border-radius: 50%;
+  color: var(--white);
+  background: var(--blue);
+  box-shadow: 0 10px 24px rgb(16 42 76 / 22%);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.scroll-top-button:hover {
+  background: var(--blue-2);
+}
+
+.scroll-top-button:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring), 0 10px 24px rgb(16 42 76 / 22%);
+}
+
 @media (max-width: 1080px) {
   .app-layout {
     grid-template-columns: 240px minmax(0, 1fr);
@@ -1603,6 +1630,11 @@ dd {
   .bottom-nav-link.router-link-active .nav-icon {
     color: var(--white);
     background: var(--blue);
+  }
+
+  .scroll-top-button {
+    right: var(--space-4);
+    bottom: 78px;
   }
 }
 

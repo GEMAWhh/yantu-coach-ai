@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 
 import { primaryNavItems } from "../app/navigation";
@@ -11,6 +11,24 @@ const currentLabel = computed(() => {
   return primaryNavItems.find((item) => item.name === route.name)?.label ?? "今日";
 });
 const systemLabel = isDemoApiEnabled() ? "本地预览" : "云端个人版";
+const showScrollTop = ref(false);
+
+function updateScrollTopVisibility(): void {
+  showScrollTop.value = window.scrollY > 480;
+}
+
+function scrollToTop(): void {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+onMounted(() => {
+  updateScrollTopVisibility();
+  window.addEventListener("scroll", updateScrollTopVisibility, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", updateScrollTopVisibility);
+});
 </script>
 
 <template>
@@ -86,5 +104,16 @@ const systemLabel = isDemoApiEnabled() ? "本地预览" : "云端个人版";
         <span>{{ item.label }}</span>
       </RouterLink>
     </nav>
+
+    <button
+      v-if="showScrollTop"
+      class="scroll-top-button"
+      type="button"
+      aria-label="回到页面顶部"
+      title="回到页面顶部"
+      @click="scrollToTop"
+    >
+      ↑
+    </button>
   </div>
 </template>
