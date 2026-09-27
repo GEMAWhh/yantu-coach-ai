@@ -236,6 +236,65 @@ ol {
   gap: var(--space-6);
 }
 
+.learning-section-tabs {
+  position: sticky;
+  z-index: 6;
+  top: var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  padding: var(--space-2);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+}
+
+.learning-section-tabs button {
+  display: grid;
+  min-width: 0;
+  min-height: 64px;
+  align-content: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  padding: var(--space-2) var(--space-3);
+  color: var(--gray-700);
+  background: transparent;
+  text-align: left;
+}
+
+.learning-section-tabs button:hover {
+  background: var(--gray-50);
+}
+
+.learning-section-tabs button.selected {
+  border-color: var(--blue);
+  color: var(--gray-900);
+  background: var(--blue-soft);
+}
+
+.learning-section-tabs button:focus-visible {
+  outline: 3px solid rgb(47 111 237 / 24%);
+  outline-offset: 2px;
+}
+
+.learning-section-tabs strong,
+.learning-section-tabs span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.learning-section-tabs strong {
+  font-size: 14px;
+}
+
+.learning-section-tabs span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .page-header {
   display: flex;
   min-width: 0;
@@ -1570,6 +1629,19 @@ dd {
 
   .prompt-template-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learning-section-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .learning-section-tabs button {
+    min-height: 48px;
+    text-align: center;
+  }
+
+  .learning-section-tabs span {
+    display: none;
   }
 
   .prompt-destinations {

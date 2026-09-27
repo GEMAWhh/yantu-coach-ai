@@ -134,6 +134,8 @@ tests/fixtures/ai/
 - `apps/web/src/components/PromptToolbox.test.ts` covers template generation, clipboard success/failure, local draft restore/clear, and blocked external windows.
 - Playwright covers the 360px workflow from template selection through generation, clipboard copy, reload recovery, and clearing the draft.
 - External Chat shortcuts only open a new window and never append the Prompt or personal data to a URL.
+- `apps/web/src/pages/LearningPage.test.ts` verifies that learning opens on the review workspace and exposes only the selected workspace.
+- Mobile Playwright flows explicitly switch to Prompt or materials before completing the existing workflows, preserving draft and management coverage after the workspace split.
 - Manual recalculate marks overdue unfinished goals high risk and delayed.
 - Goal history API returns the emitted recalculation evidence.
 
