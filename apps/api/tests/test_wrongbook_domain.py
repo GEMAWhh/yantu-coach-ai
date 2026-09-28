@@ -172,11 +172,13 @@ def test_wrongbook_result_shortcuts_submit_fixed_attempt_types(
     assert variant_body["attempt"]["attempt_type"] == "variant"
     assert variant_body["attempt"]["score"] == 96
     assert variant_body["record"]["current_status"] == "pending_interval"
+    assert variant_body["record"]["next_review_at"] is not None
     assert interval.status_code == 200
     interval_body = interval.json()["data"]
     assert interval_body["attempt"]["attempt_type"] == "interval_test"
     assert interval_body["attempt"]["request_id"] == "interval-result"
     assert interval_body["record"]["current_status"] == "stable_corrected"
+    assert interval_body["record"]["next_review_at"] is None
     assert duplicate_interval.status_code == 200
     duplicate_body = duplicate_interval.json()["data"]
     assert duplicate_body["created"] is False
@@ -339,9 +341,11 @@ def test_wrongbook_draft_history_lists_records_with_latest_drafts(
     body = history.json()
     assert history.status_code == 200
     assert body["meta"] == {"request_id": "wrongbook-history"}
-    assert body["data"]["total"] == 1
+    assert body["data"]["total"] == 2
     item = body["data"]["items"][0]
     assert item["record"]["id"] == second_id
+    assert item["question"]["id"] == item["record"]["question_id"]
+    assert item["question"]["standard_text"] == "Find the derivative of x^2 at x=3."
     assert item["record"]["current_status"] == "pending_analysis"
     assert item["verification"]["wrong_record_id"] == second_id
     assert item["draft"]["wrong_record_id"] == second_id
@@ -367,6 +371,7 @@ def test_failed_attempt_rolls_back_and_wrong_record_enters_planning_candidates(
     assert stable["record"]["current_status"] == "stable_corrected"
     assert failed["record"]["current_status"] == "regressed"
     assert failed["record"]["error_count"] == 2
+    assert failed["record"]["next_review_at"] is not None
     assert failed["verification"]["variant_passed"] is False
     candidates_body = candidates.json()
     assert candidates.status_code == 200

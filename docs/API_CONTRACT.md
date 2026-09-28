@@ -265,6 +265,7 @@ POST /api/v1/wrongbook/{wrong_record_id}/attempts
 POST /api/v1/wrongbook/{wrong_record_id}/variant-results
 POST /api/v1/wrongbook/{wrong_record_id}/interval-results
 GET  /api/v1/wrongbook/{wrong_record_id}/history
+GET  /api/v1/wrongbook/history?limit=100&offset=0
 GET  /api/v1/wrongbook/planning-candidates
 ```
 
@@ -277,6 +278,12 @@ Wrongbook attempt types are `original_redo`, `no_hint_redo`, `variant`, `interva
 `POST /wrongbook/{wrong_id}/variant-results` and `POST /wrongbook/{wrong_id}/interval-results` are shortcut endpoints over the same deterministic attempt state machine. They accept attempt result fields without `attempt_type`, force `variant` or `interval_test` respectively, and honor `Idempotency-Key` exactly like `POST /wrongbook/{wrong_id}/attempts`.
 
 `GET /wrongbook/{wrong_record_id}/history` returns the current wrong record, verification flags, and ordered attempt history. Duplicate idempotency submissions do not add duplicate attempts to history.
+
+`GET /wrongbook/history` returns the paginated wrongbook workspace. Each item includes the question, wrong record,
+verification flags, and latest draft; `total` is the full record count rather than the current page length. The client may
+request subsequent `offset` pages until all records are loaded. Result submission updates `next_review_at` deterministically:
+failed attempts schedule the next day, no-hint success schedules three days later, variant success schedules seven days
+later, and stable correction clears the date while retaining history.
 
 ## 15. Implemented goal recalculation and history
 

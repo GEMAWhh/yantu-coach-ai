@@ -521,6 +521,175 @@ h3 {
   flex: 1 1 120px;
 }
 
+.wrongbook-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-panel);
+  background: var(--blue-soft);
+}
+
+.wrongbook-hero h2,
+.wrongbook-hero p {
+  margin: 0;
+}
+
+.wrongbook-hero h2 {
+  margin-top: var(--space-1);
+  font-size: 24px;
+  letter-spacing: 0;
+}
+
+.wrongbook-hero p:last-child {
+  margin-top: var(--space-2);
+  color: var(--gray-700);
+}
+
+.wrongbook-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.wrongbook-tabs button {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-small);
+  color: var(--gray-700);
+  background: transparent;
+  font-weight: 800;
+}
+
+.wrongbook-tabs button span {
+  display: inline-grid;
+  min-width: 24px;
+  min-height: 24px;
+  place-items: center;
+  margin-left: var(--space-1);
+  border-radius: 50%;
+  background: var(--gray-100);
+  font-size: 12px;
+}
+
+.wrongbook-tabs button.selected {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.wrongbook-workspace {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.wrongbook-list {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.wrongbook-list > button {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  color: var(--ink);
+  background: var(--white);
+  text-align: left;
+}
+
+.wrongbook-list > button:hover,
+.wrongbook-list > button.selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.wrongbook-list strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.45;
+}
+
+.wrongbook-list span,
+.wrongbook-list small,
+.wrongbook-source {
+  color: var(--gray-600);
+}
+
+.wrongbook-empty {
+  padding: var(--space-5) var(--space-3);
+  color: var(--gray-600);
+  text-align: center;
+}
+
+.wrongbook-focus {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-panel);
+  background: var(--white);
+  scroll-margin-top: 24px;
+}
+
+.wrongbook-focus h3 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 20px;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+
+.wrongbook-causes {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-5) 0;
+}
+
+.wrongbook-causes > div {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-3);
+  border-left: 3px solid var(--cyan);
+  background: var(--gray-50);
+}
+
+.wrongbook-causes span {
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.wrongbook-instruction,
+.wrongbook-complete-message {
+  margin: var(--space-5) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  background: var(--gray-50);
+}
+
+.wrongbook-complete-message p {
+  margin-bottom: 0;
+  color: var(--gray-700);
+}
+
+.wrongbook-outcome-actions .task-action-button {
+  flex: 1 1 180px;
+  min-height: 48px;
+}
+
 .quick-task-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1578,6 +1747,28 @@ dd {
 }
 
 @media (max-width: 760px) {
+  .wrongbook-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wrongbook-hero .primary-action {
+    width: 100%;
+  }
+
+  .wrongbook-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .wrongbook-tabs button {
+    padding: var(--space-2);
+    font-size: 13px;
+  }
+
+  .wrongbook-focus {
+    padding: var(--space-4);
+  }
+
   .learning-manager-form {
     align-items: stretch;
     flex-direction: column;

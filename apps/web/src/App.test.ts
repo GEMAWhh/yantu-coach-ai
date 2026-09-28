@@ -173,19 +173,19 @@ function evidenceHistoryWithProviderFailureResponse(): Response {
   });
 }
 
-function emptyWrongbookDraftHistoryResponse(): Response {
-  return jsonResponse({
-    data: { total: 0, items: [] },
-    meta: { request_id: "wrongbook-history" },
-  });
-}
-
 function wrongbookDraftHistoryWithDraftResponse(status: "draft" | "confirmed" = "draft"): Response {
   return jsonResponse({
     data: {
       total: 1,
       items: [
         {
+          question: {
+            id: "question-1",
+            standard_text: "求函数的导数并判断单调区间。",
+            subject_id: "math",
+            knowledge_node_id: "node-1",
+            source: "错题上传",
+          },
           record: {
             id: "wrong-history-1",
             updated_at: "2026-07-14T10:00:00Z",
@@ -210,6 +210,57 @@ function wrongbookDraftHistoryWithDraftResponse(status: "draft" | "confirmed" = 
             },
             validation_errors: [],
           },
+        },
+      ],
+    },
+    meta: { request_id: "wrongbook-history" },
+  });
+}
+
+function wrongbookRedoHistoryResponse(): Response {
+  return jsonResponse({
+    data: {
+      total: 1,
+      items: [
+        {
+          question: {
+            id: "question-1",
+            standard_text: "求函数的导数并判断单调区间。",
+            subject_id: "math",
+            knowledge_node_id: "node-1",
+            source: "错题上传",
+          },
+          record: {
+            id: "wrong-1",
+            version: 1,
+            created_at: "2026-07-14T00:00:00Z",
+            updated_at: "2026-07-14T00:00:00Z",
+            created_by: "user",
+            question_id: "question-1",
+            knowledge_node_id: "node-1",
+            surface_cause: "calculation slip",
+            deep_cause: "derivative rule not automatic",
+            prerequisite_gap: "power rule",
+            error_count: 1,
+            redo_count: 1,
+            current_status: "pending_variant",
+            next_review_at: "2026-07-15T10:00:00Z",
+            resolved_at: null,
+          },
+          verification: {
+            id: "verification-1",
+            version: 1,
+            created_at: "2026-07-14T00:00:00Z",
+            updated_at: "2026-07-14T00:00:00Z",
+            wrong_record_id: "wrong-1",
+            original_redo_passed: false,
+            no_hint_redo_passed: true,
+            variant_passed: false,
+            interval_test_passed: false,
+            transfer_test_passed: false,
+            last_attempt_id: null,
+          },
+          draft: null,
         },
       ],
     },
@@ -1184,7 +1235,7 @@ describe("App", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const path = String(input);
-        if (path === "/api/v1/wrongbook/history?limit=10") {
+        if (path === "/api/v1/wrongbook/history?limit=100&offset=0") {
           return wrongbookDraftHistoryWithDraftResponse();
         }
         const dataByPath: Record<string, unknown> = {
@@ -1315,10 +1366,10 @@ describe("App", () => {
 
     expect(wrapper.text()).toContain("lecture.pdf");
     expect(wrapper.text()).toContain("导数应用");
-    expect(wrapper.text()).toContain("导数错题无提示重做");
+    expect(wrapper.text()).toContain("求函数的导数并判断单调区间");
     expect(wrapper.text()).toContain("复习：导数应用");
-    expect(wrapper.text()).toContain("错题草稿历史");
-    expect(wrapper.text()).toContain("待确认错题草稿");
+    expect(wrapper.text()).toContain("待分析");
+    expect(wrapper.text()).toContain("确认错因并安排重做");
     expect(wrapper.text()).toContain("sign error");
   });
 
@@ -1331,7 +1382,7 @@ describe("App", () => {
         const path = String(input);
         calls.push({ path, init });
         const emptyList = { total: 0, items: [] };
-        if (path === "/api/v1/wrongbook/history?limit=10") {
+        if (path === "/api/v1/wrongbook/history?limit=100&offset=0") {
           historyCalls += 1;
           return wrongbookDraftHistoryWithDraftResponse(
             historyCalls > 1 ? "confirmed" : "draft",
@@ -1394,18 +1445,19 @@ describe("App", () => {
       }),
     );
     const wrapper = await mountApp("/learning");
-    const confirmButton = wrapper.findAll("button").find((button) => button.text() === "确认草稿");
+    const confirmButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "确认错因并安排重做");
 
     await confirmButton?.trigger("click");
     await flushPromises();
 
-    expect(calls.some((call) => call.path === "/api/v1/wrongbook/history?limit=10")).toBe(true);
+    expect(calls.some((call) => call.path === "/api/v1/wrongbook/history?limit=100&offset=0")).toBe(true);
     const confirmCall = calls.find(
       (call) => call.path === "/api/v1/wrongbook/wrong-history-1/confirm",
     );
     expect(confirmCall).toBeDefined();
     expect(confirmCall?.init?.body).toBeUndefined();
-    expect(wrapper.text()).toContain("错题草稿已确认");
     expect(wrapper.text()).toContain("等待重做");
   });
 
@@ -1417,8 +1469,55 @@ describe("App", () => {
         const path = String(input);
         calls.push({ path, init });
         const emptyList = { total: 0, items: [] };
-        if (path === "/api/v1/wrongbook/history?limit=10") {
-          return emptyWrongbookDraftHistoryResponse();
+        if (path === "/api/v1/wrongbook/history?limit=100&offset=0") {
+          return jsonResponse({
+            data: {
+              total: 1,
+              items: [
+                {
+                  question: {
+                    id: "question-1",
+                    standard_text: "求函数的导数并判断单调区间。",
+                    subject_id: "math",
+                    knowledge_node_id: "node-1",
+                    source: "错题上传",
+                  },
+                  record: {
+                    id: "wrong-1",
+                    version: 1,
+                    created_at: "2026-07-14T00:00:00Z",
+                    updated_at: "2026-07-14T00:00:00Z",
+                    created_by: "user",
+                    question_id: "question-1",
+                    knowledge_node_id: "node-1",
+                    surface_cause: "calculation slip",
+                    deep_cause: "derivative rule not automatic",
+                    prerequisite_gap: "power rule",
+                    error_count: 1,
+                    redo_count: 1,
+                    current_status: "pending_variant",
+                    next_review_at: "2026-07-15T10:00:00Z",
+                    resolved_at: null,
+                  },
+                  verification: {
+                    id: "verification-1",
+                    version: 1,
+                    created_at: "2026-07-14T00:00:00Z",
+                    updated_at: "2026-07-14T00:00:00Z",
+                    wrong_record_id: "wrong-1",
+                    original_redo_passed: false,
+                    no_hint_redo_passed: true,
+                    variant_passed: false,
+                    interval_test_passed: false,
+                    transfer_test_passed: false,
+                    last_attempt_id: null,
+                  },
+                  draft: null,
+                },
+              ],
+            },
+            meta: { request_id: "wrongbook-history" },
+          });
         }
         if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
           return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
@@ -1559,8 +1658,8 @@ describe("App", () => {
         const path = String(input);
         calls.push({ path, init });
         const emptyList = { total: 0, items: [] };
-        if (path === "/api/v1/wrongbook/history?limit=10") {
-          return emptyWrongbookDraftHistoryResponse();
+        if (path === "/api/v1/wrongbook/history?limit=100&offset=0") {
+          return wrongbookRedoHistoryResponse();
         }
         if (path === "/api/v1/resources" || path === "/api/v1/knowledge/nodes") {
           return new Response(JSON.stringify({ data: emptyList, meta: { request_id: path } }), {
@@ -1665,24 +1764,25 @@ describe("App", () => {
     const wrapper = await mountApp("/learning");
     const variantPassButton = wrapper
       .findAll("button")
-      .find((button) => button.text() === "做对了");
+      .find((button) => button.text() === "这次做对了");
 
     await variantPassButton?.trigger("click");
     await flushPromises();
 
     const resultCall = calls.find(
-      (call) => call.path === "/api/v1/wrongbook/wrong-1/variant-results",
+      (call) => call.path === "/api/v1/wrongbook/wrong-1/attempts",
     );
     expect(resultCall).toBeDefined();
     expect(resultCall?.init?.headers).toMatchObject({
-      "Idempotency-Key": "wrong-1:variant:pass:wrongbook_variant",
+      "Idempotency-Key": "wrong-1:variant:1:pass",
     });
     expect(JSON.parse(String(resultCall?.init?.body))).toMatchObject({
       is_correct: true,
+      attempt_type: "variant",
       score: 96,
       confidence: 80,
     });
     expect(wrapper.text()).toContain("稍后再复习");
-    expect(wrapper.text()).toContain("同类题练习 · 正确");
+    expect(wrapper.text()).toContain("结果已保存");
   });
 });

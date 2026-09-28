@@ -47,6 +47,7 @@ import type {
   TaskResultSubmitPayload,
   TodayPayload,
   WeakGraphPayload,
+  WrongbookAttemptCreatePayload,
   WrongbookAttemptResultCreatePayload,
   WrongbookAttemptSubmitPayload,
   WrongbookAnalyzeCreatePayload,
@@ -246,8 +247,22 @@ export class ApiClient {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
   }
 
-  wrongbookDraftHistory(limit = 20): Promise<ApiResponse<WrongbookDraftHistoryPayload>> {
-    return this.get<WrongbookDraftHistoryPayload>(`/api/v1/wrongbook/history?limit=${limit}`);
+  wrongbookDraftHistory(limit = 20, offset = 0): Promise<ApiResponse<WrongbookDraftHistoryPayload>> {
+    return this.get<WrongbookDraftHistoryPayload>(
+      `/api/v1/wrongbook/history?limit=${limit}&offset=${offset}`,
+    );
+  }
+
+  submitWrongbookAttempt(
+    wrongRecordId: string,
+    payload: WrongbookAttemptCreatePayload,
+    idempotencyKey: string,
+  ): Promise<ApiResponse<WrongbookAttemptSubmitPayload>> {
+    return this.post<WrongbookAttemptSubmitPayload>(
+      `/api/v1/wrongbook/${encodeURIComponent(wrongRecordId)}/attempts`,
+      payload,
+      { "Idempotency-Key": idempotencyKey },
+    );
   }
 
   analyzeWrongbookRecord(

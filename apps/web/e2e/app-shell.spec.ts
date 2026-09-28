@@ -202,4 +202,26 @@ test.describe("Vue prototype shell", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);
   });
+
+  test("uses the wrongbook as a simple redo queue on mobile", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await page.goto("/learning?section=wrongbook");
+
+    await expect(
+      page.getByRole("heading", { name: /今天有 \d+ 道需要重做|今天的错题已经完成/ }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /待分析 1/ })).toBeVisible();
+    await page.getByRole("button", { name: /待分析 1/ }).click();
+    await expect(page.getByText("参数范围遗漏", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "确认错因并安排重做" }).click();
+
+    await expect(page.getByRole("button", { name: "这次做对了" })).toBeVisible();
+    await expect(page.locator(".wrongbook-result-kind")).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath("wrongbook-task-queue-mobile.png"), fullPage: true });
+    await page.getByRole("button", { name: "这次做对了" }).click();
+    await expect(page.getByText(/结果已保存/)).toBeVisible();
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(overflow).toBe(false);
+  });
 });

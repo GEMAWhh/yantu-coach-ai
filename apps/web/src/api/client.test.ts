@@ -707,7 +707,20 @@ describe("ApiClient", () => {
     const history: ApiResponse<WrongbookDraftHistoryPayload> = {
       data: {
         total: 1,
-        items: [{ record, verification, draft }],
+        items: [
+          {
+            question: {
+              id: record.question_id,
+              standard_text: "Differentiate the composite function.",
+              subject_id: "math",
+              knowledge_node_id: record.knowledge_node_id,
+              source: "manual",
+            },
+            record,
+            verification,
+            draft,
+          },
+        ],
       },
       meta: { request_id: "client-wrongbook-history" },
     };
@@ -769,7 +782,7 @@ describe("ApiClient", () => {
     ).resolves.toEqual(analyze);
     await expect(client.confirmWrongbookDraft("wrong-1")).resolves.toEqual(confirm);
 
-    expect(calls[0].input).toBe("/api/v1/wrongbook/history?limit=5");
+    expect(calls[0].input).toBe("/api/v1/wrongbook/history?limit=5&offset=0");
     expect(calls[1].input).toBe("/api/v1/wrongbook/wrong-1/analyze");
     expect(JSON.parse(String(calls[1].init?.body))).toEqual({ provider_mode: "valid" });
     expect(calls[2].input).toBe("/api/v1/wrongbook/wrong-1/confirm");

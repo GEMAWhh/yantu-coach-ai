@@ -41,6 +41,7 @@ from app.wrongbook.service import (
     WrongbookError,
     analyze_wrong_record,
     confirm_wrongbook_draft,
+    count_wrongbook_records,
     create_question,
     create_wrong_record,
     create_wrongbook_draft,
@@ -138,14 +139,16 @@ def create_wrongbook_manual_draft(
 def wrongbook_draft_history(
     request: Request,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ApiResponse[WrongbookDraftHistoryResponse]:
     session_factory = _session_factory()
     with session_factory() as session:
         items = [
             WrongbookDraftHistoryItemResponse.from_item(item)
-            for item in list_wrongbook_draft_history(session, limit=limit)
+            for item in list_wrongbook_draft_history(session, limit=limit, offset=offset)
         ]
-    return api_response(WrongbookDraftHistoryResponse(items=items, total=len(items)), request)
+        total = count_wrongbook_records(session)
+    return api_response(WrongbookDraftHistoryResponse(items=items, total=total), request)
 
 
 @router.get("/{wrong_record_id}", response_model=ApiResponse[WrongRecordDetailResponse])

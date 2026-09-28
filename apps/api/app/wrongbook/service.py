@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.asset import Asset
@@ -115,6 +115,7 @@ class WrongbookConfirmation:
 
 @dataclass(frozen=True)
 class WrongbookDraftHistoryItem:
+    question: Question
     wrong_record: WrongRecord
     verification: WrongVerification
     draft: WrongbookDraft | None
@@ -205,7 +206,13 @@ def create_wrong_record(
         error_count=error_count,
         redo_count=0,
         current_status=initial_status,
-        next_review_at=next_review_at,
+        next_review_at=(
+            next_review_at
+            if next_review_at is not None
+            else utc_now() + timedelta(days=1)
+            if initial_status == "pending_no_hint_redo"
+            else None
+        ),
         created_by=created_by,
     )
     session.add(wrong)
@@ -358,15 +365,17 @@ def get_wrongbook_draft(session: Session, wrong_record_id: str) -> WrongbookDraf
 
 
 def list_wrongbook_draft_history(
-    session: Session, *, limit: int = 20
+    session: Session, *, limit: int = 20, offset: int = 0
 ) -> list[WrongbookDraftHistoryItem]:
     records = session.scalars(
         select(WrongRecord)
         .order_by(WrongRecord.updated_at.desc(), WrongRecord.created_at.desc())
+        .offset(offset)
         .limit(limit)
     ).all()
     items: list[WrongbookDraftHistoryItem] = []
     for record in records:
+        question = get_question(session, record.question_id)
         verification = get_wrong_verification(session, record.id)
         draft = session.scalar(
             select(WrongbookDraft)
@@ -376,12 +385,17 @@ def list_wrongbook_draft_history(
         )
         items.append(
             WrongbookDraftHistoryItem(
+                question=question,
                 wrong_record=record,
                 verification=verification,
                 draft=draft,
             )
         )
     return items
+
+
+def count_wrongbook_records(session: Session) -> int:
+    return int(session.scalar(select(func.count()).select_from(WrongRecord)) or 0)
 
 
 def update_wrongbook_draft(
@@ -431,6 +445,7 @@ def confirm_wrongbook_draft(
     if wrong.current_status == "pending_analysis":
         wrong.current_status = "pending_no_hint_redo"
     now = utc_now()
+    wrong.next_review_at = now + timedelta(days=1)
     draft.status = "confirmed"
     draft.confirmed_at = now
     draft.confirmed_once = True
@@ -664,6 +679,7 @@ def _apply_attempt_result(
         wrong.error_count += 1
         wrong.current_status = "regressed"
         wrong.resolved_at = None
+        wrong.next_review_at = attempt.attempted_at + timedelta(days=1)
         _set_attempt_flag(verification, attempt.attempt_type, False)
         return
     _set_attempt_flag(verification, attempt.attempt_type, True)
@@ -682,10 +698,12 @@ def _recalculate_wrong_status(
     ):
         wrong.current_status = "stable_corrected"
         wrong.resolved_at = resolved_at
+        wrong.next_review_at = None
         return
     wrong.resolved_at = None
     if verification.no_hint_redo_passed and verification.variant_passed:
         wrong.current_status = "pending_interval"
+        wrong.next_review_at = resolved_at + timedelta(days=7)
         return
     if (
         verification.original_redo_passed
@@ -693,8 +711,10 @@ def _recalculate_wrong_status(
         or verification.variant_passed
     ):
         wrong.current_status = "pending_variant"
+        wrong.next_review_at = resolved_at + timedelta(days=3)
         return
     wrong.current_status = "pending_no_hint_redo"
+    wrong.next_review_at = resolved_at + timedelta(days=1)
 
 
 def _set_attempt_flag(

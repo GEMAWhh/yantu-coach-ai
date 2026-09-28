@@ -47,6 +47,7 @@ import type {
   WeakGraphPayload,
   WrongbookAIJobPayload,
   WrongbookAnalyzePayload,
+  WrongbookAttemptCreatePayload,
   WrongbookAttemptResultCreatePayload,
   WrongbookAttemptSubmitPayload,
   WrongbookCandidateListPayload,
@@ -607,7 +608,10 @@ function routeDemoGet<TData>(path: string, params: URLSearchParams): ApiResponse
     return respond<TData>(wrongbookCandidates(), "wrongbook-candidates");
   }
   if (path === "/api/v1/wrongbook/history") {
-    return respond<TData>(wrongbookHistory(limitParam(params)), "wrongbook-history");
+    return respond<TData>(
+      wrongbookHistory(limitParam(params), offsetParam(params)),
+      "wrongbook-history",
+    );
   }
   if (path === "/api/v1/reviews/due") {
     return respond<TData>(dueReviews(params.get("date") ?? "2026-07-15"), "due-reviews");
@@ -704,6 +708,21 @@ function routeDemoPost<TData>(
         wrongRecordId,
         action === "variant-results" ? "variant" : "interval_test",
         body as WrongbookAttemptResultCreatePayload,
+        headers["Idempotency-Key"] ?? null,
+      ),
+      "wrongbook-result",
+    );
+  }
+
+  const wrongbookAttemptMatch = path.match(/^\/api\/v1\/wrongbook\/([^/]+)\/attempts$/);
+  if (wrongbookAttemptMatch) {
+    const [, rawWrongRecordId] = wrongbookAttemptMatch;
+    const payload = body as WrongbookAttemptCreatePayload;
+    return respond<TData>(
+      wrongbookSubmission(
+        decodeURIComponent(rawWrongRecordId),
+        payload.attempt_type,
+        payload,
         headers["Idempotency-Key"] ?? null,
       ),
       "wrongbook-result",
@@ -1060,11 +1079,19 @@ function routeDemoDelete<TData>(path: string): ApiResponse<TData> {
   );
 }
 
-function wrongbookHistory(limit: number): WrongbookDraftHistoryPayload {
-  const items = [...wrongRecords]
+function wrongbookHistory(limit: number, offset: number): WrongbookDraftHistoryPayload {
+  const sorted = [...wrongRecords]
     .sort((left, right) => right.updated_at.localeCompare(left.updated_at))
-    .slice(0, limit)
+  const items = sorted
+    .slice(offset, offset + limit)
     .map((record) => ({
+      question: {
+        id: record.question_id,
+        standard_text: "已知函数 f(x)=x³-3ax，讨论函数的单调区间，并说明参数 a 的取值对极值点的影响。",
+        subject_id: "math",
+        knowledge_node_id: record.knowledge_node_id,
+        source: "错题上传",
+      },
       record,
       verification: verificationFor(record.id),
       draft:
@@ -1072,7 +1099,7 @@ function wrongbookHistory(limit: number): WrongbookDraftHistoryPayload {
           .filter((draft) => draft.wrong_record_id === record.id)
           .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0] ?? null,
     }));
-  return { items, total: items.length };
+  return { items, total: sorted.length };
 }
 
 function uploadEvidence(payload: EvidenceUploadCreatePayload): EvidenceUploadPayload {
@@ -1249,6 +1276,7 @@ function confirmWrongbook(wrongRecordId: string): WrongbookConfirmPayload {
     deep_cause: stringField(draft.structured_json.deep_cause),
     prerequisite_gap: stringField(draft.structured_json.prerequisite_gap),
     current_status: "pending_no_hint_redo",
+    next_review_at: tomorrow,
   };
   wrongDrafts = wrongDrafts.map((item) => (item.id === draft.id ? updatedDraft : item));
   wrongRecords = wrongRecords.map((item) => (item.id === record.id ? updatedRecord : item));
@@ -1257,7 +1285,7 @@ function confirmWrongbook(wrongRecordId: string): WrongbookConfirmPayload {
 
 function wrongbookSubmission(
   wrongRecordId: string,
-  attemptType: "variant" | "interval_test",
+  attemptType: WrongbookAttemptCreatePayload["attempt_type"],
   payload: WrongbookAttemptResultCreatePayload,
   idempotencyKey: string | null,
 ): WrongbookAttemptSubmitPayload {
@@ -1289,6 +1317,10 @@ function wrongbookSubmission(
     updated_at: now,
     variant_passed:
       attemptType === "variant" ? payload.is_correct : verification.variant_passed && payload.is_correct,
+    no_hint_redo_passed:
+      attemptType === "no_hint_redo"
+        ? payload.is_correct
+        : verification.no_hint_redo_passed && payload.is_correct,
     interval_test_passed:
       attemptType === "interval_test" ? payload.is_correct : verification.interval_test_passed,
     last_attempt_id: attempt.id,
@@ -1300,8 +1332,7 @@ function wrongbookSubmission(
     error_count: payload.is_correct ? record.error_count : record.error_count + 1,
     redo_count: record.redo_count + 1,
     current_status: nextWrongStatus(attemptType, payload.is_correct),
-    next_review_at:
-      attemptType === "variant" && payload.is_correct ? "2026-07-18T09:00:00Z" : record.next_review_at,
+    next_review_at: demoNextReviewAt(attemptType, payload.is_correct),
     resolved_at:
       attemptType === "interval_test" && payload.is_correct ? "2026-07-20T09:00:00Z" : record.resolved_at,
   };
@@ -1620,13 +1651,28 @@ function wrongbookJob(wrongRecordId: string, output: Record<string, unknown>): W
 }
 
 function nextWrongStatus(
-  attemptType: "variant" | "interval_test",
+  attemptType: WrongbookAttemptCreatePayload["attempt_type"],
   passed: boolean,
 ): WrongbookRecordPayload["current_status"] {
   if (!passed) {
     return "regressed";
   }
+  if (attemptType === "no_hint_redo" || attemptType === "original_redo") {
+    return "pending_variant";
+  }
   return attemptType === "variant" ? "pending_interval" : "stable_corrected";
+}
+
+function demoNextReviewAt(
+  attemptType: WrongbookAttemptCreatePayload["attempt_type"],
+  passed: boolean,
+): string | null {
+  if (!passed) return "2026-07-16T09:00:00Z";
+  if (attemptType === "no_hint_redo" || attemptType === "original_redo") {
+    return "2026-07-18T09:00:00Z";
+  }
+  if (attemptType === "variant") return "2026-07-22T09:00:00Z";
+  return null;
 }
 
 function countWrongStatus(status: WrongbookRecordPayload["current_status"]): number {
@@ -1640,6 +1686,11 @@ function stringField(value: unknown): string | null {
 function limitParam(params: URLSearchParams): number {
   const parsed = Number(params.get("limit") ?? "20");
   return Number.isFinite(parsed) ? Math.max(1, Math.min(100, Math.round(parsed))) : 20;
+}
+
+function offsetParam(params: URLSearchParams): number {
+  const parsed = Number(params.get("offset") ?? "0");
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
 }
 
 function respond<TData>(data: unknown, requestId: string): ApiResponse<TData> {
