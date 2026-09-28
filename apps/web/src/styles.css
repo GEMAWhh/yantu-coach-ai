@@ -478,6 +478,49 @@ h3 {
   gap: var(--space-2);
 }
 
+.wrongbook-result-entry,
+.wrongbook-result-recorder {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.wrongbook-result-recorder {
+  border-top: 1px solid var(--gray-200);
+  padding-top: var(--space-3);
+}
+
+.wrongbook-result-recorder > span {
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.wrongbook-result-kind {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.wrongbook-result-kind button {
+  min-height: 40px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-small);
+  padding: var(--space-2) var(--space-3);
+  color: var(--gray-700);
+  background: var(--white);
+  font-weight: 750;
+}
+
+.wrongbook-result-kind button.selected {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.wrongbook-result-recorder .task-action-button {
+  flex: 1 1 120px;
+}
+
 .quick-task-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

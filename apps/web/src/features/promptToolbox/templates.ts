@@ -35,7 +35,7 @@ export const studyPromptTemplates: StudyPromptTemplate[] = [
     outputRequirements: [
       "分别给出表层错因、深层错因和可能的前置知识缺口。",
       "引用作答中的具体步骤作为诊断依据，不要只给通用评价。",
-      "给出无提示重做要求、两道变式方向和间隔复测建议。",
+      "给出一次不看提示的重做要求、两道同类题方向和之后复习建议。",
     ],
   },
   {
@@ -74,4 +74,3 @@ export const promptDestinations = [
   { id: "qwen", label: "通义千问", url: "https://qwen.ai/qwenchat" },
   { id: "kimi", label: "Kimi", url: "https://www.kimi.ai/" },
 ] as const;
-

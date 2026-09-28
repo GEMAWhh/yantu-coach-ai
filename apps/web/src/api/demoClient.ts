@@ -97,7 +97,7 @@ let demoTasks: TaskPayload[] = [
     goal_id: "goal-week-math",
     subject_id: "数学一",
     knowledge_node_id: "node-series",
-    title: "级数判敛错题变式",
+    title: "级数判敛错题重做",
     task_type: "wrongbook_variant",
     priority: "high",
     source_type: "wrong_record",
@@ -106,8 +106,8 @@ let demoTasks: TaskPayload[] = [
     estimated_minutes: 25,
     current_stage: 3,
     target_stage: 4,
-    reason: "重复错因来自条件遗漏，先用变式验证是否真正脱离原题记忆。",
-    completion_standard: "完成 3 道同类变式并记录错因是否复现。",
+    reason: "重复错误来自条件遗漏，先做同类题确认是否真正理解。",
+    completion_standard: "完成 3 道同类题，并记录是否再次出现相同错误。",
     prerequisite_status: "satisfied",
     status: "pending",
   },
@@ -804,7 +804,7 @@ function initialGoalTree(): GoalTreeListPayload {
         progress: 36,
         risk_status: "slow",
         status: "active",
-        adjustment_reason: "数学一错题变式通过率不足。",
+        adjustment_reason: "数学一错题的同类题练习正确率不足。",
         children: [
           {
             id: "goal-quarter",

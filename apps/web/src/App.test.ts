@@ -1406,7 +1406,7 @@ describe("App", () => {
     expect(confirmCall).toBeDefined();
     expect(confirmCall?.init?.body).toBeUndefined();
     expect(wrapper.text()).toContain("错题草稿已确认");
-    expect(wrapper.text()).toContain("待无提示重做");
+    expect(wrapper.text()).toContain("等待重做");
   });
 
   it("submits a due review result from the learning page", async () => {
@@ -1531,7 +1531,9 @@ describe("App", () => {
       }),
     );
     const wrapper = await mountApp("/learning");
-    const passButton = wrapper.findAll("button").find((button) => button.text() === "通过");
+    const passButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "这次做对了");
 
     await passButton?.trigger("click");
     await flushPromises();
@@ -1545,7 +1547,7 @@ describe("App", () => {
       result_type: "pass",
       score: 90,
     });
-    expect(wrapper.text()).toContain("已通过");
+    expect(wrapper.text()).toContain("这次做对");
     expect(wrapper.text()).toContain("下次间隔 6 天");
   });
 
@@ -1663,7 +1665,7 @@ describe("App", () => {
     const wrapper = await mountApp("/learning");
     const variantPassButton = wrapper
       .findAll("button")
-      .find((button) => button.text() === "变式通过");
+      .find((button) => button.text() === "做对了");
 
     await variantPassButton?.trigger("click");
     await flushPromises();
@@ -1680,7 +1682,7 @@ describe("App", () => {
       score: 96,
       confidence: 80,
     });
-    expect(wrapper.text()).toContain("待间隔复测");
-    expect(wrapper.text()).toContain("变式 · 正确");
+    expect(wrapper.text()).toContain("稍后再复习");
+    expect(wrapper.text()).toContain("同类题练习 · 正确");
   });
 });

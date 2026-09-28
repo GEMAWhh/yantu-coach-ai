@@ -56,16 +56,16 @@ describe("ProgressPage remediation editor", () => {
     });
     await flushPromises();
 
-    const createButton = wrapper.findAll("button").find((button) => button.text() === "创建补救任务");
+    const createButton = wrapper.findAll("button").find((button) => button.text() === "安排复习");
     if (!createButton) throw new Error("remediation action missing");
     await createButton.trigger("click");
     const title = wrapper.get<HTMLInputElement>('input[maxlength="240"]');
-    await title.setValue("保留的补救任务");
+    await title.setValue("保留的复习任务");
     await wrapper.get(".remediation-editor").trigger("submit");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("补救任务创建失败");
-    expect(title.element.value).toBe("保留的补救任务");
+    expect(wrapper.text()).toContain("复习任务创建失败");
+    expect(title.element.value).toBe("保留的复习任务");
     expect(api.createTask).toHaveBeenCalledTimes(1);
   });
 });

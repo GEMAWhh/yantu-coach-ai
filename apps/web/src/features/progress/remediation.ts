@@ -9,16 +9,27 @@ export type RemediationDraft = {
   completionStandard: string;
 };
 
+const PLAIN_REASON_LABELS: Record<string, string> = {
+  "缺少变式通过": "还需要做对同类题",
+  "参数范围遗漏复现": "参数范围仍会遗漏",
+  "间隔复测未完成": "之后复习还没完成",
+  "缺少无提示练习": "还没有不看提示重做",
+};
+
+export function learningReasonLabel(reason: string): string {
+  return PLAIN_REASON_LABELS[reason] ?? reason;
+}
+
 export function remediationDraft(
   node: WeakNodePayload,
   plannedDate: string,
 ): RemediationDraft {
   const blockerText =
     node.blocking_reasons.length > 0
-      ? node.blocking_reasons.join("；")
+      ? node.blocking_reasons.map(learningReasonLabel).join("；")
       : "现有证据不足，需要补充独立练习结果";
   return {
-    title: `补救：${node.label}`,
+    title: `复习：${node.label}`,
     plannedDate,
     estimatedMinutes: node.blocking_reasons.length > 1 ? 40 : 30,
     priority: (node.repeat_error_rate ?? 0) >= 30 ? "high" : "normal",
@@ -57,7 +68,7 @@ export function validateRemediationDraft(
   if (!Number.isInteger(draft.estimatedMinutes) || draft.estimatedMinutes < 5 || draft.estimatedMinutes > 240) {
     return "预计时长应为 5 到 240 分钟的整数。";
   }
-  if (!draft.reason.trim()) return "请保留可追溯的补救原因。";
+  if (!draft.reason.trim()) return "请说明为什么需要这次复习。";
   if (!draft.completionStandard.trim()) return "请填写可验证的完成标准。";
   return null;
 }

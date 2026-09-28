@@ -4,7 +4,7 @@ const pages = [
   { name: "today", path: "/today", label: "今日", heading: "今日行动" },
   { name: "planning", path: "/planning", label: "规划", heading: "目标与任务" },
   { name: "learning", path: "/learning", label: "学习", heading: "学习中心" },
-  { name: "progress", path: "/progress", label: "进度", heading: "掌握与风险" },
+  { name: "progress", path: "/progress", label: "进度", heading: "学习进展" },
   { name: "settings", path: "/settings", label: "设置", heading: "学习画像与规则" },
 ];
 
@@ -181,9 +181,9 @@ test.describe("Vue prototype shell", () => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/progress");
 
-    await page.getByRole("button", { name: "创建补救任务" }).first().click();
-    await expect(page.getByText(/条证据/).first()).toBeVisible();
-    await page.getByLabel("任务名称").fill("E2E 函数薄弱补救");
+    await page.getByRole("button", { name: "安排复习" }).first().click();
+    await expect(page.getByText(/条学习记录/).first()).toBeVisible();
+    await page.getByLabel("任务名称").fill("E2E 函数错题复习");
     await page.getByLabel("预计分钟").fill("35");
     await page.getByLabel("完成标准").fill("完成两道无提示练习并提交真实结果。");
     await page.getByRole("button", { name: "确认创建任务" }).scrollIntoViewIfNeeded();
@@ -193,11 +193,11 @@ test.describe("Vue prototype shell", () => {
     });
     await page.getByRole("button", { name: "确认创建任务" }).click();
 
-    await expect(page.getByText(/已创建「E2E 函数薄弱补救」/)).toBeVisible();
+    await expect(page.getByText(/已创建「E2E 函数错题复习」/)).toBeVisible();
     await page.getByRole("link", { name: "查看规划" }).click();
-    await expect(page.getByRole("heading", { name: "E2E 函数薄弱补救" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "E2E 函数错题复习" })).toBeVisible();
     await page.locator('.bottom-nav-link[href="/today"]').click();
-    await expect(page.getByRole("heading", { name: "E2E 函数薄弱补救" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "E2E 函数错题复习" })).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);

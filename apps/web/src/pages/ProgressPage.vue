@@ -15,6 +15,7 @@ import MetricCard from "../components/MetricCard.vue";
 import PageHeader from "../components/PageHeader.vue";
 import StatusTag from "../components/StatusTag.vue";
 import {
+  learningReasonLabel,
   remediationDraft,
   remediationTaskPayload,
   validateRemediationDraft,
@@ -67,19 +68,19 @@ const progressMetrics = computed<MetricItem[]>(() => {
   if (!apiMastery.value || !apiErrors.value || !apiTime.value) {
     return [
       {
-        label: "稳定掌握",
+        label: "掌握稳定",
         value: "18 个",
-        detail: "多时间点证据达标",
+        detail: "多次复习结果稳定",
         tone: "green",
       },
       {
-        label: "待巩固",
+        label: "需要复习",
         value: "7 个",
-        detail: "需要变式或间隔复测",
+        detail: "需要重做或再练同类题",
         tone: "yellow",
       },
       {
-        label: "需回退",
+        label: "需要重新学习",
         value: "3 个",
         detail: "抽测失败或错因重复",
         tone: "red",
@@ -90,19 +91,19 @@ const progressMetrics = computed<MetricItem[]>(() => {
   const regressedCount = countBucket(apiErrors.value.by_status, "regressed");
   return [
     {
-      label: "稳定掌握",
+      label: "掌握稳定",
       value: `${stableCount} 个`,
-      detail: `${apiMastery.value.latest_snapshot_count} 个最新快照`,
+      detail: `${apiMastery.value.latest_snapshot_count} 个知识点记录`,
       tone: "green",
     },
     {
-      label: "待巩固",
+      label: "需要复习",
       value: `${apiMastery.value.weak_node_count} 个`,
       detail: "存在薄弱节点或阻塞原因",
       tone: "yellow",
     },
     {
-      label: "需回退",
+      label: "需要重新学习",
       value: `${regressedCount} 个`,
       detail: `错题 ${apiErrors.value.total_wrong_records} 条，实际 ${apiTime.value.actual_minutes} 分钟`,
       tone: regressedCount > 0 ? "red" : "blue",
@@ -120,7 +121,7 @@ const masteryRows = computed<ProgressMasteryItem[]>(() => {
         node: "当前没有薄弱节点",
         stage: "稳定",
         accuracy: "0 阻塞",
-        evidence: "后端薄弱图谱没有返回待处理节点。",
+        evidence: "当前没有需要优先复习的知识点。",
         tone: "green",
         weakNode: null,
       },
@@ -130,7 +131,9 @@ const masteryRows = computed<ProgressMasteryItem[]>(() => {
     node: node.label,
     stage: stageLabel(node.latest_stage),
     accuracy:
-      node.repeat_error_rate === null ? `${node.evidence_count} 条证据` : `错因率 ${node.repeat_error_rate}%`,
+      node.repeat_error_rate === null
+        ? `${node.evidence_count} 条学习记录`
+        : `错因率 ${node.repeat_error_rate}%`,
     evidence: evidenceLabel(node),
     tone: toneForStage(node.latest_stage, node.blocking_reasons),
     weakNode: node,
@@ -177,7 +180,7 @@ async function createRemediationTask(): Promise<void> {
     remediationError.value =
       error instanceof ApiClientError
         ? error.error.message
-        : "补救任务创建失败，请保留当前内容并重试。";
+        : "复习任务创建失败，请保留当前内容并重试。";
   } finally {
     remediationSaving.value = false;
   }
@@ -195,8 +198,8 @@ const riskItems = computed<RiskItem[]>(() => {
         body: "拆小为判据识别、符号检查、例题复述三类任务。",
       },
       {
-        title: "回退条件",
-        body: "若隔日抽测低于阈值，回退到基础应用并缩短复习间隔。",
+        title: "什么时候需要重学",
+        body: "如果之后再做仍然出错，就回到基础内容重新学习，并尽快再复习。",
       },
     ];
   }
@@ -214,11 +217,11 @@ const riskItems = computed<RiskItem[]>(() => {
       title: "建议行动",
       body: firstRisk
         ? `优先处理「${firstRisk.title}」，当前进度 ${firstRisk.progress}%，风险 ${firstRisk.risk_status}。`
-        : "当前没有高风险目标，优先推进薄弱节点的变式和间隔复测。",
+        : "当前没有高风险目标，优先重做错题并完成之后安排的复习。",
     },
     {
-      title: "回退条件",
-      body: `${apiMastery.value.weak_node_count} 个薄弱节点，${apiErrors.value.total_wrong_records} 条错题记录；重复错因出现时回退并缩短复习间隔。`,
+      title: "什么时候需要重学",
+      body: `${apiMastery.value.weak_node_count} 个薄弱知识点，${apiErrors.value.total_wrong_records} 条错题记录；同一种错误再次出现时，需要重新学习并尽快复习。`,
     },
   ];
 });
@@ -240,7 +243,7 @@ function stageLabel(stage: number): string {
     1: "已接触",
     2: "基础理解",
     3: "基础应用",
-    4: "待变式验证",
+    4: "需要再做同类题",
     5: "稳定掌握",
   };
   return labels[stage] ?? `阶段 ${stage}`;
@@ -261,8 +264,10 @@ function toneForStage(stage: number, blockingReasons: string[]): Tone {
 
 function evidenceLabel(node: WeakNodePayload): string {
   const blockers =
-    node.blocking_reasons.length > 0 ? node.blocking_reasons.join(" / ") : "等待更多证据";
-  return `${node.evidence_count} 条证据 · ${blockers}`;
+    node.blocking_reasons.length > 0
+      ? node.blocking_reasons.map(learningReasonLabel).join(" / ")
+      : "等待更多学习记录";
+  return `${node.evidence_count} 条学习记录 · ${blockers}`;
 }
 
 onMounted(async () => {
@@ -297,8 +302,8 @@ onMounted(async () => {
   >
     <PageHeader
       kicker="进度"
-      title="掌握与风险"
-      description="按证据展示掌握阶段、正确率、错因和计划偏差，避免把任务完成等同于掌握。"
+      title="学习进展"
+      description="看看哪些知识已经掌握、哪些需要复习，以及同一种错误是否再次出现。"
     />
 
     <div class="metric-grid">
@@ -360,8 +365,8 @@ onMounted(async () => {
           <strong>{{ selectedWeakNode.label }}</strong>
           <span>
             {{ stageLabel(selectedWeakNode.latest_stage) }} ·
-            {{ selectedWeakNode.evidence_count }} 条证据 ·
-            {{ selectedWeakNode.blocking_reasons.join(" / ") || "等待更多证据" }}
+            {{ selectedWeakNode.evidence_count }} 条学习记录 ·
+            {{ selectedWeakNode.blocking_reasons.map(learningReasonLabel).join(" / ") || "等待更多学习记录" }}
           </span>
         </div>
         <label>
@@ -400,7 +405,7 @@ onMounted(async () => {
           </select>
         </label>
         <label class="full-width">
-          <span>补救原因</span>
+          <span>为什么要复习</span>
           <textarea
             v-model="remediationForm.reason"
             rows="3"
@@ -463,7 +468,7 @@ onMounted(async () => {
               class="task-action-button"
               @click="openRemediationEditor(item.weakNode)"
             >
-              创建补救任务
+              安排复习
             </button>
           </div>
         </article>
@@ -474,9 +479,9 @@ onMounted(async () => {
       <div class="section-heading">
         <div>
           <p class="eyebrow">
-            周风险
+            本周复盘
           </p>
-          <h2>原因与行动</h2>
+          <h2>原因与下一步</h2>
         </div>
         <StatusTag
           :label="riskSourceLabel"
