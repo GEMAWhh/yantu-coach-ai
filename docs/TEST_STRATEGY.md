@@ -136,6 +136,7 @@ tests/fixtures/ai/
 - External Chat shortcuts only open a new window and never append the Prompt or personal data to a URL.
 - `apps/web/src/pages/LearningPage.test.ts` verifies that learning opens on the review workspace and exposes only the selected workspace.
 - Mobile Playwright flows explicitly switch to Prompt or materials before completing the existing workflows, preserving draft and management coverage after the workspace split.
+- Learning and progress component tests assert plain-language result and scheduling actions while preserving the existing API payloads and idempotency keys.
 - Manual recalculate marks overdue unfinished goals high risk and delayed.
 - Goal history API returns the emitted recalculation evidence.
 

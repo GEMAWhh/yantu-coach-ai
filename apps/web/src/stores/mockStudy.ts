@@ -163,7 +163,7 @@ export const useMockStudyStore = defineStore("mockStudy", {
         node: "特征值稳定性直觉",
         stage: "薄弱/衰退",
         accuracy: "48%",
-        evidence: "抽测失败，需回退并生成补救任务",
+        evidence: "之后再做仍然出错，需要重新学习并安排复习",
         tone: "red",
       },
       {

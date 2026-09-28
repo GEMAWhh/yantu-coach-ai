@@ -28,8 +28,8 @@ const learningSections: Array<{
   label: string;
   description: string;
 }> = [
-  { id: "review", label: "复习", description: "处理今天到期的卡片" },
-  { id: "wrongbook", label: "错题", description: "确认草稿并完成验证" },
+  { id: "review", label: "复习", description: "完成今天该复习的内容" },
+  { id: "wrongbook", label: "错题", description: "分析错因并重新做题" },
   { id: "materials", label: "资料", description: "上传资料和维护知识点" },
   { id: "prompt", label: "提示词", description: "生成内容后前往外部 Chat" },
 ];
@@ -53,6 +53,7 @@ const reviewSubmissions = ref<Record<string, ReviewResultSubmitPayload>>({});
 const wrongbookActionInFlight = ref<string | null>(null);
 const wrongbookActionError = ref<string | null>(null);
 const wrongbookSubmissions = ref<Record<string, WrongbookAttemptSubmitPayload>>({});
+const wrongbookResultKinds = ref<Record<string, "variant" | "interval">>({});
 const wrongbookDraftHistory = ref<WrongbookDraftHistoryItemPayload[] | null>(null);
 const wrongbookDraftHistoryError = ref<string | null>(null);
 const selectedWrongbookRecord = ref<WrongbookRecordPayload | null>(null);
@@ -126,7 +127,7 @@ const resourceSourceTone = computed<Tone>(() => (apiResources.value ? "green" : 
 const knowledgeSourceLabel = computed(() => (apiKnowledgeNodes.value ? "正式图谱" : "模拟"));
 const knowledgeSourceTone = computed<Tone>(() => (apiKnowledgeNodes.value ? "green" : "yellow"));
 const wrongbookSourceLabel = computed(() =>
-  apiWrongbookCandidates.value ? "规划候选" : "证据驱动",
+  apiWrongbookCandidates.value ? "待处理错题" : "示例流程",
 );
 const wrongbookSourceTone = computed<Tone>(() =>
   apiWrongbookCandidates.value ? "green" : "blue",
@@ -354,7 +355,7 @@ const reviewCards = computed<ReviewCard[]>(() => {
         title: "矩阵秩闭卷抽测",
         subject: "数学一",
         meta: "阶段 3 · 预计 20 分钟 · 原型卡片",
-        reason: "多时间点复习通过后才延长间隔；失败会触发回退和短间隔复测。",
+        reason: "这次做对后，系统会安排更晚的下一次复习；没做对则会尽快再次出现。",
         status: "待复习",
         tone: "yellow",
         apiBacked: false,
@@ -390,7 +391,7 @@ const reviewCards = computed<ReviewCard[]>(() => {
       subject: item.schedule.subject_id ?? item.candidate.subject_id,
       meta: `阶段 ${item.schedule.current_stage} · ${item.candidate.estimated_minutes} 分钟 · 到期 ${formatDate(item.schedule.due_at)}`,
       reason: item.schedule.next_reason,
-      status: submission ? (submittedPass ? "已通过" : "已失败") : "待复习",
+        status: submission ? (submittedPass ? "这次做对" : "这次没做对") : "待复习",
       tone: submission ? (submittedPass ? "green" : "red") : "yellow",
       apiBacked: true,
       scheduleId: item.schedule.id,
@@ -409,8 +410,8 @@ const wrongbookCards = computed<WrongbookCard[]>(() => {
     return [
       {
         id: "mock-wrongbook-1",
-        title: "1. 分类上传",
-        body: "题干、作答、答案、解析、错因、重做和变式附件分别保存。",
+        title: "1. 收集错题",
+        body: "保存题目、你的作答、答案和解析，方便还原当时为什么做错。",
         status: "原型",
         tone: "blue",
         apiBacked: false,
@@ -420,8 +421,8 @@ const wrongbookCards = computed<WrongbookCard[]>(() => {
       },
       {
         id: "mock-wrongbook-2",
-        title: "2. 用户确认",
-        body: "OCR 或 AI 结构化结果必须由用户确认后才进入正式记录。",
+        title: "2. 分析错因",
+        body: "确认真正的错误原因；自动识别结果必须由你确认后才会保存。",
         status: "原型",
         tone: "yellow",
         apiBacked: false,
@@ -431,8 +432,8 @@ const wrongbookCards = computed<WrongbookCard[]>(() => {
       },
       {
         id: "mock-wrongbook-3",
-        title: "3. 隔日重做",
-        body: "原题即时正确最多推进到待变式验证，不直接标记解决。",
+        title: "3. 不看提示重做",
+        body: "隔一段时间重新做题，避免把刚看完答案的记忆当成真正会做。",
         status: "原型",
         tone: "yellow",
         apiBacked: false,
@@ -442,8 +443,8 @@ const wrongbookCards = computed<WrongbookCard[]>(() => {
       },
       {
         id: "mock-wrongbook-4",
-        title: "4. 稳定修正",
-        body: "无提示重做、变式和间隔复测均通过后，才可稳定修正。",
+        title: "4. 以后再复习",
+        body: "重做正确后仍会安排同类题和之后复习，确认不是碰巧做对。",
         status: "原型",
         tone: "green",
         apiBacked: false,
@@ -476,7 +477,7 @@ const wrongbookCards = computed<WrongbookCard[]>(() => {
       id: candidate.id,
       title: `${index + 1}. ${candidate.title}`,
       body: `${candidate.subject_id} · ${candidate.estimated_minutes} 分钟 · 弱项 ${candidate.weakness} · 重复错因 ${candidate.repeat_error}`,
-      status: submission ? wrongbookStatusLabel(submission.record.current_status) : "待验证",
+      status: submission ? wrongbookStatusLabel(submission.record.current_status) : "待处理",
       tone: submission ? toneForWrongbookStatus(submission.record.current_status) : "yellow",
       apiBacked: true,
       sourceId: candidate.source_id,
@@ -606,6 +607,21 @@ function isWrongbookActionRunning(
   return wrongbookActionInFlight.value === wrongbookActionKey(card, resultKind, isCorrect);
 }
 
+function selectedWrongbookResultKind(card: WrongbookCard): "variant" | "interval" {
+  return card.sourceId ? (wrongbookResultKinds.value[card.sourceId] ?? "variant") : "variant";
+}
+
+function selectWrongbookResultKind(
+  card: WrongbookCard,
+  resultKind: "variant" | "interval",
+): void {
+  if (!card.sourceId) return;
+  wrongbookResultKinds.value = {
+    ...wrongbookResultKinds.value,
+    [card.sourceId]: resultKind,
+  };
+}
+
 async function submitWrongbookResult(
   card: WrongbookCard,
   resultKind: "variant" | "interval",
@@ -642,7 +658,7 @@ async function submitWrongbookResult(
       [card.sourceId]: response.data,
     };
   } catch {
-    wrongbookActionError.value = "错题验证结果提交失败，请刷新后重试。";
+    wrongbookActionError.value = "错题结果保存失败，请刷新后重试。";
   } finally {
     if (wrongbookActionInFlight.value === actionKey) {
       wrongbookActionInFlight.value = null;
@@ -752,12 +768,12 @@ function isWrongbookDraftActionRunning(
 
 function wrongbookStatusLabel(status: WrongbookAttemptSubmitPayload["record"]["current_status"]): string {
   const labels: Record<WrongbookAttemptSubmitPayload["record"]["current_status"], string> = {
-    pending_analysis: "待分析",
-    pending_no_hint_redo: "待无提示重做",
-    pending_variant: "待变式",
-    pending_interval: "待间隔复测",
-    stable_corrected: "稳定修正",
-    regressed: "已回退",
+    pending_analysis: "先分析错因",
+    pending_no_hint_redo: "等待重做",
+    pending_variant: "再做一道同类题",
+    pending_interval: "稍后再复习",
+    stable_corrected: "已稳定掌握",
+    regressed: "需要重新复习",
   };
   return labels[status];
 }
@@ -806,7 +822,7 @@ function wrongbookDraftSummary(draft: WrongbookDraftPayload): string {
   }
   const remediationPlan = draft.structured_json.remediation_plan;
   const actionCount = Array.isArray(remediationPlan) ? remediationPlan.length : 0;
-  return `草稿已生成错因诊断和 ${actionCount} 条补救动作；确认前不写入正式错题记录。`;
+  return `草稿已生成错因分析和 ${actionCount} 条后续练习建议；确认前不会保存为正式错题记录。`;
 }
 
 function wrongbookDraftField(draft: WrongbookDraftPayload, field: string): string {
@@ -832,10 +848,10 @@ function toneForWrongbookStatus(
 function attemptTypeLabel(type: WrongbookAttemptSubmitPayload["attempt"]["attempt_type"]): string {
   const labels: Record<WrongbookAttemptSubmitPayload["attempt"]["attempt_type"], string> = {
     original_redo: "原题重做",
-    no_hint_redo: "无提示重做",
-    variant: "变式",
-    interval_test: "间隔复测",
-    transfer_test: "迁移测试",
+    no_hint_redo: "不看提示重做",
+    variant: "同类题练习",
+    interval_test: "之后复习",
+    transfer_test: "新题应用",
   };
   return labels[type];
 }
@@ -1189,7 +1205,7 @@ onMounted(async () => {
               "
               @click="submitReviewResult(review, 'pass')"
             >
-              通过
+              这次做对了
             </button>
             <button
               type="button"
@@ -1199,7 +1215,7 @@ onMounted(async () => {
               "
               @click="submitReviewResult(review, 'fail')"
             >
-              失败
+              这次没做对
             </button>
           </div>
         </article>
@@ -1218,7 +1234,7 @@ onMounted(async () => {
           <p class="eyebrow">
             错题闭环
           </p>
-          <h2>确认、重做、变式、间隔复测</h2>
+          <h2>分析错因、重做、以后再复习</h2>
         </div>
         <StatusTag
           :label="wrongbookSourceLabel"
@@ -1264,10 +1280,10 @@ onMounted(async () => {
                 </dd>
               </div>
               <div v-if="selectedWrongbookVerification">
-                <dt>验证状态</dt>
+                <dt>后续练习</dt>
                 <dd>
-                  变式 {{ selectedWrongbookVerification.variant_passed ? "已过" : "未过" }} ·
-                  间隔 {{ selectedWrongbookVerification.interval_test_passed ? "已过" : "未过" }}
+                  同类题 {{ selectedWrongbookVerification.variant_passed ? "做对" : "未完成" }} ·
+                  之后复习 {{ selectedWrongbookVerification.interval_test_passed ? "做对" : "未完成" }}
                 </dd>
               </div>
             </dl>
@@ -1356,8 +1372,8 @@ onMounted(async () => {
           </p>
           <div
             v-if="card.apiBacked"
-            class="task-actions"
-            aria-label="错题验证操作"
+            class="wrongbook-result-entry"
+            aria-label="记录错题练习结果"
           >
             <button
               type="button"
@@ -1365,48 +1381,55 @@ onMounted(async () => {
               :disabled="isWrongbookDraftActionRunning('analyze', card.sourceId)"
               @click="analyzeWrongbookDraft(card)"
             >
-              生成草稿
+              分析错因
             </button>
-            <button
-              type="button"
-              class="task-action-button"
-              :disabled="
-                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'variant', true)
-              "
-              @click="submitWrongbookResult(card, 'variant', true)"
-            >
-              变式通过
-            </button>
-            <button
-              type="button"
-              class="task-action-button danger"
-              :disabled="
-                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'variant', false)
-              "
-              @click="submitWrongbookResult(card, 'variant', false)"
-            >
-              变式失败
-            </button>
-            <button
-              type="button"
-              class="task-action-button secondary"
-              :disabled="
-                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'interval', true)
-              "
-              @click="submitWrongbookResult(card, 'interval', true)"
-            >
-              间隔通过
-            </button>
-            <button
-              type="button"
-              class="task-action-button danger"
-              :disabled="
-                Boolean(card.resultNote) || isWrongbookActionRunning(card, 'interval', false)
-              "
-              @click="submitWrongbookResult(card, 'interval', false)"
-            >
-              间隔失败
-            </button>
+            <div class="wrongbook-result-recorder">
+              <span>记录刚完成的练习</span>
+              <div
+                class="wrongbook-result-kind"
+                role="group"
+                aria-label="练习类型"
+              >
+                <button
+                  type="button"
+                  :class="{ selected: selectedWrongbookResultKind(card) === 'variant' }"
+                  @click="selectWrongbookResultKind(card, 'variant')"
+                >
+                  同类题
+                </button>
+                <button
+                  type="button"
+                  :class="{ selected: selectedWrongbookResultKind(card) === 'interval' }"
+                  @click="selectWrongbookResultKind(card, 'interval')"
+                >
+                  之后复习
+                </button>
+              </div>
+              <div class="task-actions">
+                <button
+                  type="button"
+                  class="task-action-button"
+                  :disabled="
+                    Boolean(card.resultNote) ||
+                      isWrongbookActionRunning(card, selectedWrongbookResultKind(card), true)
+                  "
+                  @click="submitWrongbookResult(card, selectedWrongbookResultKind(card), true)"
+                >
+                  做对了
+                </button>
+                <button
+                  type="button"
+                  class="task-action-button danger"
+                  :disabled="
+                    Boolean(card.resultNote) ||
+                      isWrongbookActionRunning(card, selectedWrongbookResultKind(card), false)
+                  "
+                  @click="submitWrongbookResult(card, selectedWrongbookResultKind(card), false)"
+                >
+                  仍做错
+                </button>
+              </div>
+            </div>
           </div>
         </article>
       </div>
