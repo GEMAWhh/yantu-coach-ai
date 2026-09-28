@@ -400,6 +400,7 @@ class WrongbookDraftResponse(BaseModel):
 class WrongbookDraftHistoryItemResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
+    question: QuestionResponse
     record: WrongRecordResponse
     verification: WrongVerificationResponse
     draft: WrongbookDraftResponse | None
@@ -407,6 +408,7 @@ class WrongbookDraftHistoryItemResponse(BaseModel):
     @classmethod
     def from_item(cls, item: WrongbookDraftHistoryItem) -> WrongbookDraftHistoryItemResponse:
         return cls(
+            question=QuestionResponse.from_model(item.question),
             record=WrongRecordResponse.from_model(item.wrong_record),
             verification=WrongVerificationResponse.from_model(item.verification),
             draft=WrongbookDraftResponse.from_model(item.draft) if item.draft is not None else None,

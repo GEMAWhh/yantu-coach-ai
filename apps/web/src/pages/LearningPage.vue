@@ -10,7 +10,7 @@ import type {
   ReviewResultSubmitPayload,
   ReviewResultType,
   WrongbookAttemptSubmitPayload,
-  WrongbookCandidatePayload,
+  WrongbookAttemptType,
   WrongbookDraftHistoryItemPayload,
   WrongbookDraftPayload,
   WrongbookRecordPayload,
@@ -45,7 +45,6 @@ const study = useMockStudyStore();
 const activeSection = ref<LearningSection>(sectionFromLocation());
 const apiResources = ref<ResourcePayload[] | null>(null);
 const apiKnowledgeNodes = ref<KnowledgeNodePayload[] | null>(null);
-const apiWrongbookCandidates = ref<WrongbookCandidatePayload[] | null>(null);
 const apiDueReviews = ref<DueReviewPayload[] | null>(null);
 const reviewActionInFlight = ref<string | null>(null);
 const reviewActionError = ref<string | null>(null);
@@ -53,12 +52,13 @@ const reviewSubmissions = ref<Record<string, ReviewResultSubmitPayload>>({});
 const wrongbookActionInFlight = ref<string | null>(null);
 const wrongbookActionError = ref<string | null>(null);
 const wrongbookSubmissions = ref<Record<string, WrongbookAttemptSubmitPayload>>({});
-const wrongbookResultKinds = ref<Record<string, "variant" | "interval">>({});
 const wrongbookDraftHistory = ref<WrongbookDraftHistoryItemPayload[] | null>(null);
 const wrongbookDraftHistoryError = ref<string | null>(null);
 const selectedWrongbookRecord = ref<WrongbookRecordPayload | null>(null);
 const selectedWrongbookVerification = ref<WrongbookVerificationPayload | null>(null);
 const selectedWrongbookDraft = ref<WrongbookDraftPayload | null>(null);
+const selectedWrongbookId = ref<string | null>(null);
+const wrongbookFilter = ref<"analysis" | "redo" | "completed">("redo");
 const resourceActionInFlight = ref(false);
 const resourceMessage = ref<{ tone: "error" | "success"; text: string } | null>(null);
 const selectedResourceFile = ref<File | null>(null);
@@ -93,21 +93,6 @@ type ResourceRow = LearningResource & {
   asset: ResourcePayload["asset"] | null;
 };
 
-type LoopCard = {
-  title: string;
-  body: string;
-};
-
-type WrongbookCard = LoopCard & {
-  id: string;
-  status: string;
-  tone: Tone;
-  apiBacked: boolean;
-  sourceId: string | null;
-  taskType: string | null;
-  resultNote: string | null;
-};
-
 type ReviewCard = {
   id: string;
   title: string;
@@ -126,22 +111,53 @@ const resourceSourceLabel = computed(() => (apiResources.value ? "正式资源" 
 const resourceSourceTone = computed<Tone>(() => (apiResources.value ? "green" : "cyan"));
 const knowledgeSourceLabel = computed(() => (apiKnowledgeNodes.value ? "正式图谱" : "模拟"));
 const knowledgeSourceTone = computed<Tone>(() => (apiKnowledgeNodes.value ? "green" : "yellow"));
-const wrongbookSourceLabel = computed(() =>
-  apiWrongbookCandidates.value ? "待处理错题" : "示例流程",
+
+const wrongbookCounts = computed(() => {
+  const items = wrongbookDraftHistory.value ?? [];
+  return {
+    analysis: items.filter((item) => item.record.current_status === "pending_analysis").length,
+    redo: items.filter(
+      (item) => !["pending_analysis", "stable_corrected"].includes(item.record.current_status),
+    ).length,
+    completed: items.filter((item) => item.record.current_status === "stable_corrected").length,
+  };
+});
+
+const dueWrongbookCount = computed(() =>
+  (wrongbookDraftHistory.value ?? []).filter(
+    (item) =>
+      !["pending_analysis", "stable_corrected"].includes(item.record.current_status) &&
+      isWrongbookDue(item.record),
+  ).length,
 );
-const wrongbookSourceTone = computed<Tone>(() =>
-  apiWrongbookCandidates.value ? "green" : "blue",
-);
-const wrongbookDraftSourceTone = computed<Tone>(() =>
-  wrongbookDraftHistory.value ? "green" : "yellow",
-);
-const pendingWrongbookDraftCount = computed(() =>
-  wrongbookDraftHistory.value
-    ? wrongbookDraftHistory.value.filter((item) => item.draft?.status === "draft").length
-    : selectedWrongbookDraft.value?.status === "draft"
-      ? 1
-      : 0,
-);
+
+const visibleWrongbookItems = computed(() => {
+  const items = wrongbookDraftHistory.value ?? [];
+  if (wrongbookFilter.value === "analysis") {
+    return items.filter((item) => item.record.current_status === "pending_analysis");
+  }
+  if (wrongbookFilter.value === "completed") {
+    return items.filter((item) => item.record.current_status === "stable_corrected");
+  }
+  return items.filter(
+    (item) => !["pending_analysis", "stable_corrected"].includes(item.record.current_status),
+  );
+});
+
+const selectedWrongbookItem = computed(() => {
+  const items = wrongbookDraftHistory.value ?? [];
+  return (
+    items.find((item) => item.record.id === selectedWrongbookId.value) ??
+    visibleWrongbookItems.value[0] ??
+    null
+  );
+});
+
+const wrongbookEmptyLabel = computed(() => {
+  if (wrongbookFilter.value === "analysis") return "没有等待分析的错题。";
+  if (wrongbookFilter.value === "completed") return "还没有完成归档的错题。";
+  return "当前没有待重做错题。";
+});
 const reviewSourceLabel = computed(() => (apiDueReviews.value ? "正式复习" : "原型复习"));
 const reviewSourceTone = computed<Tone>(() => (apiDueReviews.value ? "green" : "yellow"));
 
@@ -405,92 +421,6 @@ const reviewCards = computed<ReviewCard[]>(() => {
   });
 });
 
-const wrongbookCards = computed<WrongbookCard[]>(() => {
-  if (!apiWrongbookCandidates.value) {
-    return [
-      {
-        id: "mock-wrongbook-1",
-        title: "1. 收集错题",
-        body: "保存题目、你的作答、答案和解析，方便还原当时为什么做错。",
-        status: "原型",
-        tone: "blue",
-        apiBacked: false,
-        sourceId: null,
-        taskType: null,
-        resultNote: null,
-      },
-      {
-        id: "mock-wrongbook-2",
-        title: "2. 分析错因",
-        body: "确认真正的错误原因；自动识别结果必须由你确认后才会保存。",
-        status: "原型",
-        tone: "yellow",
-        apiBacked: false,
-        sourceId: null,
-        taskType: null,
-        resultNote: null,
-      },
-      {
-        id: "mock-wrongbook-3",
-        title: "3. 不看提示重做",
-        body: "隔一段时间重新做题，避免把刚看完答案的记忆当成真正会做。",
-        status: "原型",
-        tone: "yellow",
-        apiBacked: false,
-        sourceId: null,
-        taskType: null,
-        resultNote: null,
-      },
-      {
-        id: "mock-wrongbook-4",
-        title: "4. 以后再复习",
-        body: "重做正确后仍会安排同类题和之后复习，确认不是碰巧做对。",
-        status: "原型",
-        tone: "green",
-        apiBacked: false,
-        sourceId: null,
-        taskType: null,
-        resultNote: null,
-      },
-    ];
-  }
-  if (apiWrongbookCandidates.value.length === 0) {
-    return [
-      {
-        id: "empty-wrongbook",
-        title: "暂无错题候选",
-        body: "当前没有进入今日计划的错题候选，继续按资源和知识图谱推进。",
-        status: "空队列",
-        tone: "neutral",
-        apiBacked: false,
-        sourceId: null,
-        taskType: null,
-        resultNote: null,
-      },
-    ];
-  }
-  return apiWrongbookCandidates.value.slice(0, 4).map((candidate, index) => {
-    const submission = candidate.source_id
-      ? wrongbookSubmissions.value[candidate.source_id]
-      : null;
-    return {
-      id: candidate.id,
-      title: `${index + 1}. ${candidate.title}`,
-      body: `${candidate.subject_id} · ${candidate.estimated_minutes} 分钟 · 弱项 ${candidate.weakness} · 重复错因 ${candidate.repeat_error}`,
-      status: submission ? wrongbookStatusLabel(submission.record.current_status) : "待处理",
-      tone: submission ? toneForWrongbookStatus(submission.record.current_status) : "yellow",
-      apiBacked: true,
-      sourceId: candidate.source_id,
-      taskType: candidate.task_type,
-      resultNote: submission
-        ? `${attemptTypeLabel(submission.attempt.attempt_type)} · ${
-            submission.attempt.is_correct ? "正确" : "错误"
-          } · ${submission.created ? "已记录" : "幂等返回"}`
-        : null,
-    };
-  });
-});
-
 function formatBytes(sizeBytes: number): string {
   if (sizeBytes < 1024) {
     return `${sizeBytes} B`;
@@ -599,64 +529,87 @@ function formatDate(value: string): string {
   return value.slice(0, 10);
 }
 
-function isWrongbookActionRunning(
-  card: WrongbookCard,
-  resultKind: "variant" | "interval",
-  isCorrect: boolean,
-): boolean {
-  return wrongbookActionInFlight.value === wrongbookActionKey(card, resultKind, isCorrect);
+function wrongbookDueLabel(record: WrongbookRecordPayload): string {
+  if (record.current_status === "stable_corrected") {
+    return record.resolved_at ? `完成于 ${formatDate(record.resolved_at)}` : "已完成";
+  }
+  if (record.current_status === "pending_analysis") return "先确认错因";
+  if (!record.next_review_at) return "现在可以重做";
+  const due = formatDate(record.next_review_at);
+  const today = todayString();
+  if (due < today) return "已经到期";
+  if (due === today) return "今天重做";
+  return `${due} 重做`;
 }
 
-function selectedWrongbookResultKind(card: WrongbookCard): "variant" | "interval" {
-  return card.sourceId ? (wrongbookResultKinds.value[card.sourceId] ?? "variant") : "variant";
+function isWrongbookDue(record: WrongbookRecordPayload): boolean {
+  return !record.next_review_at || formatDate(record.next_review_at) <= todayString();
 }
 
-function selectWrongbookResultKind(
-  card: WrongbookCard,
-  resultKind: "variant" | "interval",
-): void {
-  if (!card.sourceId) return;
-  wrongbookResultKinds.value = {
-    ...wrongbookResultKinds.value,
-    [card.sourceId]: resultKind,
-  };
+function selectWrongbookFilter(filter: "analysis" | "redo" | "completed"): void {
+  wrongbookFilter.value = filter;
+  selectedWrongbookId.value = null;
+}
+
+function selectWrongbookItem(item: WrongbookDraftHistoryItemPayload): void {
+  selectedWrongbookId.value = item.record.id;
+  selectWrongbookDraftHistory(item);
+}
+
+function startNextWrongbook(): void {
+  const next = (wrongbookDraftHistory.value ?? []).find(
+    (item) =>
+      !["pending_analysis", "stable_corrected"].includes(item.record.current_status) &&
+      isWrongbookDue(item.record),
+  );
+  if (!next) return;
+  wrongbookFilter.value = "redo";
+  selectWrongbookItem(next);
+  requestAnimationFrame(() => document.querySelector(".wrongbook-focus")?.scrollIntoView({ block: "start" }));
+}
+
+function nextWrongbookAttemptType(status: WrongbookRecordPayload["current_status"]): WrongbookAttemptType {
+  if (status === "pending_variant") return "variant";
+  if (status === "pending_interval") return "interval_test";
+  return "no_hint_redo";
+}
+
+function isWrongbookResultRunning(item: WrongbookDraftHistoryItemPayload, isCorrect: boolean): boolean {
+  return wrongbookActionInFlight.value === `${item.record.id}:${isCorrect ? "pass" : "fail"}`;
 }
 
 async function submitWrongbookResult(
-  card: WrongbookCard,
-  resultKind: "variant" | "interval",
+  item: WrongbookDraftHistoryItemPayload,
   isCorrect: boolean,
 ): Promise<void> {
-  if (!card.apiBacked || !card.sourceId) {
-    return;
-  }
-  const actionKey = wrongbookActionKey(card, resultKind, isCorrect);
+  const actionKey = `${item.record.id}:${isCorrect ? "pass" : "fail"}`;
   const client = new ApiClient();
   wrongbookActionInFlight.value = actionKey;
   wrongbookActionError.value = null;
   try {
     const payload = {
+      attempt_type: nextWrongbookAttemptType(item.record.current_status),
       is_correct: isCorrect,
       score: isCorrect ? 96 : 40,
       confidence: isCorrect ? 80 : 40,
       attempted_at: new Date().toISOString(),
     };
-    const response =
-      resultKind === "variant"
-        ? await client.submitWrongbookVariantResult(
-            card.sourceId,
-            payload,
-            wrongbookIdempotencyKey(card, resultKind, isCorrect),
-          )
-        : await client.submitWrongbookIntervalResult(
-            card.sourceId,
-            payload,
-            wrongbookIdempotencyKey(card, resultKind, isCorrect),
-          );
+    const response = await client.submitWrongbookAttempt(
+      item.record.id,
+      payload,
+      [item.record.id, payload.attempt_type, item.record.version, isCorrect ? "pass" : "fail"].join(":"),
+    );
     wrongbookSubmissions.value = {
       ...wrongbookSubmissions.value,
-      [card.sourceId]: response.data,
+      [item.record.id]: response.data,
     };
+    wrongbookDraftHistory.value = (wrongbookDraftHistory.value ?? []).map((entry) =>
+      entry.record.id === item.record.id
+        ? { ...entry, record: response.data.record, verification: response.data.verification }
+        : entry,
+    );
+    selectedWrongbookRecord.value = response.data.record;
+    selectedWrongbookVerification.value = response.data.verification;
   } catch {
     wrongbookActionError.value = "错题结果保存失败，请刷新后重试。";
   } finally {
@@ -668,12 +621,20 @@ async function submitWrongbookResult(
 
 async function loadWrongbookDraftHistory(selectRecordId?: string): Promise<void> {
   try {
-    const history = await new ApiClient().wrongbookDraftHistory(10);
-    wrongbookDraftHistory.value = history.data.items;
+    const client = new ApiClient();
+    const items: WrongbookDraftHistoryItemPayload[] = [];
+    let total = 0;
+    do {
+      const history = await client.wrongbookDraftHistory(100, items.length);
+      if (history.data.items.length === 0) break;
+      items.push(...history.data.items);
+      total = history.data.total;
+    } while (items.length < total);
+    wrongbookDraftHistory.value = items;
     wrongbookDraftHistoryError.value = null;
     const selected = selectRecordId
-      ? history.data.items.find((item) => item.record.id === selectRecordId)
-      : history.data.items.find((item) => item.draft !== null);
+      ? items.find((item) => item.record.id === selectRecordId)
+      : items.find((item) => item.draft !== null);
     if (selected && (!selectedWrongbookDraft.value || selectRecordId)) {
       selectWrongbookDraftHistory(selected);
     }
@@ -684,21 +645,19 @@ async function loadWrongbookDraftHistory(selectRecordId?: string): Promise<void>
 }
 
 function selectWrongbookDraftHistory(item: WrongbookDraftHistoryItemPayload): void {
+  selectedWrongbookId.value = item.record.id;
   selectedWrongbookRecord.value = item.record;
   selectedWrongbookVerification.value = item.verification;
   selectedWrongbookDraft.value = item.draft;
   wrongbookActionError.value = null;
 }
 
-async function analyzeWrongbookDraft(card: WrongbookCard): Promise<void> {
-  if (!card.apiBacked || !card.sourceId) {
-    return;
-  }
-  const actionKey = wrongbookDraftActionKey("analyze", card.sourceId);
+async function analyzeWrongbookDraft(item: WrongbookDraftHistoryItemPayload): Promise<void> {
+  const actionKey = wrongbookDraftActionKey("analyze", item.record.id);
   wrongbookActionInFlight.value = actionKey;
   wrongbookActionError.value = null;
   try {
-    const analyzed = await new ApiClient().analyzeWrongbookRecord(card.sourceId, {
+    const analyzed = await new ApiClient().analyzeWrongbookRecord(item.record.id, {
       provider_mode: "valid",
     });
     selectedWrongbookDraft.value = analyzed.data.draft;
@@ -734,24 +693,6 @@ async function confirmSelectedWrongbookDraft(): Promise<void> {
   }
 }
 
-function wrongbookActionKey(
-  card: WrongbookCard,
-  resultKind: "variant" | "interval",
-  isCorrect: boolean,
-): string {
-  return [card.sourceId, resultKind, isCorrect ? "pass" : "fail"].join(":");
-}
-
-function wrongbookIdempotencyKey(
-  card: WrongbookCard,
-  resultKind: "variant" | "interval",
-  isCorrect: boolean,
-): string {
-  return [card.sourceId, resultKind, isCorrect ? "pass" : "fail", card.taskType ?? "candidate"].join(
-    ":",
-  );
-}
-
 function wrongbookDraftActionKey(kind: "analyze" | "confirm", wrongRecordId: string): string {
   return ["wrongbook-draft", kind, wrongRecordId].join(":");
 }
@@ -778,53 +719,6 @@ function wrongbookStatusLabel(status: WrongbookAttemptSubmitPayload["record"]["c
   return labels[status];
 }
 
-function wrongbookDraftStatusLabel(draft: WrongbookDraftPayload | null): string {
-  if (!draft) {
-    return "未分析";
-  }
-  const labels: Record<WrongbookDraftPayload["status"], string> = {
-    draft: "待确认",
-    needs_correction: "需修正",
-    confirmed: "已确认",
-  };
-  return labels[draft.status];
-}
-
-function wrongbookDraftTone(draft: WrongbookDraftPayload | null): Tone {
-  if (!draft) {
-    return "neutral";
-  }
-  if (draft.status === "confirmed") {
-    return "green";
-  }
-  if (draft.status === "needs_correction") {
-    return "yellow";
-  }
-  return "blue";
-}
-
-function wrongbookDraftTitle(draft: WrongbookDraftPayload | null): string {
-  if (!draft) {
-    return "暂无可处理错题草稿";
-  }
-  if (draft.status === "confirmed") {
-    return "错题草稿已确认";
-  }
-  if (draft.status === "needs_correction") {
-    return "错题草稿需修正";
-  }
-  return "待确认错题草稿";
-}
-
-function wrongbookDraftSummary(draft: WrongbookDraftPayload): string {
-  if (draft.validation_errors.length > 0) {
-    return `草稿存在 ${draft.validation_errors.length} 个结构问题，需要人工修正后才能确认。`;
-  }
-  const remediationPlan = draft.structured_json.remediation_plan;
-  const actionCount = Array.isArray(remediationPlan) ? remediationPlan.length : 0;
-  return `草稿已生成错因分析和 ${actionCount} 条后续练习建议；确认前不会保存为正式错题记录。`;
-}
-
 function wrongbookDraftField(draft: WrongbookDraftPayload, field: string): string {
   const value = draft.structured_json[field];
   return typeof value === "string" && value.trim() ? value : "待确认";
@@ -845,17 +739,6 @@ function toneForWrongbookStatus(
   return "yellow";
 }
 
-function attemptTypeLabel(type: WrongbookAttemptSubmitPayload["attempt"]["attempt_type"]): string {
-  const labels: Record<WrongbookAttemptSubmitPayload["attempt"]["attempt_type"], string> = {
-    original_redo: "原题重做",
-    no_hint_redo: "不看提示重做",
-    variant: "同类题练习",
-    interval_test: "之后复习",
-    transfer_test: "新题应用",
-  };
-  return labels[type];
-}
-
 function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -864,20 +747,17 @@ onMounted(async () => {
   const client = new ApiClient();
   void loadWrongbookDraftHistory();
   try {
-    const [resources, knowledgeNodes, wrongbookCandidates, dueReviews] = await Promise.all([
+    const [resources, knowledgeNodes, dueReviews] = await Promise.all([
       client.resources(),
       client.knowledgeNodes(),
-      client.wrongbookPlanningCandidates(),
       client.dueReviews(todayString()),
     ]);
     apiResources.value = resources.data.items;
     apiKnowledgeNodes.value = knowledgeNodes.data.items;
-    apiWrongbookCandidates.value = wrongbookCandidates.data.items;
     apiDueReviews.value = dueReviews.data.items;
   } catch {
     apiResources.value = null;
     apiKnowledgeNodes.value = null;
-    apiWrongbookCandidates.value = null;
     apiDueReviews.value = null;
   }
 });
@@ -1229,17 +1109,27 @@ onMounted(async () => {
       role="tabpanel"
       aria-labelledby="learning-tab-wrongbook"
     >
-      <div class="section-heading">
+      <div class="wrongbook-hero">
         <div>
           <p class="eyebrow">
-            错题闭环
+            今天的错题
           </p>
-          <h2>分析错因、重做、以后再复习</h2>
+          <h2 v-if="dueWrongbookCount > 0">
+            今天有 {{ dueWrongbookCount }} 道需要重做
+          </h2>
+          <h2 v-else>
+            今天的错题已经完成
+          </h2>
+          <p>系统会保留每道错题并安排之后重做；连续验证正确后，它会自动退出待办。</p>
         </div>
-        <StatusTag
-          :label="wrongbookSourceLabel"
-          :tone="wrongbookSourceTone"
-        />
+        <button
+          type="button"
+          class="primary-action"
+          :disabled="dueWrongbookCount === 0"
+          @click="startNextWrongbook"
+        >
+          开始下一题
+        </button>
       </div>
       <p
         v-if="wrongbookActionError"
@@ -1248,189 +1138,155 @@ onMounted(async () => {
       >
         {{ wrongbookActionError }}
       </p>
-      <div class="draft-workspace">
-        <article class="draft-panel">
+      <div
+        class="wrongbook-tabs"
+        role="tablist"
+        aria-label="错题状态"
+      >
+        <button
+          type="button"
+          :class="{ selected: wrongbookFilter === 'analysis' }"
+          @click="selectWrongbookFilter('analysis')"
+        >
+          待分析 <span>{{ wrongbookCounts.analysis }}</span>
+        </button>
+        <button
+          type="button"
+          :class="{ selected: wrongbookFilter === 'redo' }"
+          @click="selectWrongbookFilter('redo')"
+        >
+          待重做 <span>{{ wrongbookCounts.redo }}</span>
+        </button>
+        <button
+          type="button"
+          :class="{ selected: wrongbookFilter === 'completed' }"
+          @click="selectWrongbookFilter('completed')"
+        >
+          已完成 <span>{{ wrongbookCounts.completed }}</span>
+        </button>
+      </div>
+
+      <div class="wrongbook-workspace">
+        <div
+          class="wrongbook-list"
+          aria-label="错题列表"
+        >
+          <button
+            v-for="item in visibleWrongbookItems"
+            :key="item.record.id"
+            type="button"
+            :class="{ selected: selectedWrongbookItem?.record.id === item.record.id }"
+            @click="selectWrongbookItem(item)"
+          >
+            <strong>{{ item.question.standard_text }}</strong>
+            <span>{{ item.question.subject_id ?? "未分类" }} · 错误 {{ item.record.error_count }} 次</span>
+            <small>{{ wrongbookDueLabel(item.record) }}</small>
+          </button>
+          <p
+            v-if="wrongbookDraftHistory && visibleWrongbookItems.length === 0"
+            class="wrongbook-empty"
+          >
+            {{ wrongbookEmptyLabel }}
+          </p>
+          <p
+            v-else-if="!wrongbookDraftHistory && !wrongbookDraftHistoryError"
+            class="wrongbook-empty"
+          >
+            正在加载错题。
+          </p>
+        </div>
+
+        <article
+          v-if="selectedWrongbookItem"
+          class="wrongbook-focus"
+        >
           <div class="task-card-header">
-            <strong>{{ wrongbookDraftTitle(selectedWrongbookDraft) }}</strong>
+            <span>{{ selectedWrongbookItem.question.subject_id ?? "未分类" }}</span>
             <StatusTag
-              :label="wrongbookDraftStatusLabel(selectedWrongbookDraft)"
-              :tone="wrongbookDraftTone(selectedWrongbookDraft)"
+              :label="wrongbookStatusLabel(selectedWrongbookItem.record.current_status)"
+              :tone="toneForWrongbookStatus(selectedWrongbookItem.record.current_status)"
             />
           </div>
-          <template v-if="selectedWrongbookDraft">
-            <p>{{ wrongbookDraftSummary(selectedWrongbookDraft) }}</p>
-            <dl class="detail-list">
-              <div>
-                <dt>表层错因</dt>
-                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "surface_cause") }}</dd>
-              </div>
-              <div>
-                <dt>深层错因</dt>
-                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "deep_cause") }}</dd>
-              </div>
-              <div>
-                <dt>前置缺口</dt>
-                <dd>{{ wrongbookDraftField(selectedWrongbookDraft, "prerequisite_gap") }}</dd>
-              </div>
-              <div v-if="selectedWrongbookRecord">
-                <dt>正式记录</dt>
-                <dd>
-                  {{ wrongbookStatusLabel(selectedWrongbookRecord.current_status) }} · 错误
-                  {{ selectedWrongbookRecord.error_count }} 次
-                </dd>
-              </div>
-              <div v-if="selectedWrongbookVerification">
-                <dt>后续练习</dt>
-                <dd>
-                  同类题 {{ selectedWrongbookVerification.variant_passed ? "做对" : "未完成" }} ·
-                  之后复习 {{ selectedWrongbookVerification.interval_test_passed ? "做对" : "未完成" }}
-                </dd>
-              </div>
-            </dl>
+          <h3>{{ selectedWrongbookItem.question.standard_text }}</h3>
+          <p class="wrongbook-source">
+            {{ selectedWrongbookItem.question.source ?? "手动记录" }} · 错误 {{ selectedWrongbookItem.record.error_count }} 次
+          </p>
+
+          <template v-if="selectedWrongbookItem.record.current_status === 'pending_analysis'">
+            <div
+              v-if="selectedWrongbookItem.draft"
+              class="wrongbook-causes"
+            >
+              <div><span>直接原因</span><strong>{{ wrongbookDraftField(selectedWrongbookItem.draft, 'surface_cause') }}</strong></div>
+              <div><span>真正原因</span><strong>{{ wrongbookDraftField(selectedWrongbookItem.draft, 'deep_cause') }}</strong></div>
+              <div><span>需要补的基础</span><strong>{{ wrongbookDraftField(selectedWrongbookItem.draft, 'prerequisite_gap') }}</strong></div>
+            </div>
             <div class="task-actions">
               <button
+                v-if="!selectedWrongbookItem.draft"
                 type="button"
                 class="task-action-button"
-                :disabled="
-                  selectedWrongbookDraft.status !== 'draft' ||
-                    isWrongbookDraftActionRunning('confirm', selectedWrongbookDraft.wrong_record_id)
-                "
-                @click="confirmSelectedWrongbookDraft"
+                :disabled="isWrongbookDraftActionRunning('analyze', selectedWrongbookItem.record.id)"
+                @click="analyzeWrongbookDraft(selectedWrongbookItem)"
               >
-                确认草稿
+                生成错因建议
+              </button>
+              <button
+                v-else-if="selectedWrongbookItem.draft.status === 'draft'"
+                type="button"
+                class="task-action-button"
+                :disabled="isWrongbookDraftActionRunning('confirm', selectedWrongbookItem.record.id)"
+                @click="selectWrongbookItem(selectedWrongbookItem); confirmSelectedWrongbookDraft()"
+              >
+                确认错因并安排重做
               </button>
             </div>
           </template>
-          <p v-else>
-            暂无可处理错题草稿。
-          </p>
-        </article>
 
-        <article class="draft-panel">
-          <div class="task-card-header">
-            <strong>错题草稿历史</strong>
-            <StatusTag
-              :label="`${pendingWrongbookDraftCount} 份待确认`"
-              :tone="wrongbookDraftSourceTone"
-            />
-          </div>
-          <p
-            v-if="wrongbookDraftHistoryError"
-            class="task-action-error"
-            role="status"
-          >
-            {{ wrongbookDraftHistoryError }}
-          </p>
-          <div
-            v-if="wrongbookDraftHistory && wrongbookDraftHistory.length > 0"
-            class="draft-history-list"
-          >
-            <button
-              v-for="item in wrongbookDraftHistory"
-              :key="item.record.id"
-              type="button"
-              class="draft-history-item"
-              @click="selectWrongbookDraftHistory(item)"
-            >
-              <span>
-                <strong>{{ formatDate(item.record.updated_at) }}</strong>
-                <small>
-                  {{ item.record.knowledge_node_id ?? "未关联知识点" }} ·
-                  {{ wrongbookStatusLabel(item.record.current_status) }}
-                </small>
-              </span>
-              <StatusTag
-                :label="wrongbookDraftStatusLabel(item.draft)"
-                :tone="wrongbookDraftTone(item.draft)"
-              />
-            </button>
-          </div>
-          <p v-else-if="wrongbookDraftHistory && wrongbookDraftHistory.length === 0">
-            暂无错题草稿历史。
-          </p>
-          <p v-else-if="!wrongbookDraftHistoryError">
-            正在加载错题草稿历史。
-          </p>
-        </article>
-      </div>
-
-      <div class="step-grid">
-        <article
-          v-for="card in wrongbookCards"
-          :key="card.id"
-        >
-          <div class="task-card-header">
-            <strong>{{ card.title }}</strong>
-            <StatusTag
-              :label="card.status"
-              :tone="card.tone"
-            />
-          </div>
-          <p>{{ card.body }}</p>
-          <p v-if="card.resultNote">
-            {{ card.resultNote }}
-          </p>
-          <div
-            v-if="card.apiBacked"
-            class="wrongbook-result-entry"
-            aria-label="记录错题练习结果"
-          >
-            <button
-              type="button"
-              class="task-action-button secondary"
-              :disabled="isWrongbookDraftActionRunning('analyze', card.sourceId)"
-              @click="analyzeWrongbookDraft(card)"
-            >
-              分析错因
-            </button>
-            <div class="wrongbook-result-recorder">
-              <span>记录刚完成的练习</span>
-              <div
-                class="wrongbook-result-kind"
-                role="group"
-                aria-label="练习类型"
-              >
-                <button
-                  type="button"
-                  :class="{ selected: selectedWrongbookResultKind(card) === 'variant' }"
-                  @click="selectWrongbookResultKind(card, 'variant')"
-                >
-                  同类题
-                </button>
-                <button
-                  type="button"
-                  :class="{ selected: selectedWrongbookResultKind(card) === 'interval' }"
-                  @click="selectWrongbookResultKind(card, 'interval')"
-                >
-                  之后复习
-                </button>
-              </div>
-              <div class="task-actions">
-                <button
-                  type="button"
-                  class="task-action-button"
-                  :disabled="
-                    Boolean(card.resultNote) ||
-                      isWrongbookActionRunning(card, selectedWrongbookResultKind(card), true)
-                  "
-                  @click="submitWrongbookResult(card, selectedWrongbookResultKind(card), true)"
-                >
-                  做对了
-                </button>
-                <button
-                  type="button"
-                  class="task-action-button danger"
-                  :disabled="
-                    Boolean(card.resultNote) ||
-                      isWrongbookActionRunning(card, selectedWrongbookResultKind(card), false)
-                  "
-                  @click="submitWrongbookResult(card, selectedWrongbookResultKind(card), false)"
-                >
-                  仍做错
-                </button>
-              </div>
+          <template v-else-if="selectedWrongbookItem.record.current_status === 'stable_corrected'">
+            <div class="wrongbook-complete-message">
+              <strong>这道题已经完成</strong>
+              <p>它已从待重做中移走，历史记录仍会保留。</p>
             </div>
-          </div>
+          </template>
+
+          <template v-else>
+            <div class="wrongbook-causes">
+              <div><span>错因</span><strong>{{ selectedWrongbookItem.record.deep_cause ?? selectedWrongbookItem.record.surface_cause ?? "待补充" }}</strong></div>
+              <div><span>下次重做</span><strong>{{ wrongbookDueLabel(selectedWrongbookItem.record) }}</strong></div>
+            </div>
+            <p class="wrongbook-instruction">
+              {{ isWrongbookDue(selectedWrongbookItem.record) ? "先在纸上独立完成，再记录结果。不要边看答案边做。" : `这道题还没到重做日期，${wrongbookDueLabel(selectedWrongbookItem.record)}。` }}
+            </p>
+            <p
+              v-if="wrongbookSubmissions[selectedWrongbookItem.record.id]"
+              class="task-action-success"
+              role="status"
+            >
+              结果已保存，{{ wrongbookDueLabel(selectedWrongbookItem.record) }}。
+            </p>
+            <div
+              v-if="isWrongbookDue(selectedWrongbookItem.record)"
+              class="task-actions wrongbook-outcome-actions"
+            >
+              <button
+                type="button"
+                class="task-action-button"
+                :disabled="isWrongbookResultRunning(selectedWrongbookItem, true)"
+                @click="submitWrongbookResult(selectedWrongbookItem, true)"
+              >
+                这次做对了
+              </button>
+              <button
+                type="button"
+                class="task-action-button danger"
+                :disabled="isWrongbookResultRunning(selectedWrongbookItem, false)"
+                @click="submitWrongbookResult(selectedWrongbookItem, false)"
+              >
+                仍然做错
+              </button>
+            </div>
+          </template>
         </article>
       </div>
     </section>

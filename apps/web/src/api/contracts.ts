@@ -554,6 +554,10 @@ export type WrongbookAttemptResultCreatePayload = {
   confidence?: number | null;
 };
 
+export type WrongbookAttemptCreatePayload = WrongbookAttemptResultCreatePayload & {
+  attempt_type: WrongbookAttemptType;
+};
+
 export type WrongbookRecordPayload = {
   id: string;
   version: number;
@@ -663,6 +667,13 @@ export type WrongbookConfirmPayload = {
 };
 
 export type WrongbookDraftHistoryItemPayload = {
+  question: {
+    id: string;
+    standard_text: string;
+    subject_id: string | null;
+    knowledge_node_id: string | null;
+    source: string | null;
+  };
   record: WrongbookRecordPayload;
   verification: WrongbookVerificationPayload;
   draft: WrongbookDraftPayload | null;
