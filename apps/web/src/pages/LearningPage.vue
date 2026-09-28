@@ -21,7 +21,28 @@ import PromptToolbox from "../components/PromptToolbox.vue";
 import StatusTag from "../components/StatusTag.vue";
 import { useMockStudyStore, type LearningResource, type Tone } from "../stores/mockStudy";
 
+type LearningSection = "review" | "wrongbook" | "materials" | "prompt";
+
+const learningSections: Array<{
+  id: LearningSection;
+  label: string;
+  description: string;
+}> = [
+  { id: "review", label: "复习", description: "处理今天到期的卡片" },
+  { id: "wrongbook", label: "错题", description: "确认草稿并完成验证" },
+  { id: "materials", label: "资料", description: "上传资料和维护知识点" },
+  { id: "prompt", label: "提示词", description: "生成内容后前往外部 Chat" },
+];
+
+function sectionFromLocation(): LearningSection {
+  const section = new URLSearchParams(window.location.search).get("section");
+  return learningSections.some((item) => item.id === section)
+    ? (section as LearningSection)
+    : "review";
+}
+
 const study = useMockStudyStore();
+const activeSection = ref<LearningSection>(sectionFromLocation());
 const apiResources = ref<ResourcePayload[] | null>(null);
 const apiKnowledgeNodes = ref<KnowledgeNodePayload[] | null>(null);
 const apiWrongbookCandidates = ref<WrongbookCandidatePayload[] | null>(null);
@@ -52,6 +73,14 @@ const knowledgeForm = ref({
   exam_frequency: 50,
   description: "",
 });
+
+function selectLearningSection(section: LearningSection): void {
+  activeSection.value = section;
+  const url = new URL(window.location.href);
+  if (section === "review") url.searchParams.delete("section");
+  else url.searchParams.set("section", section);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 type KnowledgeChip = {
   id: string | null;
@@ -845,13 +874,47 @@ onMounted(async () => {
   >
     <PageHeader
       kicker="学习"
-      title="资料与知识单元"
-      description="使用固定学习 Prompt 辅助对话，并管理资料、错题、复习卡片和知识图谱。"
+      title="学习中心"
+      description="先完成到期复习；错题、资料和 Prompt 按需进入，互不干扰。"
     />
 
-    <PromptToolbox />
+    <nav
+      class="learning-section-tabs"
+      role="tablist"
+      aria-label="学习功能"
+    >
+      <button
+        v-for="section in learningSections"
+        :id="`learning-tab-${section.id}`"
+        :key="section.id"
+        type="button"
+        role="tab"
+        :aria-selected="activeSection === section.id"
+        :aria-controls="`learning-panel-${section.id}`"
+        :class="{ selected: activeSection === section.id }"
+        @click="selectLearningSection(section.id)"
+      >
+        <strong>{{ section.label }}</strong>
+        <span>{{ section.description }}</span>
+      </button>
+    </nav>
 
-    <div class="content-grid two-columns">
+    <div
+      v-show="activeSection === 'prompt'"
+      id="learning-panel-prompt"
+      role="tabpanel"
+      aria-labelledby="learning-tab-prompt"
+    >
+      <PromptToolbox />
+    </div>
+
+    <div
+      v-show="activeSection === 'materials'"
+      id="learning-panel-materials"
+      class="content-grid two-columns"
+      role="tabpanel"
+      aria-labelledby="learning-tab-materials"
+    >
       <section class="panel">
         <div class="section-heading">
           <div>
@@ -1062,7 +1125,13 @@ onMounted(async () => {
       </section>
     </div>
 
-    <section class="panel">
+    <section
+      v-show="activeSection === 'review'"
+      id="learning-panel-review"
+      class="panel"
+      role="tabpanel"
+      aria-labelledby="learning-tab-review"
+    >
       <div class="section-heading">
         <div>
           <p class="eyebrow">
@@ -1137,7 +1206,13 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section class="panel">
+    <section
+      v-show="activeSection === 'wrongbook'"
+      id="learning-panel-wrongbook"
+      class="panel"
+      role="tabpanel"
+      aria-labelledby="learning-tab-wrongbook"
+    >
       <div class="section-heading">
         <div>
           <p class="eyebrow">
