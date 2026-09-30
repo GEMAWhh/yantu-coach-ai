@@ -55,4 +55,14 @@ describe("LearningPage management forms", () => {
 
     expect(wrapper.text()).toContain("名称、编码和科目不能为空。");
   });
+
+  it("requires question text before saving a wrong question", async () => {
+    window.history.replaceState(null, "", "/learning?section=wrongbook");
+    const wrapper = mount(LearningPage, { global: { plugins: [createPinia()] } });
+
+    await wrapper.get(".wrongbook-hero-actions .secondary-button").trigger("click");
+    await wrapper.get(".wrongbook-capture-form").trigger("submit");
+
+    expect(wrapper.text()).toContain("请先填写题目内容。");
+  });
 });

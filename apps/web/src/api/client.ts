@@ -55,6 +55,8 @@ import type {
   WrongbookCandidateListPayload,
   WrongbookConfirmPayload,
   WrongbookDraftHistoryPayload,
+  WrongbookQuickCaptureCreatePayload,
+  WrongbookQuickCapturePayload,
 } from "./contracts";
 import { demoApiRequest, isDemoApiEnabled } from "./demoClient";
 import { getPersonalAccessKey } from "./auth";
@@ -251,6 +253,12 @@ export class ApiClient {
     return this.get<WrongbookDraftHistoryPayload>(
       `/api/v1/wrongbook/history?limit=${limit}&offset=${offset}`,
     );
+  }
+
+  quickCaptureWrongQuestion(
+    payload: WrongbookQuickCaptureCreatePayload,
+  ): Promise<ApiResponse<WrongbookQuickCapturePayload>> {
+    return this.post<WrongbookQuickCapturePayload>("/api/v1/wrongbook/quick-capture", payload);
   }
 
   submitWrongbookAttempt(

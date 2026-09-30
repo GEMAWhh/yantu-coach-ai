@@ -30,6 +30,38 @@ ASSET_ROLES = [
 ]
 
 
+def test_quick_capture_creates_pending_wrong_question_atomically(
+    test_settings: RuntimeSettings,
+) -> None:
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/v1/wrongbook/quick-capture",
+            json={
+                "standard_text": "求函数 f(x)=x^2 在 x=3 处的导数。",
+                "subject_id": "math",
+                "source": "今天练习册",
+            },
+        )
+        invalid = client.post(
+            "/api/v1/wrongbook/quick-capture",
+            json={"standard_text": "   "},
+        )
+        history = client.get("/api/v1/wrongbook/history")
+
+    assert response.status_code == 200
+    body = response.json()["data"]
+    assert body["question"]["standard_text"] == "求函数 f(x)=x^2 在 x=3 处的导数。"
+    assert body["question"]["subject_id"] == "math"
+    assert body["question"]["source"] == "今天练习册"
+    assert body["record"]["question_id"] == body["question"]["id"]
+    assert body["record"]["current_status"] == "pending_analysis"
+    assert body["verification"]["wrong_record_id"] == body["record"]["id"]
+    assert invalid.status_code == 422
+    history_items = history.json()["data"]["items"]
+    assert len(history_items) == 1
+    assert history_items[0]["record"]["id"] == body["record"]["id"]
+
+
 @pytest.fixture
 def test_settings(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
