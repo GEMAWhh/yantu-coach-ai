@@ -254,6 +254,7 @@ Current implemented wrongbook endpoints are:
 ```http
 POST /api/v1/wrongbook/questions
 POST /api/v1/wrongbook/records
+POST /api/v1/wrongbook/quick-capture
 POST /api/v1/wrongbook/drafts
 GET  /api/v1/wrongbook/{wrong_record_id}
 POST /api/v1/wrongbook/{wrong_record_id}/analyze
@@ -270,6 +271,8 @@ GET  /api/v1/wrongbook/planning-candidates
 ```
 
 The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
+
+`POST /wrongbook/quick-capture` accepts required `standard_text` plus optional `subject_id` and `source`. It creates the question, pending-analysis wrong record, and verification row in one transaction, then returns all three objects. It does not generate or confirm an AI draft.
 
 `POST /wrongbook/drafts` creates a manual structured draft for an existing wrong record. `POST /wrongbook/{wrong_id}/analyze` uses the Fake Provider and writes an `ai_jobs` row plus a `wrongbook_drafts` row. `GET /draft` returns the latest draft, `PATCH /draft` replaces its structured JSON and revalidates it, and `POST /confirm` copies only a valid draft into `wrong_records.surface_cause`, `deep_cause`, and `prerequisite_gap`. Wrong records created without cause fields start at `pending_analysis` and move to `pending_no_hint_redo` only after draft confirmation. Unconfirmed or invalid drafts must not mutate formal wrong-record fields.
 

@@ -53,6 +53,9 @@ import type {
   WrongbookCandidateListPayload,
   WrongbookConfirmPayload,
   WrongbookDraftHistoryPayload,
+  WrongbookQuickCaptureCreatePayload,
+  WrongbookQuickCapturePayload,
+  WrongbookQuestionPayload,
   WrongbookDraftPayload,
   WrongbookRecordPayload,
   WrongbookVerificationPayload,
@@ -210,6 +213,27 @@ const wrongRecord: WrongbookRecordPayload = {
 };
 
 let wrongRecords: WrongbookRecordPayload[] = [wrongRecord];
+
+let wrongQuestions: WrongbookQuestionPayload[] = [
+  {
+    id: "question-derivative-12",
+    version: 1,
+    created_at: "2026-07-14T18:00:00Z",
+    updated_at: "2026-07-14T18:00:00Z",
+    created_by: "user",
+    is_deleted: false,
+    deleted_at: null,
+    subject_id: "math",
+    knowledge_node_id: "node-derivative",
+    standard_text: "已知函数 f(x)=x³-3ax，讨论函数的单调区间，并说明参数 a 的取值对极值点的影响。",
+    question_type: null,
+    difficulty: null,
+    source: "错题上传",
+    source_year: null,
+    source_page: null,
+    status: "active",
+  },
+];
 
 let wrongVerifications: WrongbookVerificationPayload[] = [
   {
@@ -628,6 +652,12 @@ function routeDemoPost<TData>(
   body: unknown,
   headers: Record<string, string>,
 ): ApiResponse<TData> {
+  if (path === "/api/v1/wrongbook/quick-capture") {
+    return respond<TData>(
+      quickCaptureWrongQuestion(body as WrongbookQuickCaptureCreatePayload),
+      "wrongbook-quick-capture",
+    );
+  }
   if (path === "/api/v1/tasks") {
     return respond<TData>(createDemoTask(body as TaskCreatePayload), "task-create");
   }
@@ -1085,13 +1115,7 @@ function wrongbookHistory(limit: number, offset: number): WrongbookDraftHistoryP
   const items = sorted
     .slice(offset, offset + limit)
     .map((record) => ({
-      question: {
-        id: record.question_id,
-        standard_text: "已知函数 f(x)=x³-3ax，讨论函数的单调区间，并说明参数 a 的取值对极值点的影响。",
-        subject_id: "math",
-        knowledge_node_id: record.knowledge_node_id,
-        source: "错题上传",
-      },
+      question: wrongQuestionFor(record.question_id),
       record,
       verification: verificationFor(record.id),
       draft:
@@ -1100,6 +1124,70 @@ function wrongbookHistory(limit: number, offset: number): WrongbookDraftHistoryP
           .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0] ?? null,
     }));
   return { items, total: sorted.length };
+}
+
+function quickCaptureWrongQuestion(
+  payload: WrongbookQuickCaptureCreatePayload,
+): WrongbookQuickCapturePayload {
+  const id = ++demoSequence;
+  const question: WrongbookQuestionPayload = {
+    id: `question-demo-${id}`,
+    version: 1,
+    created_at: now,
+    updated_at: now,
+    created_by: "user",
+    is_deleted: false,
+    deleted_at: null,
+    subject_id: payload.subject_id?.trim() || null,
+    knowledge_node_id: null,
+    standard_text: payload.standard_text.trim(),
+    question_type: null,
+    difficulty: null,
+    source: payload.source?.trim() || null,
+    source_year: null,
+    source_page: null,
+    status: "active",
+  };
+  const record: WrongbookRecordPayload = {
+    id: `wrong-demo-${id}`,
+    version: 1,
+    created_at: now,
+    updated_at: now,
+    created_by: "user",
+    question_id: question.id,
+    knowledge_node_id: null,
+    surface_cause: null,
+    deep_cause: null,
+    prerequisite_gap: null,
+    error_count: 1,
+    redo_count: 0,
+    current_status: "pending_analysis",
+    next_review_at: null,
+    resolved_at: null,
+  };
+  const verification: WrongbookVerificationPayload = {
+    id: `wrong-verification-demo-${id}`,
+    version: 1,
+    created_at: now,
+    updated_at: now,
+    wrong_record_id: record.id,
+    original_redo_passed: false,
+    no_hint_redo_passed: false,
+    variant_passed: false,
+    interval_test_passed: false,
+    transfer_test_passed: false,
+    last_attempt_id: null,
+  };
+  wrongQuestions = [question, ...wrongQuestions];
+  wrongRecords = [record, ...wrongRecords];
+  wrongVerifications = [verification, ...wrongVerifications];
+  return { question, record, verification };
+}
+
+function wrongQuestionFor(questionId: string): WrongbookQuestionPayload {
+  const question = wrongQuestions.find((item) => item.id === questionId);
+  if (!question) throw new Error(`Demo wrongbook question not found: ${questionId}`);
+  return question;
 }
 
 function uploadEvidence(payload: EvidenceUploadCreatePayload): EvidenceUploadPayload {

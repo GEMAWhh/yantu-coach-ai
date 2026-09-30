@@ -31,6 +31,8 @@ from app.schemas.wrongbook import (
     WrongbookDraftResponse,
     WrongbookDraftUpdate,
     WrongbookHistoryResponse,
+    WrongbookQuickCaptureCreate,
+    WrongbookQuickCaptureResponse,
     WrongRecordCreate,
     WrongRecordDetailResponse,
     WrongRecordResponse,
@@ -86,6 +88,32 @@ def create_wrong_record_endpoint(
             record = create_wrong_record(session, **payload.model_dump())
             verification = get_wrong_verification(session, record.id)
             response = WrongRecordDetailResponse(
+                record=WrongRecordResponse.from_model(record),
+                verification=WrongVerificationResponse.from_model(verification),
+            )
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(response, request)
+
+
+@router.post("/quick-capture", response_model=ApiResponse[WrongbookQuickCaptureResponse])
+def quick_capture_wrong_question(
+    request: Request,
+    payload: WrongbookQuickCaptureCreate,
+) -> ApiResponse[WrongbookQuickCaptureResponse]:
+    session_factory = _session_factory()
+    try:
+        with session_factory.begin() as session:
+            question = create_question(
+                session,
+                standard_text=payload.standard_text,
+                subject_id=payload.subject_id,
+                source=payload.source,
+            )
+            record = create_wrong_record(session, question_id=question.id)
+            verification = get_wrong_verification(session, record.id)
+            response = WrongbookQuickCaptureResponse(
+                question=QuestionResponse.from_model(question),
                 record=WrongRecordResponse.from_model(record),
                 verification=WrongVerificationResponse.from_model(verification),
             )

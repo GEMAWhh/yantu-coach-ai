@@ -219,3 +219,9 @@ tests/fixtures/ai/
 - Pure unit tests cover deterministic prefill, knowledge-node traceability, past-date rejection, and duration boundaries.
 - Mobile Playwright coverage creates a task from a formal weak node and verifies it through in-app Planning and Today navigation.
 - The workflow keeps API failures editable and never mutates mastery or evidence records.
+
+## 18. Wrongbook quick-capture coverage
+
+- API tests verify that one request creates the question, pending-analysis wrong record, and verification row, while empty question text is rejected.
+- Learning-page unit tests keep empty submissions in the browser and show a direct validation message.
+- Mobile Playwright coverage records a wrong question with optional subject and source, then verifies that it immediately appears in the pending-analysis queue without horizontal overflow.

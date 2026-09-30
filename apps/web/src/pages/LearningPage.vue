@@ -54,6 +54,14 @@ const wrongbookActionError = ref<string | null>(null);
 const wrongbookSubmissions = ref<Record<string, WrongbookAttemptSubmitPayload>>({});
 const wrongbookDraftHistory = ref<WrongbookDraftHistoryItemPayload[] | null>(null);
 const wrongbookDraftHistoryError = ref<string | null>(null);
+const showWrongbookCapture = ref(false);
+const wrongbookCaptureInFlight = ref(false);
+const wrongbookCaptureMessage = ref<{ tone: "error" | "success"; text: string } | null>(null);
+const wrongbookCaptureForm = ref({
+  standard_text: "",
+  subject_id: "",
+  source: "",
+});
 const selectedWrongbookRecord = ref<WrongbookRecordPayload | null>(null);
 const selectedWrongbookVerification = ref<WrongbookVerificationPayload | null>(null);
 const selectedWrongbookDraft = ref<WrongbookDraftPayload | null>(null);
@@ -644,6 +652,33 @@ async function loadWrongbookDraftHistory(selectRecordId?: string): Promise<void>
   }
 }
 
+async function submitWrongbookCapture(): Promise<void> {
+  const standardText = wrongbookCaptureForm.value.standard_text.trim();
+  if (!standardText) {
+    wrongbookCaptureMessage.value = { tone: "error", text: "请先填写题目内容。" };
+    return;
+  }
+
+  wrongbookCaptureInFlight.value = true;
+  wrongbookCaptureMessage.value = null;
+  try {
+    const response = await new ApiClient().quickCaptureWrongQuestion({
+      standard_text: standardText,
+      subject_id: wrongbookCaptureForm.value.subject_id.trim() || null,
+      source: wrongbookCaptureForm.value.source.trim() || null,
+    });
+    wrongbookFilter.value = "analysis";
+    await loadWrongbookDraftHistory(response.data.record.id);
+    wrongbookCaptureForm.value = { standard_text: "", subject_id: "", source: "" };
+    showWrongbookCapture.value = false;
+    wrongbookCaptureMessage.value = { tone: "success", text: "已记入错题本，接下来分析错因。" };
+  } catch {
+    wrongbookCaptureMessage.value = { tone: "error", text: "错题保存失败，请稍后重试。" };
+  } finally {
+    wrongbookCaptureInFlight.value = false;
+  }
+}
+
 function selectWrongbookDraftHistory(item: WrongbookDraftHistoryItemPayload): void {
   selectedWrongbookId.value = item.record.id;
   selectedWrongbookRecord.value = item.record;
@@ -1122,15 +1157,86 @@ onMounted(async () => {
           </h2>
           <p>系统会保留每道错题并安排之后重做；连续验证正确后，它会自动退出待办。</p>
         </div>
-        <button
-          type="button"
-          class="primary-action"
-          :disabled="dueWrongbookCount === 0"
-          @click="startNextWrongbook"
-        >
-          开始下一题
-        </button>
+        <div class="wrongbook-hero-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            @click="showWrongbookCapture = !showWrongbookCapture; wrongbookCaptureMessage = null"
+          >
+            {{ showWrongbookCapture ? "收起" : "记一道错题" }}
+          </button>
+          <button
+            type="button"
+            class="primary-action"
+            :disabled="dueWrongbookCount === 0"
+            @click="startNextWrongbook"
+          >
+            开始下一题
+          </button>
+        </div>
       </div>
+      <form
+        v-if="showWrongbookCapture"
+        class="wrongbook-capture-form"
+        @submit.prevent="submitWrongbookCapture"
+      >
+        <div class="wrongbook-capture-heading">
+          <div>
+            <strong>记一道错题</strong>
+            <p>先把题目留下，错因可以稍后分析。</p>
+          </div>
+          <button
+            type="button"
+            class="text-button"
+            @click="showWrongbookCapture = false; wrongbookCaptureMessage = null"
+          >
+            取消
+          </button>
+        </div>
+        <label class="field wrongbook-question-field">
+          <span>题目内容</span>
+          <textarea
+            v-model="wrongbookCaptureForm.standard_text"
+            rows="4"
+            placeholder="粘贴题目，或用一句话记下题目"
+            :disabled="wrongbookCaptureInFlight"
+          />
+        </label>
+        <div class="wrongbook-capture-optional">
+          <label class="field">
+            <span>科目（可选）</span>
+            <input
+              v-model="wrongbookCaptureForm.subject_id"
+              type="text"
+              placeholder="例如：数学"
+              :disabled="wrongbookCaptureInFlight"
+            >
+          </label>
+          <label class="field">
+            <span>来源（可选）</span>
+            <input
+              v-model="wrongbookCaptureForm.source"
+              type="text"
+              placeholder="例如：今天的练习册"
+              :disabled="wrongbookCaptureInFlight"
+            >
+          </label>
+        </div>
+        <button
+          type="submit"
+          class="primary-action"
+          :disabled="wrongbookCaptureInFlight"
+        >
+          {{ wrongbookCaptureInFlight ? "正在保存…" : "保存到错题本" }}
+        </button>
+      </form>
+      <p
+        v-if="wrongbookCaptureMessage"
+        :class="wrongbookCaptureMessage.tone === 'error' ? 'task-action-error' : 'task-action-success'"
+        role="status"
+      >
+        {{ wrongbookCaptureMessage.text }}
+      </p>
       <p
         v-if="wrongbookActionError"
         class="task-action-error"

@@ -548,6 +548,85 @@ h3 {
   color: var(--gray-700);
 }
 
+.wrongbook-hero-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+
+.wrongbook-capture-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-small);
+  background: var(--white);
+}
+
+.wrongbook-capture-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.wrongbook-capture-heading strong {
+  font-size: 18px;
+}
+
+.wrongbook-capture-heading p {
+  margin: 4px 0 0;
+  color: var(--gray-600);
+}
+
+.wrongbook-question-field textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.wrongbook-capture-form .field {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2);
+}
+
+.wrongbook-capture-form .field > span {
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.wrongbook-capture-form input,
+.wrongbook-capture-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-small);
+  padding: var(--space-3);
+  color: var(--ink);
+  background: var(--white);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.wrongbook-capture-form input:focus,
+.wrongbook-capture-form textarea:focus {
+  border-color: var(--blue);
+  outline: 3px solid var(--blue-soft);
+}
+
+.wrongbook-capture-optional {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.wrongbook-capture-form > .primary-action {
+  justify-self: end;
+}
+
 .wrongbook-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1753,6 +1832,24 @@ dd {
   }
 
   .wrongbook-hero .primary-action {
+    width: 100%;
+  }
+
+  .wrongbook-hero-actions,
+  .wrongbook-capture-optional {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .wrongbook-hero-actions {
+    display: grid;
+  }
+
+  .wrongbook-capture-form {
+    padding: var(--space-4);
+  }
+
+  .wrongbook-capture-form > .primary-action {
     width: 100%;
   }
 

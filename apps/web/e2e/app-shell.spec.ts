@@ -211,7 +211,22 @@ test.describe("Vue prototype shell", () => {
       page.getByRole("heading", { name: /今天有 \d+ 道需要重做|今天的错题已经完成/ }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /待分析 1/ })).toBeVisible();
-    await page.getByRole("button", { name: /待分析 1/ }).click();
+    await page.getByRole("button", { name: "记一道错题" }).click();
+    await page.getByLabel("题目内容").fill("E2E：求数列极限并说明使用的判定方法。");
+    await page.getByLabel("科目（可选）").fill("数学");
+    await page.getByLabel("来源（可选）").fill("今日模拟题");
+    await page.setViewportSize({ width: 360, height: 1200 });
+    await page.locator(".wrongbook-capture-form").scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: testInfo.outputPath("wrongbook-quick-capture-mobile.png"),
+    });
+    await page.getByRole("button", { name: "保存到错题本" }).click();
+
+    await expect(page.getByText("已记入错题本，接下来分析错因。")).toBeVisible();
+    await expect(page.getByRole("button", { name: /待分析 2/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "E2E：求数列极限并说明使用的判定方法。" })).toBeVisible();
+
+    await page.getByRole("button", { name: /已知函数 f\(x\)=x³-3ax/ }).click();
     await expect(page.getByText("参数范围遗漏", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "确认错因并安排重做" }).click();
 

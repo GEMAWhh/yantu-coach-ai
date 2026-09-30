@@ -526,6 +526,31 @@ export type WrongbookCandidateListPayload = {
   total: number;
 };
 
+export type WrongbookQuickCaptureCreatePayload = {
+  standard_text: string;
+  subject_id?: string | null;
+  source?: string | null;
+};
+
+export type WrongbookQuestionPayload = {
+  id: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  subject_id: string | null;
+  knowledge_node_id: string | null;
+  standard_text: string;
+  question_type: string | null;
+  difficulty: string | null;
+  source: string | null;
+  source_year: number | null;
+  source_page: string | null;
+  status: string;
+};
+
 export type WrongbookAttemptType =
   | "original_redo"
   | "no_hint_redo"
@@ -617,6 +642,12 @@ export type WrongbookAttemptSubmitPayload = {
   created: boolean;
 };
 
+export type WrongbookQuickCapturePayload = {
+  question: WrongbookQuestionPayload;
+  record: WrongbookRecordPayload;
+  verification: WrongbookVerificationPayload;
+};
+
 export type WrongbookAIJobPayload = {
   id: string;
   version: number;
@@ -667,13 +698,10 @@ export type WrongbookConfirmPayload = {
 };
 
 export type WrongbookDraftHistoryItemPayload = {
-  question: {
-    id: string;
-    standard_text: string;
-    subject_id: string | null;
-    knowledge_node_id: string | null;
-    source: string | null;
-  };
+  question: Pick<
+    WrongbookQuestionPayload,
+    "id" | "standard_text" | "subject_id" | "knowledge_node_id" | "source"
+  >;
   record: WrongbookRecordPayload;
   verification: WrongbookVerificationPayload;
   draft: WrongbookDraftPayload | null;

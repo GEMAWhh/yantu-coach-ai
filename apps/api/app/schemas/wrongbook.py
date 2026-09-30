@@ -118,6 +118,14 @@ class WrongRecordCreate(BaseModel):
     next_review_at: datetime | None = None
 
 
+class WrongbookQuickCaptureCreate(BaseModel):
+    model_config = ConfigDict(frozen=True, str_strip_whitespace=True)
+
+    standard_text: str = Field(min_length=1)
+    subject_id: str | None = None
+    source: str | None = Field(default=None, max_length=120)
+
+
 class WrongVerificationResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -188,6 +196,14 @@ class WrongRecordResponse(BaseModel):
             next_review_at=wrong.next_review_at,
             resolved_at=wrong.resolved_at,
         )
+
+
+class WrongbookQuickCaptureResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    question: QuestionResponse
+    record: WrongRecordResponse
+    verification: WrongVerificationResponse
 
 
 class WrongRecordDetailResponse(BaseModel):
