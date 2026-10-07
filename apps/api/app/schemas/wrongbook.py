@@ -15,6 +15,7 @@ from app.models.wrongbook import (
     WrongVerification,
 )
 from app.planning.engine import PlanningCandidate
+from app.schemas.assets import AssetResponse
 from app.wrongbook.service import (
     AttemptSubmission,
     WrongbookConfirmation,
@@ -239,6 +240,16 @@ class QuestionAssetResponse(BaseModel):
             asset_role=cast(AssetRole, asset.asset_role),
             page_order=asset.page_order,
         )
+
+
+class WrongbookAttachmentResponse(BaseModel):
+    link: QuestionAssetResponse
+    asset: AssetResponse
+
+
+class WrongbookAttachmentListResponse(BaseModel):
+    items: list[WrongbookAttachmentResponse]
+    total: int
 
 
 class AttemptCreate(BaseModel):

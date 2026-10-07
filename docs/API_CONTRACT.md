@@ -264,6 +264,7 @@ GET  /api/v1/wrongbook/{wrong_record_id}/draft
 PATCH /api/v1/wrongbook/{wrong_record_id}/draft
 POST /api/v1/wrongbook/{wrong_record_id}/confirm
 POST /api/v1/wrongbook/{wrong_record_id}/assets
+GET  /api/v1/wrongbook/{wrong_record_id}/assets
 POST /api/v1/wrongbook/{wrong_record_id}/attempts
 POST /api/v1/wrongbook/{wrong_record_id}/variant-results
 POST /api/v1/wrongbook/{wrong_record_id}/interval-results
@@ -273,6 +274,8 @@ GET  /api/v1/wrongbook/planning-candidates
 ```
 
 The implemented domain accepts existing `asset_id` values and enforces exactly seven attachment roles: `statement`, `figure`, `my_answer`, `marking`, `standard_answer`, `original_solution`, and `supplement`.
+
+`GET /wrongbook/{wrong_record_id}/assets` returns `{items: [{link, asset}], total}` ordered by role, page order and link ID. Unknown records return 404. Links contain association ID, question ID, asset ID, role and page order; assets contain metadata only. Content is read through the authenticated asset content endpoint. Attachments do not change learning state.
 
 `POST /wrongbook/quick-capture` accepts required `standard_text` plus optional `subject_id` and `source`. It creates the question, pending-analysis wrong record, and verification row in one transaction, then returns all three objects. It does not generate or confirm an AI draft.
 

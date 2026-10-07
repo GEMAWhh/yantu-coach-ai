@@ -526,6 +526,16 @@ export type WrongbookCandidateListPayload = {
   total: number;
 };
 
+export type WrongbookAttachmentRole = "statement" | "figure" | "my_answer" | "marking" | "standard_answer" | "original_solution" | "supplement";
+export type WrongbookAttachmentLink = {
+  id: string; question_id: string; asset_id: string;
+  asset_role: WrongbookAttachmentRole; page_order: number;
+};
+export type WrongbookAttachmentList = {
+  items: Array<{ link: WrongbookAttachmentLink; asset: AssetPayload }>;
+  total: number;
+};
+
 export type WrongbookQuickCaptureCreatePayload = {
   standard_text: string;
   subject_id?: string | null;

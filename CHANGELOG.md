@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Classified original-question, answer and solution attachments with mobile camera input and authenticated viewing.
 - Manual wrong-question cause editing with draft saves and explicit confirmation before scheduling redo.
 - Fast wrong-question capture from the wrongbook workspace, with atomic question/record creation and immediate pending-analysis feedback.
 - AI 研发执行包、治理规范、质量门禁、角色提示词和首批 Issue。
