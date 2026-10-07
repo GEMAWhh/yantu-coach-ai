@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Manual wrong-question cause editing with draft saves and explicit confirmation before scheduling redo.
 - Fast wrong-question capture from the wrongbook workspace, with atomic question/record creation and immediate pending-analysis feedback.
 - AI 研发执行包、治理规范、质量门禁、角色提示词和首批 Issue。
 - 云端个人版 API 连接配置、严格 CORS 边界和个人访问密钥保护。

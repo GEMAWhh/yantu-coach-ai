@@ -19,6 +19,7 @@ import type {
 import PageHeader from "../components/PageHeader.vue";
 import PromptToolbox from "../components/PromptToolbox.vue";
 import StatusTag from "../components/StatusTag.vue";
+import WrongbookCauseEditor from "../components/WrongbookCauseEditor.vue";
 import { useMockStudyStore, type LearningResource, type Tone } from "../stores/mockStudy";
 
 type LearningSection = "review" | "wrongbook" | "materials" | "prompt";
@@ -67,6 +68,7 @@ const selectedWrongbookVerification = ref<WrongbookVerificationPayload | null>(n
 const selectedWrongbookDraft = ref<WrongbookDraftPayload | null>(null);
 const selectedWrongbookId = ref<string | null>(null);
 const wrongbookFilter = ref<"analysis" | "redo" | "completed">("redo");
+const wrongbookCausesDirty = ref(false);
 const resourceActionInFlight = ref(false);
 const resourceMessage = ref<{ tone: "error" | "success"; text: string } | null>(null);
 const selectedResourceFile = ref<File | null>(null);
@@ -687,25 +689,6 @@ function selectWrongbookDraftHistory(item: WrongbookDraftHistoryItemPayload): vo
   wrongbookActionError.value = null;
 }
 
-async function analyzeWrongbookDraft(item: WrongbookDraftHistoryItemPayload): Promise<void> {
-  const actionKey = wrongbookDraftActionKey("analyze", item.record.id);
-  wrongbookActionInFlight.value = actionKey;
-  wrongbookActionError.value = null;
-  try {
-    const analyzed = await new ApiClient().analyzeWrongbookRecord(item.record.id, {
-      provider_mode: "valid",
-    });
-    selectedWrongbookDraft.value = analyzed.data.draft;
-    await loadWrongbookDraftHistory(analyzed.data.draft.wrong_record_id);
-  } catch {
-    wrongbookActionError.value = "错题草稿生成失败，请刷新后重试。";
-  } finally {
-    if (wrongbookActionInFlight.value === actionKey) {
-      wrongbookActionInFlight.value = null;
-    }
-  }
-}
-
 async function confirmSelectedWrongbookDraft(): Promise<void> {
   if (!selectedWrongbookDraft.value) {
     return;
@@ -1319,6 +1302,12 @@ onMounted(async () => {
           </p>
 
           <template v-if="selectedWrongbookItem.record.current_status === 'pending_analysis'">
+            <WrongbookCauseEditor
+              :key="selectedWrongbookItem.record.id"
+              :item="selectedWrongbookItem"
+              @saved="loadWrongbookDraftHistory"
+              @dirty="wrongbookCausesDirty = $event"
+            />
             <div
               v-if="selectedWrongbookItem.draft"
               class="wrongbook-causes"
@@ -1329,19 +1318,10 @@ onMounted(async () => {
             </div>
             <div class="task-actions">
               <button
-                v-if="!selectedWrongbookItem.draft"
+                v-if="selectedWrongbookItem.draft?.status === 'draft'"
                 type="button"
                 class="task-action-button"
-                :disabled="isWrongbookDraftActionRunning('analyze', selectedWrongbookItem.record.id)"
-                @click="analyzeWrongbookDraft(selectedWrongbookItem)"
-              >
-                生成错因建议
-              </button>
-              <button
-                v-else-if="selectedWrongbookItem.draft.status === 'draft'"
-                type="button"
-                class="task-action-button"
-                :disabled="isWrongbookDraftActionRunning('confirm', selectedWrongbookItem.record.id)"
+                :disabled="wrongbookCausesDirty || isWrongbookDraftActionRunning('confirm', selectedWrongbookItem.record.id)"
                 @click="selectWrongbookItem(selectedWrongbookItem); confirmSelectedWrongbookDraft()"
               >
                 确认错因并安排重做

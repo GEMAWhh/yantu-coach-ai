@@ -249,6 +249,8 @@ Unconfirmed drafts must not write formal evidence fields, tasks, mastery evidenc
 
 ## 14. Implemented wrongbook domain boundary
 
+The pending-analysis UI uses `POST /wrongbook/drafts` for manual cause entry and repair. Each save creates a manual-source draft; the separate `/confirm` action remains required before formal cause fields change.
+
 Current implemented wrongbook endpoints are:
 
 ```http

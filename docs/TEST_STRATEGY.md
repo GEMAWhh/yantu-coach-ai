@@ -222,6 +222,8 @@ tests/fixtures/ai/
 
 ## 18. Wrongbook quick-capture coverage
 
+Manual cause editing is covered by component tests for empty input, failed saves, and draft-only API writes. Mobile E2E saves and edits causes and blocks confirmation of unsaved changes.
+
 - API tests verify that one request creates the question, pending-analysis wrong record, and verification row, while empty question text is rejected.
 - Learning-page unit tests keep empty submissions in the browser and show a direct validation message.
 - Mobile Playwright coverage records a wrong question with optional subject and source, then verifies that it immediately appears in the pending-analysis queue without horizontal overflow.

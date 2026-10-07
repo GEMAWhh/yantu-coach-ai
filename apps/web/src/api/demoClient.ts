@@ -652,6 +652,24 @@ function routeDemoPost<TData>(
   body: unknown,
   headers: Record<string, string>,
 ): ApiResponse<TData> {
+  if (path === "/api/v1/wrongbook/drafts") {
+    const payload = body as { wrong_record_id: string; structured_json: Record<string, unknown> };
+    wrongRecordFor(payload.wrong_record_id);
+    const draft: WrongbookDraftPayload = {
+      id: `wrong-manual-draft-${++demoSequence}`, version: 1,
+      created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      wrong_record_id: payload.wrong_record_id, ai_job_id: `wrong-manual-job-${demoSequence}`,
+      status: "draft", schema_version: "wrongbook-analysis-v1",
+      structured_json: payload.structured_json, validation_errors: [],
+      confirmed_at: null, confirmed_once: false,
+    };
+    wrongDrafts = [draft, ...wrongDrafts];
+    return respond<TData>({
+      draft,
+      ai_job: { ...wrongbookJob(payload.wrong_record_id, payload.structured_json),
+        id: draft.ai_job_id, provider: "manual", model_name: "manual", job_type: "wrongbook_manual_draft" },
+    }, "wrongbook-manual-draft");
+  }
   if (path === "/api/v1/wrongbook/quick-capture") {
     return respond<TData>(
       quickCaptureWrongQuestion(body as WrongbookQuickCaptureCreatePayload),

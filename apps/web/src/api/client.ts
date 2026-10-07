@@ -289,6 +289,16 @@ export class ApiClient {
     );
   }
 
+  saveManualWrongbookDraft(
+    wrongRecordId: string,
+    structuredJson: Record<string, unknown>,
+  ): Promise<ApiResponse<WrongbookAnalyzePayload>> {
+    return this.post<WrongbookAnalyzePayload>("/api/v1/wrongbook/drafts", {
+      wrong_record_id: wrongRecordId,
+      structured_json: structuredJson,
+    });
+  }
+
   submitWrongbookVariantResult(
     wrongRecordId: string,
     payload: WrongbookAttemptResultCreatePayload,
