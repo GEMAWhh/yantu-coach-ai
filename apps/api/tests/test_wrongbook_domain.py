@@ -100,12 +100,24 @@ def test_wrongbook_assets_are_strictly_role_separated(
             f"/api/v1/wrongbook/{wrong_id}/assets",
             json={"asset_id": asset.id, "asset_role": "answer", "page_order": 0},
         )
+        listing = client.get(f"/api/v1/wrongbook/{wrong_id}/assets")
+        missing = client.get("/api/v1/wrongbook/missing/assets")
 
     assert [response.status_code for response in linked] == [200] * len(ASSET_ROLES)
     assert {response.json()["data"]["asset_role"] for response in linked} == set(ASSET_ROLES)
     assert duplicate.status_code == 409
     assert duplicate.json()["error"]["code"] == "QUESTION_ASSET_DUPLICATE_ROLE_PAGE"
     assert invalid.status_code == 422
+    assert listing.status_code == 200
+    assert listing.json()["data"]["total"] == len(ASSET_ROLES)
+    assert {item["link"]["asset_role"] for item in listing.json()["data"]["items"]} == set(
+        ASSET_ROLES
+    )
+    assert all(
+        item["asset"]["original_name"] == "wrongbook-proof.png"
+        for item in listing.json()["data"]["items"]
+    )
+    assert missing.status_code == 404
 
     with session_factory() as session:
         roles = set(session.scalars(select(QuestionAsset.asset_role)).all())

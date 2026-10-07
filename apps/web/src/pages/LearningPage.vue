@@ -20,6 +20,7 @@ import PageHeader from "../components/PageHeader.vue";
 import PromptToolbox from "../components/PromptToolbox.vue";
 import StatusTag from "../components/StatusTag.vue";
 import WrongbookCauseEditor from "../components/WrongbookCauseEditor.vue";
+import WrongbookAttachments from "../components/WrongbookAttachments.vue";
 import { useMockStudyStore, type LearningResource, type Tone } from "../stores/mockStudy";
 
 type LearningSection = "review" | "wrongbook" | "materials" | "prompt";
@@ -1301,6 +1302,10 @@ onMounted(async () => {
             {{ selectedWrongbookItem.question.source ?? "手动记录" }} · 错误 {{ selectedWrongbookItem.record.error_count }} 次
           </p>
 
+          <WrongbookAttachments
+            :key="selectedWrongbookItem.record.id"
+            :record-id="selectedWrongbookItem.record.id"
+          />
           <template v-if="selectedWrongbookItem.record.current_status === 'pending_analysis'">
             <WrongbookCauseEditor
               :key="selectedWrongbookItem.record.id"

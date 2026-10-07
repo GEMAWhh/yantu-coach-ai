@@ -1,4 +1,5 @@
 import type {
+  WrongbookAttachmentLink,
   AnalyticsErrorsPayload,
   AnalyticsGoalRiskPayload,
   AnalyticsMasteryPayload,
@@ -396,6 +397,7 @@ let resources: ResourceListPayload = {
 };
 
 const demoAssetContent = new Map<string, string>();
+const wrongAttachments: WrongbookAttachmentLink[] = [];
 
 const settingsProfile: SettingsProfilePayload = {
   name: "研途用户",
@@ -456,6 +458,16 @@ export async function demoApiRequest<TData>(request: DemoRequest): Promise<ApiRe
 }
 
 function routeDemoGet<TData>(path: string, params: URLSearchParams): ApiResponse<TData> {
+  const attachments = path.match(/^\/api\/v1\/wrongbook\/([^/]+)\/assets$/);
+  if (attachments) {
+    const record = wrongRecordFor(decodeURIComponent(attachments[1]!));
+    const items = wrongAttachments.filter((link) => link.question_id === record.question_id).map((link) => {
+      const asset = resources.items.find((item) => item.asset.id === link.asset_id)?.asset;
+      if (!asset) throw new Error("Missing attachment");
+      return { link, asset };
+    });
+    return respond<TData>({ items, total: items.length }, "wrongbook-attachments");
+  }
   if (path === "/health") {
     return respond<TData>(
       {
@@ -652,6 +664,16 @@ function routeDemoPost<TData>(
   body: unknown,
   headers: Record<string, string>,
 ): ApiResponse<TData> {
+  const attachments = path.match(/^\/api\/v1\/wrongbook\/([^/]+)\/assets$/);
+  if (attachments) {
+    const record = wrongRecordFor(decodeURIComponent(attachments[1]!));
+    const payload = body as Pick<WrongbookAttachmentLink, "asset_id" | "asset_role" | "page_order">;
+    if (!resources.items.some((item) => item.asset.id === payload.asset_id)) throw new Error("Missing asset");
+    if (wrongAttachments.some((link) => link.question_id === record.question_id && link.asset_role === payload.asset_role && link.page_order === payload.page_order)) throw new Error("Duplicate attachment order");
+    const link = { ...payload, id: `wrong-attachment-${++demoSequence}`, question_id: record.question_id };
+    wrongAttachments.push(link);
+    return respond<TData>(link, "wrongbook-attachment");
+  }
   if (path === "/api/v1/wrongbook/drafts") {
     const payload = body as { wrong_record_id: string; structured_json: Record<string, unknown> };
     wrongRecordFor(payload.wrong_record_id);

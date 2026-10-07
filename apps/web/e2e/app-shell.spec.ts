@@ -225,6 +225,17 @@ test.describe("Vue prototype shell", () => {
     await expect(page.getByText("已记入错题本，接下来分析错因。")).toBeVisible();
     await expect(page.getByRole("button", { name: /待分析 2/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "E2E：求数列极限并说明使用的判定方法。" })).toBeVisible();
+    await page.getByLabel("选择图片或 PDF").setInputFiles({
+      name: "wrong-question.png", mimeType: "image/png",
+      buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3XkAAAAASUVORK5CYII=", "base64"),
+    });
+    await page.getByRole("button", { name: "保存附件", exact: true }).click();
+    await expect(page.getByText("题目 · wrong-question.png")).toBeVisible();
+    await page.locator(".attachments").getByRole("button", { name: "查看", exact: true }).click();
+    await expect(page.getByAltText("错题附件预览")).toBeVisible();
+    await expect.poll(() => page.getByAltText("错题附件预览").evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await page.locator(".attachments").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("wrongbook-attachments-mobile.png") });
 
     await page.getByLabel("哪里做错了").fill("漏掉参数为零的情况");
     await page.getByLabel("为什么会做错").fill("直接套公式，没有分类讨论");

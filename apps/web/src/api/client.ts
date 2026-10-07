@@ -55,6 +55,8 @@ import type {
   WrongbookCandidateListPayload,
   WrongbookConfirmPayload,
   WrongbookDraftHistoryPayload,
+  WrongbookAttachmentList,
+  WrongbookAttachmentLink,
   WrongbookQuickCaptureCreatePayload,
   WrongbookQuickCapturePayload,
 } from "./contracts";
@@ -247,6 +249,14 @@ export class ApiClient {
 
   wrongbookPlanningCandidates(): Promise<ApiResponse<WrongbookCandidateListPayload>> {
     return this.get<WrongbookCandidateListPayload>("/api/v1/wrongbook/planning-candidates");
+  }
+
+  wrongbookAttachments(id: string): Promise<ApiResponse<WrongbookAttachmentList>> {
+    return this.get(`/api/v1/wrongbook/${encodeURIComponent(id)}/assets`);
+  }
+
+  linkWrongbookAttachment(id: string, payload: Pick<WrongbookAttachmentLink, "asset_id" | "asset_role" | "page_order">): Promise<ApiResponse<WrongbookAttachmentLink>> {
+    return this.post(`/api/v1/wrongbook/${encodeURIComponent(id)}/assets`, payload);
   }
 
   wrongbookDraftHistory(limit = 20, offset = 0): Promise<ApiResponse<WrongbookDraftHistoryPayload>> {

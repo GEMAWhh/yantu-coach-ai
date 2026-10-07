@@ -1,13 +1,17 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Header, Query, Request
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.database import get_session_factory
 from app.errors import ApiError
+from app.models.asset import Asset
 from app.models.evidence import AIJob
+from app.models.wrongbook import QuestionAsset
 from app.request_context import get_request_id
 from app.responses import api_response
+from app.schemas.assets import AssetResponse
 from app.schemas.common import ApiResponse
 from app.schemas.wrongbook import (
     AttemptCreate,
@@ -22,6 +26,8 @@ from app.schemas.wrongbook import (
     WrongbookAIJobResponse,
     WrongbookAnalyzeRequest,
     WrongbookAnalyzeResponse,
+    WrongbookAttachmentListResponse,
+    WrongbookAttachmentResponse,
     WrongbookCandidateListResponse,
     WrongbookCandidateResponse,
     WrongbookConfirmResponse,
@@ -324,6 +330,33 @@ def link_asset(
     except WrongbookError as exc:
         raise _api_wrongbook_error(exc) from exc
     return api_response(response, request)
+
+
+@router.get(
+    "/{wrong_record_id}/assets", response_model=ApiResponse[WrongbookAttachmentListResponse]
+)
+def list_wrong_assets(
+    request: Request, wrong_record_id: str
+) -> ApiResponse[WrongbookAttachmentListResponse]:
+    try:
+        with _session_factory()() as session:
+            record = get_wrong_record(session, wrong_record_id)
+            rows = session.execute(
+                select(QuestionAsset, Asset)
+                .join(Asset, Asset.id == QuestionAsset.asset_id)
+                .where(QuestionAsset.question_id == record.question_id)
+                .order_by(QuestionAsset.asset_role, QuestionAsset.page_order, QuestionAsset.id)
+            ).all()
+            items = [
+                WrongbookAttachmentResponse(
+                    link=QuestionAssetResponse.from_model(link),
+                    asset=AssetResponse.from_model(asset),
+                )
+                for link, asset in rows
+            ]
+    except WrongbookError as exc:
+        raise _api_wrongbook_error(exc) from exc
+    return api_response(WrongbookAttachmentListResponse(items=items, total=len(items)), request)
 
 
 @router.post("/{wrong_record_id}/attempts", response_model=ApiResponse[AttemptSubmitResponse])
